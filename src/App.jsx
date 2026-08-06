@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { BookOpen, MessageCircle, GraduationCap, ScrollText, ChevronRight } from "lucide-react";
 import { TOKENS, FONTS_IMPORT } from "./shared/theme.js";
 import VocabModule from "./modules/vocab/VocabModule.jsx";
+import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 
 // Add new modules here as they're built. `ready: true` modules render their
 // component; `ready: false` modules show a "coming soon" card on the menu.
 const MODULES = [
   { id: "vocab", name: "Vocabulary", tagline: "Flashcards & quizzes", icon: BookOpen, ready: true },
-  { id: "grammar", name: "Grammar", tagline: "Rules, drills, verb tables", icon: GraduationCap, ready: false },
+  { id: "grammar", name: "Grammar", tagline: "Rules, drills, verb tables", icon: GraduationCap, ready: true },
   { id: "conversations", name: "Conversations", tagline: "Guided dialogues", icon: MessageCircle, ready: false },
   { id: "stories", name: "Stories", tagline: "Short graded readers", icon: ScrollText, ready: false },
 ];
@@ -86,6 +87,7 @@ export default function App() {
       <style>{FONTS_IMPORT}</style>
       {!active && <ModuleMenu onSelect={setActive} />}
       {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
+      {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}
     </div>
   );
 }

@@ -54,3 +54,14 @@ export function touchStreak(progress) {
 export function categoryKnownCount(progress, level, category) {
   return category.words.filter((w) => progress.words[wordKey(level, category, w)] === "known").length;
 }
+
+// Grammar drill items are keyed by level/topic/item id rather than an
+// Italian word, so they get their own key builder — namespaced with a
+// "grammar:" prefix to avoid ever colliding with a vocab wordKey.
+export function drillKey(level, topic, item) {
+  return `grammar:${level.id}:${topic.id}:${item.id}`;
+}
+
+export function topicKnownCount(progress, level, topic) {
+  return topic.drills.filter((d) => progress.words[drillKey(level, topic, d)] === "known").length;
+}

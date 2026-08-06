@@ -1,0 +1,470 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { ArrowLeft, BookOpen, ChevronRight, Check, X, Flame } from "lucide-react";
+import { TOKENS } from "../../shared/theme.js";
+import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import { loadProgress, saveProgress, touchStreak, markWord, drillKey, topicKnownCount } from "../../shared/storage.js";
+import { shuffle } from "../../shared/shuffle.js";
+import Postmark from "../../shared/Postmark.jsx";
+import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
+import TopBar from "../../shared/TopBar.jsx";
+import SessionSummary from "../../shared/SessionSummary.jsx";
+import SpeakButton from "../../shared/SpeakButton.jsx";
+
+function ExplanationTable({ table }) {
+  return (
+    <div style={{ overflowX: "auto", marginBottom: 18 }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 320 }}>
+        <thead>
+          <tr>
+            {table.headers.map((h, i) => (
+              <th
+                key={i}
+                style={{
+                  textAlign: "left",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  color: TOKENS.inkSoft,
+                  borderBottom: `1.5px solid ${TOKENS.line}`,
+                  padding: "6px 10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, i) => (
+            <tr key={i}>
+              {row.map((cell, j) => (
+                <td
+                  key={j}
+                  style={{
+                    fontFamily: j === 0 ? "'Inter', sans-serif" : "'Fraunces', serif",
+                    fontWeight: j === 0 ? 500 : 600,
+                    fontSize: j === 0 ? 13 : 15,
+                    color: j === 0 ? TOKENS.inkSoft : TOKENS.ink,
+                    borderBottom: `1px solid ${TOKENS.line}`,
+                    padding: "7px 10px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function GrammarHome({ onPick, onExit, progress }) {
+  const [level, setLevel] = useState(GRAMMAR_LEVELS[0]);
+  const { count: streakCount, lastDate } = progress.streak;
+  const streakIsLive = streakCount > 0 && lastDate;
+
+  return (
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 20px 60px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <button
+          onClick={onExit}
+          style={{ border: "none", background: "transparent", cursor: "pointer", color: TOKENS.inkSoft, display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: 13, padding: 0 }}
+        >
+          <ArrowLeft size={16} /> All modules
+        </button>
+        {streakIsLive && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, color: TOKENS.limoncelloDeep, fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13 }}>
+            <Flame size={15} /> {streakCount} day{streakCount === 1 ? "" : "s"}
+          </div>
+        )}
+      </div>
+
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriatic, marginBottom: 6, textTransform: "uppercase" }}>
+          Regole in tasca
+        </p>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
+          Grammar
+        </h1>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 28, flexWrap: "wrap" }}>
+        {GRAMMAR_LEVELS.map((lv) => {
+          const active = lv.id === level.id;
+          return (
+            <button
+              key={lv.id}
+              onClick={() => setLevel(lv)}
+              style={{
+                border: `1.5px solid ${active ? lv.accentDeep : TOKENS.line}`,
+                background: active ? lv.accent : "transparent",
+                color: active ? lv.accentDeep : TOKENS.inkSoft,
+                borderRadius: 999,
+                padding: "9px 18px",
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              {lv.label} · {lv.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <p style={{ textAlign: "center", color: TOKENS.inkSoft, fontFamily: "'Inter', sans-serif", fontSize: 15, marginBottom: 28 }}>
+        {level.tagline}
+      </p>
+
+      <div style={{ display: "grid", gap: 14 }}>
+        {level.topics.map((topic) => {
+          const known = topicKnownCount(progress, level, topic);
+          return (
+            <div
+              key={topic.id}
+              style={{
+                background: TOKENS.card,
+                border: `1px solid ${TOKENS.line}`,
+                borderRadius: 14,
+                padding: "18px 20px",
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+              }}
+            >
+              <Postmark level={level.label} accentDeep={level.accentDeep} />
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: TOKENS.ink, margin: "0 0 2px" }}>
+                  {topic.name}
+                </h3>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
+                  {known > 0 ? `${known} / ${topic.drills.length} mastered` : topic.tagline}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => onPick(level, topic, "lesson")}
+                  style={{
+                    border: `1.5px solid ${TOKENS.ink}`,
+                    background: "transparent",
+                    color: TOKENS.ink,
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <BookOpen size={15} /> Learn
+                </button>
+                <button
+                  onClick={() => onPick(level, topic, "drill")}
+                  style={{
+                    border: "none",
+                    background: TOKENS.ink,
+                    color: TOKENS.paper,
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  Drill <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Lesson({ level, topic, onBack, onPick, onStudySession }) {
+  useEffect(() => {
+    onStudySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { explanation } = topic;
+
+  return (
+    <div>
+      <TopBar level={level} label={topic.name} onBack={onBack} />
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 20px 60px" }}>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: "0 0 12px" }}>
+          {topic.name}
+        </h2>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: TOKENS.inkSoft, lineHeight: 1.6, margin: "0 0 20px" }}>
+          {explanation.summary}
+        </p>
+
+        {explanation.table && <ExplanationTable table={explanation.table} />}
+
+        {explanation.points && explanation.points.length > 0 && (
+          <ul style={{ margin: "0 0 20px", paddingLeft: 20 }}>
+            {explanation.points.map((point, i) => (
+              <li key={i} style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.ink, marginBottom: 8, lineHeight: 1.5 }}>
+                {point}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {explanation.examples && explanation.examples.length > 0 && (
+          <div style={{ background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 24 }}>
+            {explanation.examples.map((ex, i) => (
+              <div key={i} style={{ marginBottom: i === explanation.examples.length - 1 ? 0 : 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: 0 }}>
+                    "{ex.it}"
+                  </p>
+                  <SpeakButton text={ex.it} color={level.accentDeep} size={15} />
+                </div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "2px 0 0" }}>
+                  {ex.en}
+                </p>
+                {i !== explanation.examples.length - 1 && <PerforatedDivider />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => onPick(level, topic, "drill")}
+          style={{
+            width: "100%",
+            border: "none",
+            background: TOKENS.ink,
+            color: TOKENS.paper,
+            borderRadius: 10,
+            padding: "13px 0",
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          Start drill <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function buildDrillQuestions(topic) {
+  return shuffle(topic.drills).map((item) => ({
+    item,
+    options: shuffle(item.options),
+  }));
+}
+
+function fillBlank(item) {
+  return item.prompt.replace("___", item.answer);
+}
+
+function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
+  const questions = useMemo(() => buildDrillQuestions(topic), [topic]);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [missed, setMissed] = useState([]);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    onStudySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const q = questions[index];
+
+  const choose = (opt) => {
+    if (selected) return;
+    setSelected(opt);
+    const isCorrect = opt === q.item.answer;
+    onMarkDrill(drillKey(level, topic, q.item), isCorrect ? "known" : "learning");
+    if (isCorrect) {
+      setCorrectCount((c) => c + 1);
+    } else {
+      setMissed((m) => [...m, q.item]);
+    }
+  };
+
+  const next = () => {
+    if (index + 1 >= questions.length) {
+      setDone(true);
+    } else {
+      setIndex((i) => i + 1);
+      setSelected(null);
+    }
+  };
+
+  if (done) {
+    return (
+      <SessionSummary
+        level={level}
+        title="Drill complete"
+        primary={correctCount}
+        primaryLabel={`correct out of ${questions.length}`}
+        secondary={missed.length}
+        secondaryLabel="to review"
+        missed={missed.map((item) => ({ id: item.id, primary: fillBlank(item), secondary: item.hint }))}
+        missedHeading="TO REVIEW"
+        backLabel="Back to topics"
+        onBack={onBack}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <TopBar level={level} label={topic.name} onBack={onBack} />
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
+          <span>{index + 1} / {questions.length}</span>
+          <span>{correctCount} correct</span>
+        </div>
+
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 8px" }}>
+          Complete the sentence
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: 0, letterSpacing: 0.2 }}>
+            {q.item.prompt}
+          </h2>
+          <SpeakButton text={fillBlank(q.item)} color={level.accentDeep} size={17} />
+        </div>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontStyle: "italic", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 22px" }}>
+          {q.item.hint}
+        </p>
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {q.options.map((opt) => {
+            const isSelected = selected === opt;
+            const isAnswer = opt === q.item.answer;
+            let bg = TOKENS.card;
+            let border = TOKENS.line;
+            let color = TOKENS.ink;
+            if (selected) {
+              if (isAnswer) {
+                bg = "#EAF3EE";
+                border = TOKENS.malachite;
+                color = TOKENS.malachite;
+              } else if (isSelected) {
+                bg = "#F8EAE7";
+                border = TOKENS.corallo;
+                color = TOKENS.corallo;
+              }
+            }
+            return (
+              <button
+                key={opt}
+                onClick={() => choose(opt)}
+                style={{
+                  textAlign: "left",
+                  border: `1.5px solid ${border}`,
+                  background: bg,
+                  color,
+                  borderRadius: 10,
+                  padding: "13px 16px",
+                  fontFamily: "'Fraunces', serif",
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: selected ? "default" : "pointer",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                {opt}
+                {selected && isAnswer && <Check size={16} />}
+                {selected && isSelected && !isAnswer && <X size={16} />}
+              </button>
+            );
+          })}
+        </div>
+
+        {selected && (
+          <button
+            onClick={next}
+            style={{
+              marginTop: 20,
+              width: "100%",
+              border: "none",
+              background: TOKENS.ink,
+              color: TOKENS.paper,
+              borderRadius: 10,
+              padding: "13px 0",
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 600,
+              fontSize: 15,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            {index + 1 >= questions.length ? "See results" : "Next"} <ChevronRight size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// onExit returns to the app's module menu (see src/App.jsx)
+export default function GrammarModule({ onExit }) {
+  const [session, setSession] = useState(null);
+  const [progress, setProgress] = useState(loadProgress);
+
+  useEffect(() => {
+    saveProgress(progress);
+  }, [progress]);
+
+  const onPick = (level, topic, mode) => setSession({ level, topic, mode });
+  const onBack = () => setSession(null);
+  const onMarkDrill = (key, status) => setProgress((p) => markWord(p, key, status));
+  const onStudySession = () => setProgress((p) => touchStreak(p));
+
+  if (!session) return <GrammarHome onPick={onPick} onExit={onExit} progress={progress} />;
+  if (session.mode === "lesson") {
+    return (
+      <Lesson
+        level={session.level}
+        topic={session.topic}
+        onBack={onBack}
+        onPick={onPick}
+        onStudySession={onStudySession}
+      />
+    );
+  }
+  return (
+    <Drill
+      level={session.level}
+      topic={session.topic}
+      onBack={onBack}
+      onMarkDrill={onMarkDrill}
+      onStudySession={onStudySession}
+    />
+  );
+}

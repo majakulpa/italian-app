@@ -6,6 +6,8 @@ import {
   markWord,
   touchStreak,
   categoryKnownCount,
+  drillKey,
+  topicKnownCount,
   todayISO,
 } from "./storage.js";
 
@@ -15,6 +17,13 @@ const category = {
   words: [
     { it: "ciao", en: "hi" },
     { it: "grazie", en: "thanks" },
+  ],
+};
+const topic = {
+  id: "present-are",
+  drills: [
+    { id: "1", answer: "parlo" },
+    { id: "2", answer: "parli" },
   ],
 };
 
@@ -88,6 +97,36 @@ describe("categoryKnownCount", () => {
   it("returns 0 when nothing is marked known", () => {
     const progress = { words: {}, streak: { count: 0, lastDate: null } };
     expect(categoryKnownCount(progress, level, category)).toBe(0);
+  });
+});
+
+describe("drillKey", () => {
+  it("builds a namespaced key from level, topic, and drill item", () => {
+    expect(drillKey(level, topic, { id: "1" })).toBe("grammar:A1:present-are:1");
+  });
+
+  it("never collides with a vocab wordKey for the same level", () => {
+    const vocabK = wordKey(level, category, { it: "ciao" });
+    const grammarK = drillKey(level, topic, { id: "1" });
+    expect(vocabK).not.toBe(grammarK);
+  });
+});
+
+describe("topicKnownCount", () => {
+  it("counts only drill items marked known in that topic", () => {
+    const progress = {
+      words: {
+        "grammar:A1:present-are:1": "known",
+        "grammar:A1:present-are:2": "learning",
+      },
+      streak: { count: 0, lastDate: null },
+    };
+    expect(topicKnownCount(progress, level, topic)).toBe(1);
+  });
+
+  it("returns 0 when nothing is marked known", () => {
+    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    expect(topicKnownCount(progress, level, topic)).toBe(0);
   });
 });
 

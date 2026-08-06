@@ -1,57 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { ArrowLeft, RotateCw, Check, X, ChevronRight, Trophy, Layers, Flame } from "lucide-react";
+import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Flame } from "lucide-react";
 import { TOKENS } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import { shuffle } from "../../shared/shuffle.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function Postmark({ level, accentDeep }) {
-  return (
-    <div
-      style={{
-        width: 56,
-        height: 56,
-        borderRadius: "50%",
-        border: `2px solid ${accentDeep}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        transform: "rotate(-8deg)",
-        background: "rgba(255,255,255,0.5)",
-        flexShrink: 0,
-      }}
-    >
-      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 600, color: accentDeep, letterSpacing: 0.5 }}>
-        {level}
-      </span>
-      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: accentDeep, letterSpacing: 1 }}>
-        ITALIANO
-      </span>
-    </div>
-  );
-}
-
-function PerforatedDivider() {
-  return (
-    <div
-      style={{
-        height: 1,
-        backgroundImage: `repeating-linear-gradient(to right, ${TOKENS.line} 0, ${TOKENS.line} 6px, transparent 6px, transparent 12px)`,
-        margin: "18px 0",
-      }}
-    />
-  );
-}
+import Postmark from "../../shared/Postmark.jsx";
+import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
+import TopBar from "../../shared/TopBar.jsx";
+import SessionSummary from "../../shared/SessionSummary.jsx";
 
 function VocabHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
@@ -186,25 +143,6 @@ function VocabHome({ onPick, onExit, progress }) {
   );
 }
 
-function TopBar({ level, category, onBack }) {
-  return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 12 }}>
-      <button
-        onClick={onBack}
-        aria-label="Back"
-        style={{ border: "none", background: "transparent", cursor: "pointer", color: TOKENS.ink, display: "flex", padding: 6 }}
-      >
-        <ArrowLeft size={20} />
-      </button>
-      <div>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: level.accentDeep, margin: 0, letterSpacing: 1 }}>
-          {level.label} · {category.name.toUpperCase()}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
   const order = useMemo(() => shuffle(category.words), [category]);
   const [index, setIndex] = useState(0);
@@ -242,6 +180,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
         primaryLabel="marked known"
         secondary={stats.learning}
         secondaryLabel="still learning"
+        backLabel="Back to categories"
         onBack={onBack}
       />
     );
@@ -249,7 +188,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
 
   return (
     <div>
-      <TopBar level={level} category={category} onBack={onBack} />
+      <TopBar level={level} label={category.name} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 10 }}>
           <span>{index + 1} / {order.length}</span>
@@ -411,7 +350,9 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
         primaryLabel={`correct out of ${questions.length}`}
         secondary={missed.length}
         secondaryLabel="to review"
-        missed={missed}
+        missed={missed.map((w) => ({ id: w.it, primary: w.it, secondary: w.en }))}
+        missedHeading="WORDS TO REVIEW"
+        backLabel="Back to categories"
         onBack={onBack}
       />
     );
@@ -419,7 +360,7 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
 
   return (
     <div>
-      <TopBar level={level} category={category} onBack={onBack} />
+      <TopBar level={level} label={category.name} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
           <span>{index + 1} / {questions.length}</span>
@@ -507,72 +448,6 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function SessionSummary({ level, title, primary, primaryLabel, secondary, secondaryLabel, missed, onBack }) {
-  return (
-    <div style={{ maxWidth: 480, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-        <div
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: "50%",
-            background: level.accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: level.accentDeep,
-          }}
-        >
-          <Trophy size={28} />
-        </div>
-      </div>
-      <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px" }}>
-        {title}
-      </h2>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 28 }}>
-        <div style={{ background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 22px", minWidth: 120 }}>
-          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: TOKENS.malachite, margin: 0 }}>{primary}</p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0" }}>{primaryLabel}</p>
-        </div>
-        <div style={{ background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 22px", minWidth: 120 }}>
-          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: TOKENS.corallo, margin: 0 }}>{secondary}</p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0" }}>{secondaryLabel}</p>
-        </div>
-      </div>
-
-      {missed && missed.length > 0 && (
-        <div style={{ textAlign: "left", background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 20px", marginBottom: 28 }}>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.inkSoft, margin: "0 0 10px", letterSpacing: 1 }}>
-            WORDS TO REVIEW
-          </p>
-          {missed.map((w) => (
-            <p key={w.it} style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.ink, margin: "0 0 6px" }}>
-              <strong>{w.it}</strong> — {w.en}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <button
-        onClick={onBack}
-        style={{
-          border: "none",
-          background: TOKENS.ink,
-          color: TOKENS.paper,
-          borderRadius: 10,
-          padding: "13px 26px",
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 600,
-          fontSize: 15,
-          cursor: "pointer",
-        }}
-      >
-        Back to categories
-      </button>
     </div>
   );
 }

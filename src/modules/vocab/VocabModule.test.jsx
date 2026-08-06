@@ -1,0 +1,161 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import VocabModule from "./VocabModule.jsx";
+import { LEVELS } from "../../data/vocab.js";
+import { TOKENS } from "../../shared/theme.js";
+
+const a1 = LEVELS.find((l) => l.id === "A1");
+const greetings = a1.categories.find((c) => c.id === "greetings");
+
+beforeEach(() => {
+  localStorage.clear();
+  // shuffle() uses Math.random via Fisher-Yates; a value just under 1 makes
+  // every swap a no-op (j always equals i), so word/option order stays
+  // exactly as authored in data/vocab.js and tests can assert on it.
+  vi.spyOn(Math, "random").mockReturnValue(0.99);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function renderVocab() {
+  return render(<VocabModule onExit={() => {}} />);
+}
+
+describe("VocabHome", () => {
+  it("shows A1 categories by default with word counts", () => {
+    renderVocab();
+    expect(screen.getByText("Vocabulary")).toBeInTheDocument();
+    expect(screen.getByText("Greetings & basics")).toBeInTheDocument();
+    expect(screen.getByText("Family")).toBeInTheDocument();
+    // Both A1 categories happen to have 12 words each.
+    expect(screen.getAllByText(`${greetings.words.length} parole`)).toHaveLength(a1.categories.length);
+  });
+
+  it("switches categories when a different level is selected", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getByRole("button", { name: /A2 · Elementare/ }));
+    expect(screen.getByText("Travel")).toBeInTheDocument();
+    expect(screen.queryByText("Greetings & basics")).not.toBeInTheDocument();
+  });
+
+  it("has no streak badge and no known-count until something is studied", () => {
+    renderVocab();
+    expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(`${greetings.words.length} parole`).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Flashcards", () => {
+  it("flips a card to reveal the translation and example sentence", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    const firstWord = greetings.words[0];
+    expect(screen.getByText(firstWord.it)).toBeInTheDocument();
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    expect(screen.getByText(firstWord.en)).toBeInTheDocument();
+    expect(screen.getByText(`"${firstWord.ex}"`)).toBeInTheDocument();
+  });
+
+  it("marking a word known increases the known count and advances to the next card", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /I knew it/ }));
+
+    expect(screen.getByText("1 known")).toBeInTheDocument();
+    expect(screen.getByText(`2 / ${greetings.words.length}`)).toBeInTheDocument();
+    expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
+  });
+
+  it("completes the deck, shows a summary, and persists known words", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    for (let i = 0; i < greetings.words.length; i++) {
+      await user.click(screen.getByText("Tap to reveal translation"));
+      await user.click(screen.getByRole("button", { name: /I knew it/ }));
+    }
+
+    expect(screen.getByText("Deck complete")).toBeInTheDocument();
+    expect(screen.getByText("marked known")).toBeInTheDocument();
+    expect(screen.getByText(String(greetings.words.length))).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back to categories" }));
+    expect(screen.getByText(`${greetings.words.length} / ${greetings.words.length} known`)).toBeInTheDocument();
+  });
+});
+
+describe("Quiz", () => {
+  it("marks a correct answer, updates the score, and moves to the next question", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    const word0 = greetings.words[0];
+    expect(screen.getByText(word0.it)).toBeInTheDocument();
+
+    const correctButton = screen.getByRole("button", { name: word0.en });
+    await user.click(correctButton);
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+    expect(correctButton).toHaveStyle({ color: TOKENS.malachite });
+
+    await user.click(screen.getByRole("button", { name: /Next word/ }));
+    expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
+  });
+
+  it("marks a wrong answer, highlighting both the pick and the correct option", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    // With shuffle() mocked to be a no-op, distractors are the next words
+    // in category order, so word1's translation is guaranteed to be a
+    // wrong option for word0's question.
+    const word0 = greetings.words[0];
+    const word1 = greetings.words[1];
+
+    const wrongButton = screen.getByRole("button", { name: word1.en });
+    await user.click(wrongButton);
+
+    expect(screen.getByText("0 correct")).toBeInTheDocument();
+    expect(wrongButton).toHaveStyle({ color: TOKENS.corallo });
+    expect(screen.getByRole("button", { name: word0.en })).toHaveStyle({ color: TOKENS.malachite });
+  });
+
+  it("completes the quiz and lists missed words for review", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    const word0 = greetings.words[0];
+    const word1 = greetings.words[1];
+
+    // Get question 0 wrong on purpose.
+    await user.click(screen.getByRole("button", { name: word1.en }));
+    await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+
+    // Answer the rest correctly.
+    for (let i = 1; i < greetings.words.length; i++) {
+      const word = greetings.words[i];
+      await user.click(screen.getByRole("button", { name: word.en }));
+      await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+    }
+
+    expect(screen.getByText("Quiz complete")).toBeInTheDocument();
+    expect(screen.getByText(`correct out of ${greetings.words.length}`)).toBeInTheDocument();
+    expect(screen.getByText("to review")).toBeInTheDocument();
+    expect(screen.getByText("WORDS TO REVIEW")).toBeInTheDocument();
+    expect(screen.getByText(word0.it)).toBeInTheDocument();
+  });
+});

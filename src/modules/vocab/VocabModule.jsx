@@ -3,6 +3,7 @@ import { ArrowLeft, RotateCw, Check, X, ChevronRight, Trophy, Layers, Flame } fr
 import { TOKENS } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import SpeakButton from "../../shared/SpeakButton.jsx";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -275,18 +276,24 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingRight: 50 }}>
             {!flipped ? (
-              <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
-                {word.it}
-              </h2>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+                  {word.it}
+                </h2>
+                <SpeakButton text={word.it} color={level.accentDeep} size={20} />
+              </div>
             ) : (
               <>
                 <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 600, color: level.accentDeep, margin: "0 0 10px" }}>
                   {word.en}
                 </h2>
                 <PerforatedDivider />
-                <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: "0 0 4px" }}>
-                  "{word.ex}"
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: "0 0 4px" }}>
+                    "{word.ex}"
+                  </p>
+                  <SpeakButton text={word.ex} color={TOKENS.inkSoft} size={15} style={{ marginBottom: 4 }} />
+                </div>
                 <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
                   {word.exEn}
                 </p>
@@ -422,9 +429,12 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 8px" }}>
           What does this mean?
         </p>
-        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px" }}>
-          {q.word.it}
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 22 }}>
+          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+            {q.word.it}
+          </h2>
+          <SpeakButton text={q.word.it} color={level.accentDeep} size={19} />
+        </div>
 
         <div style={{ display: "grid", gap: 10 }}>
           {q.options.map((opt) => {

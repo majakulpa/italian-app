@@ -52,6 +52,14 @@ describe("VocabHome", () => {
     expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
     expect(screen.getAllByText(`${greetings.words.length} parole`).length).toBeGreaterThan(0);
   });
+
+  it("hides the Listen button when speech isn't supported, but keeps Cards/Quiz", () => {
+    speech.isSpeechSupported.mockReturnValue(false);
+    renderVocab();
+    expect(screen.queryByRole("button", { name: /Listen/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Cards" })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Quiz" })[0]).toBeInTheDocument();
+  });
 });
 
 describe("Flashcards", () => {
@@ -206,6 +214,19 @@ describe("ListeningQuiz", () => {
     expect(speech.speakItalian).toHaveBeenCalledWith(word1.it);
   });
 
+  it("marks a wrong answer without crediting the score", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    // With shuffle() mocked to be a no-op, word1's translation is guaranteed
+    // to be a wrong option for word0's question (see the Quiz tests above).
+    const word1 = greetings.words[1];
+    await user.click(screen.getByRole("button", { name: word1.en }));
+
+    expect(screen.getByText("0 correct")).toBeInTheDocument();
+  });
+
   it("completes the session, shows a summary, and persists known words", async () => {
     const user = userEvent.setup();
     renderVocab();
@@ -221,5 +242,30 @@ describe("ListeningQuiz", () => {
 
     await user.click(screen.getByRole("button", { name: "Back to categories" }));
     expect(screen.getByText(`${greetings.words.length} / ${greetings.words.length} known`)).toBeInTheDocument();
+  });
+
+  it("lists missed words for review at the end", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    const word0 = greetings.words[0];
+    const word1 = greetings.words[1];
+
+    // Get question 0 wrong on purpose.
+    await user.click(screen.getByRole("button", { name: word1.en }));
+    await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+
+    // Answer the rest correctly.
+    for (let i = 1; i < greetings.words.length; i++) {
+      const word = greetings.words[i];
+      await user.click(screen.getByRole("button", { name: word.en }));
+      await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+    }
+
+    expect(screen.getByText("Listening complete")).toBeInTheDocument();
+    expect(screen.getByText("to review")).toBeInTheDocument();
+    expect(screen.getByText("WORDS TO REVIEW")).toBeInTheDocument();
+    expect(screen.getByText(word0.it)).toBeInTheDocument();
   });
 });

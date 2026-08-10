@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Flame } from "lucide-react";
+import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Flame, Headphones, Volume2 } from "lucide-react";
 import { TOKENS } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
+import { speakItalian, isSpeechSupported } from "../../shared/speech.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import Postmark from "../../shared/Postmark.jsx";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
@@ -95,7 +96,7 @@ function VocabHome({ onPick, onExit, progress }) {
                 {known > 0 ? `${known} / ${cat.words.length} known` : `${cat.words.length} parole`}
               </p>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
               <button
                 onClick={() => onPick(level, cat, "flashcards")}
                 style={{
@@ -115,6 +116,27 @@ function VocabHome({ onPick, onExit, progress }) {
               >
                 <Layers size={15} /> Cards
               </button>
+              {isSpeechSupported() && (
+                <button
+                  onClick={() => onPick(level, cat, "listening")}
+                  style={{
+                    border: `1.5px solid ${TOKENS.ink}`,
+                    background: "transparent",
+                    color: TOKENS.ink,
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Headphones size={15} /> Listen
+                </button>
+              )}
               <button
                 onClick={() => onPick(level, cat, "quiz")}
                 style={{
@@ -452,6 +474,183 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
   );
 }
 
+function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) {
+  const questions = useMemo(() => buildQuizQuestions(category), [category]);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [missed, setMissed] = useState([]);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    onStudySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const q = questions[index];
+
+  // Auto-play each new word as soon as its question appears.
+  useEffect(() => {
+    if (!done) speakItalian(q.word.it);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, done]);
+
+  const choose = (opt) => {
+    if (selected) return;
+    setSelected(opt);
+    const isCorrect = opt.it === q.word.it;
+    onMarkWord(wordKey(level, category, q.word), isCorrect ? "known" : "learning");
+    if (isCorrect) {
+      setCorrectCount((c) => c + 1);
+    } else {
+      setMissed((m) => [...m, q.word]);
+    }
+  };
+
+  const next = () => {
+    if (index + 1 >= questions.length) {
+      setDone(true);
+    } else {
+      setIndex((i) => i + 1);
+      setSelected(null);
+    }
+  };
+
+  if (done) {
+    return (
+      <SessionSummary
+        level={level}
+        title="Listening complete"
+        primary={correctCount}
+        primaryLabel={`correct out of ${questions.length}`}
+        secondary={missed.length}
+        secondaryLabel="to review"
+        missed={missed.map((w) => ({ id: w.it, primary: w.it, secondary: w.en }))}
+        missedHeading="WORDS TO REVIEW"
+        backLabel="Back to categories"
+        onBack={onBack}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <TopBar level={level} label={category.name} onBack={onBack} />
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
+          <span>{index + 1} / {questions.length}</span>
+          <span>{correctCount} correct</span>
+        </div>
+
+        <p style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 16px" }}>
+          Listen, then choose what it means
+        </p>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <button
+            onClick={() => speakItalian(q.word.it)}
+            aria-label="Play again"
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: "50%",
+              border: `2px solid ${level.accentDeep}`,
+              background: TOKENS.card,
+              color: level.accentDeep,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Volume2 size={32} />
+          </button>
+        </div>
+        <p style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "0 0 22px" }}>
+          Tap to hear it again
+        </p>
+
+        {selected && (
+          <p style={{ textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 18, color: TOKENS.ink, margin: "-8px 0 20px" }}>
+            {q.word.it}
+          </p>
+        )}
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {q.options.map((opt) => {
+            const isSelected = selected && selected.it === opt.it;
+            const isAnswer = opt.it === q.word.it;
+            let bg = TOKENS.card;
+            let border = TOKENS.line;
+            let color = TOKENS.ink;
+            if (selected) {
+              if (isAnswer) {
+                bg = "#EAF3EE";
+                border = TOKENS.malachite;
+                color = TOKENS.malachite;
+              } else if (isSelected) {
+                bg = "#F8EAE7";
+                border = TOKENS.corallo;
+                color = TOKENS.corallo;
+              }
+            }
+            return (
+              <button
+                key={opt.it}
+                onClick={() => choose(opt)}
+                style={{
+                  textAlign: "left",
+                  border: `1.5px solid ${border}`,
+                  background: bg,
+                  color,
+                  borderRadius: 10,
+                  padding: "13px 16px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 500,
+                  fontSize: 15,
+                  cursor: selected ? "default" : "pointer",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                {opt.en}
+                {selected && isAnswer && <Check size={16} />}
+                {selected && isSelected && !isAnswer && <X size={16} />}
+              </button>
+            );
+          })}
+        </div>
+
+        {selected && (
+          <button
+            onClick={next}
+            style={{
+              marginTop: 20,
+              width: "100%",
+              border: "none",
+              background: TOKENS.ink,
+              color: TOKENS.paper,
+              borderRadius: 10,
+              padding: "13px 0",
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 600,
+              fontSize: 15,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            {index + 1 >= questions.length ? "See results" : "Next word"} <ChevronRight size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // onExit returns to the app's module menu (see src/App.jsx)
 export default function VocabModule({ onExit }) {
   const [session, setSession] = useState(null);
@@ -470,6 +669,17 @@ export default function VocabModule({ onExit }) {
   if (session.mode === "flashcards") {
     return (
       <Flashcards
+        level={session.level}
+        category={session.category}
+        onBack={onBack}
+        onMarkWord={onMarkWord}
+        onStudySession={onStudySession}
+      />
+    );
+  }
+  if (session.mode === "listening") {
+    return (
+      <ListeningQuiz
         level={session.level}
         category={session.category}
         onBack={onBack}

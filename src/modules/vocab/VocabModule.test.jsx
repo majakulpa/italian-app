@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import VocabModule from "./VocabModule.jsx";
 import { LEVELS } from "../../data/vocab.js";
 import { TOKENS } from "../../shared/theme.js";
+import * as speech from "../../shared/speech.js";
 
 const a1 = LEVELS.find((l) => l.id === "A1");
 const greetings = a1.categories.find((c) => c.id === "greetings");
@@ -14,6 +15,10 @@ beforeEach(() => {
   // every swap a no-op (j always equals i), so word/option order stays
   // exactly as authored in data/vocab.js and tests can assert on it.
   vi.spyOn(Math, "random").mockReturnValue(0.99);
+  // jsdom has no SpeechSynthesis API — pretend it's supported (as in every
+  // real browser this app targets) so speaker buttons and Listen mode render.
+  vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+  vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -157,5 +162,64 @@ describe("Quiz", () => {
     expect(screen.getByText("to review")).toBeInTheDocument();
     expect(screen.getByText("WORDS TO REVIEW")).toBeInTheDocument();
     expect(screen.getByText(word0.it)).toBeInTheDocument();
+  });
+});
+
+describe("ListeningQuiz", () => {
+  it("auto-plays the word and lets the user replay it", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    const word0 = greetings.words[0];
+    expect(speech.speakItalian).toHaveBeenCalledWith(word0.it);
+
+    speech.speakItalian.mockClear();
+    await user.click(screen.getByRole("button", { name: "Play again" }));
+    expect(speech.speakItalian).toHaveBeenCalledWith(word0.it);
+  });
+
+  it("does not reveal the Italian word until an answer is chosen", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    const word0 = greetings.words[0];
+    expect(screen.queryByText(word0.it)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: word0.en }));
+    expect(screen.getByText(word0.it)).toBeInTheDocument();
+  });
+
+  it("marks a correct answer, updates the score, and auto-plays the next word", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    const word0 = greetings.words[0];
+    const word1 = greetings.words[1];
+    await user.click(screen.getByRole("button", { name: word0.en }));
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+
+    speech.speakItalian.mockClear();
+    await user.click(screen.getByRole("button", { name: /Next word/ }));
+    expect(speech.speakItalian).toHaveBeenCalledWith(word1.it);
+  });
+
+  it("completes the session, shows a summary, and persists known words", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    for (const word of greetings.words) {
+      await user.click(screen.getByRole("button", { name: word.en }));
+      await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+    }
+
+    expect(screen.getByText("Listening complete")).toBeInTheDocument();
+    expect(screen.getByText(`correct out of ${greetings.words.length}`)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back to categories" }));
+    expect(screen.getByText(`${greetings.words.length} / ${greetings.words.length} known`)).toBeInTheDocument();
   });
 });

@@ -65,3 +65,14 @@ export function drillKey(level, topic, item) {
 export function topicKnownCount(progress, level, topic) {
   return topic.drills.filter((d) => progress.words[drillKey(level, topic, d)] === "known").length;
 }
+
+// Conversations don't have a "known"/"learning" word to track — a dialogue
+// is either completed or not — so this reuses the same map with a
+// "conversation:" namespace and a "done" status.
+export function conversationKey(level, dialogue) {
+  return `conversation:${level.id}:${dialogue.id}`;
+}
+
+export function isConversationDone(progress, level, dialogue) {
+  return progress.words[conversationKey(level, dialogue)] === "done";
+}

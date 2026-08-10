@@ -42,11 +42,12 @@ src/
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
+    conversations.js             Guided dialogues (levels > dialogues > steps > options)
   modules/
-    vocab/VocabModule.jsx        Flashcards + quiz UI (done)
-    grammar/GrammarModule.jsx    Lesson (explanation) + drill UI (done)
-    conversations/               Not yet built
-    stories/                    Not yet built
+    vocab/VocabModule.jsx              Flashcards + quiz UI (done)
+    grammar/GrammarModule.jsx          Lesson (explanation) + drill UI (done)
+    conversations/ConversationsModule.jsx  Chat-style guided dialogues (done)
+    stories/                          Not yet built
 public/
   manifest icons, favicon
 vite.config.js              PWA config (manifest, service worker) + Vitest config
@@ -80,24 +81,27 @@ the `MODULES` array in `src/App.jsx` with `ready: true`.
   Each topic has a short explanation (conjugation table + bullet points +
   example sentences) and an 8-question fill-in-the-blank drill with a
   missed-items review list.
+- **Conversations** — A1/A2/B1 levels, 2 guided dialogues per level (café,
+  introductions, directions, restaurant, making plans, job interview). Each
+  turn offers a more formal and a more casual way to say the same thing,
+  with light feedback on the register — no wrong answers, just style. Chat
+  transcript builds up turn by turn; a recap at the end tallies formal vs
+  casual picks and re-lists your responses.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
-  mastered words and drill items, plus a daily study streak, shared across
-  modules.
+  mastered words, drill items, and completed dialogues, plus a daily study
+  streak, shared across modules.
 - **Pronunciation** — speaker icons next to Italian text play it aloud via
   the browser's `SpeechSynthesis` API.
 
 ## Roadmap — suggested order for Claude Code
 
-1. **Conversations module** — short guided dialogues (2 speakers) where
-   the user picks the next line from 2-3 options; branches give light
-   feedback ("more formal" / "more casual").
-2. **Stories module** — 4-6 short graded readers per level, Italian text
+1. **Stories module** — 4-6 short graded readers per level, Italian text
    with tap-to-reveal word glosses, plus 2-3 comprehension questions per
    story.
-3. **Spaced repetition** — a simple leitner-box or SM-2-style scheduler so
+2. **Spaced repetition** — a simple leitner-box or SM-2-style scheduler so
    "still learning"/"learning" items resurface sooner than mastered ones,
    across all modules.
-4. **Recorded audio** — the `SpeechSynthesis` pronunciation is in place;
+3. **Recorded audio** — the `SpeechSynthesis` pronunciation is in place;
    a recorded-audio pack would be a quality upgrade later.
 
 ## Design notes

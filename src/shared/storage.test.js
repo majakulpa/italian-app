@@ -8,6 +8,8 @@ import {
   categoryKnownCount,
   drillKey,
   topicKnownCount,
+  conversationKey,
+  isConversationDone,
   todayISO,
 } from "./storage.js";
 
@@ -26,6 +28,7 @@ const topic = {
     { id: "2", answer: "parli" },
   ],
 };
+const dialogue = { id: "cafe" };
 
 beforeEach(() => {
   localStorage.clear();
@@ -127,6 +130,30 @@ describe("topicKnownCount", () => {
   it("returns 0 when nothing is marked known", () => {
     const progress = { words: {}, streak: { count: 0, lastDate: null } };
     expect(topicKnownCount(progress, level, topic)).toBe(0);
+  });
+});
+
+describe("conversationKey", () => {
+  it("builds a namespaced key from level and dialogue", () => {
+    expect(conversationKey(level, dialogue)).toBe("conversation:A1:cafe");
+  });
+
+  it("never collides with a grammar drillKey for the same level", () => {
+    const grammarK = drillKey(level, topic, { id: "1" });
+    const conversationK = conversationKey(level, dialogue);
+    expect(grammarK).not.toBe(conversationK);
+  });
+});
+
+describe("isConversationDone", () => {
+  it("returns true once the dialogue is marked done", () => {
+    const progress = { words: { "conversation:A1:cafe": "done" }, streak: { count: 0, lastDate: null } };
+    expect(isConversationDone(progress, level, dialogue)).toBe(true);
+  });
+
+  it("returns false when not yet marked done", () => {
+    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    expect(isConversationDone(progress, level, dialogue)).toBe(false);
   });
 });
 

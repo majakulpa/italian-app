@@ -489,6 +489,12 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
 
   const q = questions[index];
 
+  // Auto-play each new word as soon as its question appears.
+  useEffect(() => {
+    if (!done) speakItalian(q.word.it);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, done]);
+
   const choose = (opt) => {
     if (selected) return;
     setSelected(opt);
@@ -537,13 +543,13 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
         </div>
 
         <p style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 16px" }}>
-          Tap to listen, then choose what it means
+          Listen, then choose what it means
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
           <button
             onClick={() => speakItalian(q.word.it)}
-            aria-label="Play word"
+            aria-label="Play again"
             style={{
               width: 84,
               height: 84,
@@ -561,7 +567,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
           </button>
         </div>
         <p style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "0 0 22px" }}>
-          Tap the speaker to hear the word
+          Tap to hear it again
         </p>
 
         {selected && (

@@ -73,8 +73,8 @@ the `MODULES` array in `src/App.jsx` with `ready: true`.
 - **Vocabulary** — A1/A2/B1 levels, 2 categories per level (72 words with
   example sentences), flashcard mode (flip, mark known/still learning),
   multiple-choice quiz mode with a missed-words review list, and a listening
-  mode (tap the speaker to hear the word via `SpeechSynthesis`, pick its
-  meaning — no Italian text shown until you answer).
+  mode (hear the word via `SpeechSynthesis`, pick its meaning — no Italian
+  text shown until you answer).
 - **Grammar** — A1/A2/B1 levels, 2 topics per level (present tense of -are/
   -ere/-ire verbs, essere vs avere, articles, passato prossimo, comparatives).
   Each topic has a short explanation (conjugation table + bullet points +

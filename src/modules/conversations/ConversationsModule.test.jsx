@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ConversationsModule from "./ConversationsModule.jsx";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
+import * as speech from "../../shared/speech.js";
 
 const a1 = CONVERSATION_LEVELS.find((l) => l.id === "A1");
 const cafe = a1.dialogues.find((d) => d.id === "cafe");
@@ -11,6 +12,10 @@ const directions = a2.dialogues.find((d) => d.id === "directions");
 
 beforeEach(() => {
   localStorage.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function renderConversations() {
@@ -157,5 +162,40 @@ describe("translations", () => {
 
     // New step, same option position — should be hidden again.
     expect(screen.queryByText(cafe.steps[1].options[0].en)).not.toBeInTheDocument();
+  });
+});
+
+describe("pronunciation", () => {
+  it("lets the user hear an option without selecting it", async () => {
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    const speakSpy = vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const step0Pick = cafe.steps[0].options[0];
+    const speakButton = screen.getByRole("button", { name: `Pronounce "${step0Pick.it}"` });
+    await user.click(speakButton);
+
+    expect(speakSpy).toHaveBeenCalledWith(step0Pick.it);
+    // Still on step 1 with nothing chosen — the click didn't select the option.
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    expect(screen.getByText(cafe.steps[0].options[1].it)).toBeInTheDocument();
+  });
+
+  it("lets the user hear their own picked response", async () => {
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    const speakSpy = vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const step0Pick = cafe.steps[0].options[0];
+    await user.click(screen.getByText(step0Pick.it));
+    speakSpy.mockClear();
+
+    const speakButton = screen.getByRole("button", { name: `Pronounce "${step0Pick.it}"` });
+    await user.click(speakButton);
+    expect(speakSpy).toHaveBeenCalledWith(step0Pick.it);
   });
 });

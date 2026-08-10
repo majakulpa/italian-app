@@ -212,13 +212,18 @@ function YouBubble({ pick, level }) {
       </p>
       <div
         style={{
-          background: level.accent,
+          background: `${level.accent}26`,
+          border: `1.5px solid ${level.accent}`,
           borderRadius: "16px 4px 16px 16px",
           padding: "12px 16px",
           maxWidth: "85%",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
         }}
       >
         <p style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: level.accentDeep, margin: 0 }}>{pick.it}</p>
+        <SpeakButton text={pick.it} color={level.accentDeep} size={14} />
       </div>
       <TranslationToggle en={pick.en} align="right" />
       <p style={{ fontFamily: "'Inter', sans-serif", fontStyle: "italic", fontSize: 12, color: TOKENS.inkSoft, margin: "6px 0 0", textAlign: "right", maxWidth: "85%" }}>
@@ -340,7 +345,10 @@ function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
               >
                 {opt.tone}
               </span>
-              <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink }}>{opt.it}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink }}>{opt.it}</span>
+                <SpeakButton text={opt.it} color={TOKENS.inkSoft} size={14} />
+              </span>
               <TranslationToggle en={opt.en} align="left" />
             </div>
           ))}

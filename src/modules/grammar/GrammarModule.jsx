@@ -376,9 +376,14 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
               }
             }
             return (
-              <button
+              <div
                 key={opt}
+                role="button"
+                tabIndex={0}
                 onClick={() => choose(opt)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") choose(opt);
+                }}
                 style={{
                   textAlign: "left",
                   border: `1.5px solid ${border}`,
@@ -395,10 +400,13 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
                   alignItems: "center",
                 }}
               >
-                {opt}
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {opt}
+                  <SpeakButton text={opt} color={color} size={15} />
+                </span>
                 {selected && isAnswer && <Check size={16} />}
                 {selected && isSelected && !isAnswer && <X size={16} />}
-              </button>
+              </div>
             );
           })}
         </div>

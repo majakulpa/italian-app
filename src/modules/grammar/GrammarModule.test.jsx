@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import GrammarModule from "./GrammarModule.jsx";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import * as speech from "../../shared/speech.js";
 
 const a1 = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const presentAre = a1.topics.find((t) => t.id === "present-are");
@@ -130,5 +131,25 @@ describe("Drill", () => {
     expect(screen.getByText("to review")).toBeInTheDocument();
     expect(screen.getByText("TO REVIEW")).toBeInTheDocument();
     expect(screen.getByText(first.prompt.replace("___", first.answer))).toBeInTheDocument();
+  });
+
+  it("lets the user hear an answer option without selecting it", async () => {
+    // jsdom has no SpeechSynthesis API — mock it locally for this test only,
+    // so other tests keep matching options by their exact accessible name
+    // (adding a nested "Pronounce ..." button would otherwise change it).
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    const speakSpy = vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    const speakButton = screen.getByRole("button", { name: `Pronounce "${item0.answer}"` });
+    await user.click(speakButton);
+
+    expect(speakSpy).toHaveBeenCalledWith(item0.answer);
+    // Still on the same question, nothing selected — the click didn't choose it.
+    expect(screen.getByText("0 correct")).toBeInTheDocument();
+    expect(screen.getByText(item0.prompt)).toBeInTheDocument();
   });
 });

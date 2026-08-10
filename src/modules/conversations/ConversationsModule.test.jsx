@@ -97,3 +97,65 @@ describe("Dialogue", () => {
     expect(screen.getByText(firstOption.it)).toBeInTheDocument();
   });
 });
+
+describe("translations", () => {
+  it("hides English translations for the opening line and options until revealed", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    expect(screen.queryByText(cafe.steps[0].them.en)).not.toBeInTheDocument();
+    for (const opt of cafe.steps[0].options) {
+      expect(screen.queryByText(opt.en)).not.toBeInTheDocument();
+    }
+
+    const [themToggle] = screen.getAllByRole("button", { name: "Show translation" });
+    await user.click(themToggle);
+    expect(screen.getByText(cafe.steps[0].them.en)).toBeInTheDocument();
+  });
+
+  it("hides the translation of a picked response until revealed, but always shows the feedback", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const step0Pick = cafe.steps[0].options[0];
+    await user.click(screen.getByText(step0Pick.it));
+
+    // Feedback is coaching content, not a translation — always visible.
+    expect(screen.getByText(step0Pick.feedback)).toBeInTheDocument();
+    expect(screen.queryByText(step0Pick.en)).not.toBeInTheDocument();
+  });
+
+  it("toggling an option's translation does not select that option", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    // Toggles in DOM order: the them-bubble's, then each option's.
+    // Use one of the option toggles — the ones nested inside the
+    // otherwise-clickable option card, where stopPropagation matters.
+    const toggles = screen.getAllByRole("button", { name: "Show translation" });
+    await user.click(toggles[1]);
+
+    // Still on step 1 with both options present — nothing was chosen.
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    expect(screen.getByText(cafe.steps[0].options[0].it)).toBeInTheDocument();
+    expect(screen.getByText(cafe.steps[0].options[1].it)).toBeInTheDocument();
+  });
+
+  it("does not leak a revealed translation into the next step's option at the same position", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    // Reveal the first option's translation, then pick the *other* option
+    // so the reveal itself isn't what advances the step.
+    const optionToggles = screen.getAllByRole("button", { name: "Show translation" });
+    await user.click(optionToggles[1]); // the first option's own toggle (after the them-bubble's toggle)
+    await user.click(screen.getByText(cafe.steps[0].options[1].it));
+
+    // New step, same option position — should be hidden again.
+    expect(screen.queryByText(cafe.steps[1].options[0].en)).not.toBeInTheDocument();
+  });
+});

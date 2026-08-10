@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, ChevronRight, Check, Flame, User } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, Flame, User, Eye, EyeOff } from "lucide-react";
 import { TOKENS } from "../../shared/theme.js";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
 import { loadProgress, saveProgress, touchStreak, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
@@ -122,6 +122,45 @@ function ConversationsHome({ onPick, onExit, progress }) {
   );
 }
 
+// English is hidden by default — tap to reveal it, matching the
+// tap-to-flip/tap-to-reveal pattern used elsewhere in the app (flashcards,
+// listening quiz). stopPropagation matters where this sits inside a larger
+// clickable element (an option card).
+function TranslationToggle({ en, align = "left" }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: align === "right" ? "flex-end" : "flex-start" }}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setRevealed((r) => !r);
+        }}
+        style={{
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          padding: 0,
+          marginTop: 4,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          color: TOKENS.inkSoft,
+          fontFamily: "'Inter', sans-serif",
+          fontSize: 12,
+        }}
+      >
+        {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
+        {revealed ? "Hide translation" : "Show translation"}
+      </button>
+      {revealed && (
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0", textAlign: align }}>
+          {en}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ThemBubble({ speakerName, line, level }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -160,7 +199,7 @@ function ThemBubble({ speakerName, line, level }) {
         <p style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink, margin: 0 }}>{line.it}</p>
         <SpeakButton text={line.it} color={level.accentDeep} size={14} />
       </div>
-      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0" }}>{line.en}</p>
+      <TranslationToggle en={line.en} align="left" />
     </div>
   );
 }
@@ -181,7 +220,7 @@ function YouBubble({ pick, level }) {
       >
         <p style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: level.accentDeep, margin: 0 }}>{pick.it}</p>
       </div>
-      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0", textAlign: "right" }}>{pick.en}</p>
+      <TranslationToggle en={pick.en} align="right" />
       <p style={{ fontFamily: "'Inter', sans-serif", fontStyle: "italic", fontSize: 12, color: TOKENS.inkSoft, margin: "6px 0 0", textAlign: "right", maxWidth: "85%" }}>
         <span
           style={{
@@ -267,9 +306,17 @@ function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
 
         <div style={{ display: "grid", gap: 10 }}>
           {currentStep.options.map((opt, i) => (
-            <button
-              key={i}
+            <div
+              // Keying on stepIndex too (not just i) forces a fresh instance
+              // per step, so a revealed translation doesn't carry over onto
+              // the next step's option in the same list position.
+              key={`${stepIndex}-${i}`}
+              role="button"
+              tabIndex={0}
               onClick={() => choose(opt)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") choose(opt);
+              }}
               style={{
                 textAlign: "left",
                 border: `1.5px solid ${TOKENS.line}`,
@@ -294,8 +341,8 @@ function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
                 {opt.tone}
               </span>
               <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink }}>{opt.it}</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft }}>{opt.en}</span>
-            </button>
+              <TranslationToggle en={opt.en} align="left" />
+            </div>
           ))}
         </div>
       </div>

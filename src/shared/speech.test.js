@@ -6,11 +6,14 @@ class MockUtterance {
   }
 }
 
-function setSpeechSynthesis(voices) {
+function setSpeechSynthesis(voices, { speaking = false, pending = false } = {}) {
   window.speechSynthesis = {
     getVoices: vi.fn(() => voices),
     speak: vi.fn(),
     cancel: vi.fn(),
+    resume: vi.fn(),
+    speaking,
+    pending,
     onvoiceschanged: null,
   };
   global.SpeechSynthesisUtterance = MockUtterance;
@@ -41,18 +44,45 @@ describe("speakItalian", () => {
     expect(() => speakItalian("ciao")).not.toThrow();
   });
 
-  it("cancels any current speech and speaks the given text in Italian", async () => {
+  it("speaks the given text in Italian", async () => {
     setSpeechSynthesis([]);
     const { speakItalian } = await import("./speech.js");
 
     speakItalian("buongiorno");
 
-    expect(window.speechSynthesis.cancel).toHaveBeenCalled();
     expect(window.speechSynthesis.speak).toHaveBeenCalledTimes(1);
     const utterance = window.speechSynthesis.speak.mock.calls[0][0];
     expect(utterance.text).toBe("buongiorno");
     expect(utterance.lang).toBe("it-IT");
     expect(utterance.rate).toBe(0.9);
+  });
+
+  it("resumes the queue defensively even when nothing is paused", async () => {
+    setSpeechSynthesis([]);
+    const { speakItalian } = await import("./speech.js");
+
+    speakItalian("buongiorno");
+
+    expect(window.speechSynthesis.resume).toHaveBeenCalled();
+  });
+
+  it("does not cancel when the queue is idle", async () => {
+    setSpeechSynthesis([], { speaking: false, pending: false });
+    const { speakItalian } = await import("./speech.js");
+
+    speakItalian("ciao");
+
+    expect(window.speechSynthesis.cancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels the current utterance before speaking a new one", async () => {
+    setSpeechSynthesis([], { speaking: true });
+    const { speakItalian } = await import("./speech.js");
+
+    speakItalian("ciao");
+
+    expect(window.speechSynthesis.cancel).toHaveBeenCalled();
+    expect(window.speechSynthesis.speak).toHaveBeenCalledTimes(1);
   });
 
   it("selects an exact it-IT voice when one is available", async () => {

@@ -166,17 +166,30 @@ describe("Quiz", () => {
 });
 
 describe("ListeningQuiz", () => {
-  it("auto-plays the word and lets the user replay it", async () => {
+  it("does not play any audio until the speaker button is tapped", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    expect(speech.speakItalian).not.toHaveBeenCalled();
+
+    const word0 = greetings.words[0];
+    await user.click(screen.getByRole("button", { name: "Play word" }));
+    expect(speech.speakItalian).toHaveBeenCalledWith(word0.it);
+  });
+
+  it("lets the user replay the word as many times as they like", async () => {
     const user = userEvent.setup();
     renderVocab();
     await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
 
     const word0 = greetings.words[0];
-    expect(speech.speakItalian).toHaveBeenCalledWith(word0.it);
+    await user.click(screen.getByRole("button", { name: "Play word" }));
+    await user.click(screen.getByRole("button", { name: "Play word" }));
 
-    speech.speakItalian.mockClear();
-    await user.click(screen.getByRole("button", { name: "Play again" }));
-    expect(speech.speakItalian).toHaveBeenCalledWith(word0.it);
+    expect(speech.speakItalian).toHaveBeenCalledTimes(2);
+    expect(speech.speakItalian).toHaveBeenNthCalledWith(1, word0.it);
+    expect(speech.speakItalian).toHaveBeenNthCalledWith(2, word0.it);
   });
 
   it("does not reveal the Italian word until an answer is chosen", async () => {
@@ -191,19 +204,18 @@ describe("ListeningQuiz", () => {
     expect(screen.getByText(word0.it)).toBeInTheDocument();
   });
 
-  it("marks a correct answer, updates the score, and auto-plays the next word", async () => {
+  it("marks a correct answer, updates the score, and does not auto-play the next word", async () => {
     const user = userEvent.setup();
     renderVocab();
     await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
 
     const word0 = greetings.words[0];
-    const word1 = greetings.words[1];
     await user.click(screen.getByRole("button", { name: word0.en }));
     expect(screen.getByText("1 correct")).toBeInTheDocument();
 
     speech.speakItalian.mockClear();
     await user.click(screen.getByRole("button", { name: /Next word/ }));
-    expect(speech.speakItalian).toHaveBeenCalledWith(word1.it);
+    expect(speech.speakItalian).not.toHaveBeenCalled();
   });
 
   it("completes the session, shows a summary, and persists known words", async () => {

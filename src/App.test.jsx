@@ -8,17 +8,14 @@ beforeEach(() => {
 });
 
 describe("App", () => {
-  it("shows the module menu with Vocabulary, Grammar, and Conversations enabled, Stories coming soon", () => {
+  it("shows the module menu with every module enabled", () => {
     render(<App />);
     expect(screen.getByText("Italiano")).toBeInTheDocument();
 
-    for (const name of ["Vocabulary", "Grammar", "Conversations"]) {
+    for (const name of ["Vocabulary", "Grammar", "Conversations", "Stories"]) {
       expect(screen.getByRole("button", { name: new RegExp(name) })).toBeEnabled();
     }
-
-    const storiesButton = screen.getByRole("button", { name: /Stories/ });
-    expect(storiesButton).toBeDisabled();
-    expect(storiesButton).toHaveTextContent("Coming soon");
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument();
   });
 
   it("opens the Vocabulary module and returns to the menu via its back button", async () => {
@@ -54,12 +51,14 @@ describe("App", () => {
     expect(screen.getByText("Benvenuto")).toBeInTheDocument();
   });
 
-  it("does nothing when a disabled module card is clicked", async () => {
+  it("opens the Stories module and returns to the menu via its back button", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /Stories/ }));
-    expect(screen.getByText("Italiano")).toBeInTheDocument();
-    expect(screen.queryByText("Parole in viaggio")).not.toBeInTheDocument();
+    expect(screen.getByText("Quattro pagine")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
   });
 });

@@ -44,7 +44,9 @@ export default function TicketCard({ level, title, subtitle, children }) {
           <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: TOKENS.ink, margin: "0 0 2px" }}>
             {title}
           </h3>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0, display: "flex", alignItems: "center", gap: 5 }}>
+          {/* wraps so a subtitle with several parts (status, tagline, reading
+              time) stacks on a narrow screen instead of squeezing */}
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
             {subtitle}
           </p>
         </div>

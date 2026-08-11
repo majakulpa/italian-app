@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, ChevronRight, Check, Flame, User, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, Flame, User } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
 import { loadProgress, saveProgress, touchStreak, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
@@ -8,6 +8,7 @@ import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
+import TranslationToggle from "../../shared/TranslationToggle.jsx";
 
 function ConversationsHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(CONVERSATION_LEVELS[0]);
@@ -84,45 +85,6 @@ function ConversationsHome({ onPick, onExit, progress }) {
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// English is hidden by default — tap to reveal it, matching the
-// tap-to-flip/tap-to-reveal pattern used elsewhere in the app (flashcards,
-// listening quiz). stopPropagation matters where this sits inside a larger
-// clickable element (an option card).
-function TranslationToggle({ en, align = "left" }) {
-  const [revealed, setRevealed] = useState(false);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: align === "right" ? "flex-end" : "flex-start" }}>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setRevealed((r) => !r);
-        }}
-        style={{
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          padding: 0,
-          marginTop: 4,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          color: TOKENS.inkSoft,
-          fontFamily: "'Inter', sans-serif",
-          fontSize: 12,
-        }}
-      >
-        {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
-        {revealed ? "Hide translation" : "Show translation"}
-      </button>
-      {revealed && (
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0", textAlign: align }}>
-          {en}
-        </p>
-      )}
     </div>
   );
 }

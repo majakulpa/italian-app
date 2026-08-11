@@ -77,6 +77,16 @@ export function isConversationDone(progress, level, dialogue) {
   return progress.words[conversationKey(level, dialogue)] === "done";
 }
 
+// Stories work like conversations: read + answer the comprehension
+// questions and the story is "done". Same map, "story:" namespace.
+export function storyKey(level, story) {
+  return `story:${level.id}:${story.id}`;
+}
+
+export function isStoryDone(progress, level, story) {
+  return progress.words[storyKey(level, story)] === "done";
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

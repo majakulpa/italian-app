@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronRight, Check, X, Flame } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
-import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
 import { loadProgress, saveProgress, touchStreak, markWord, drillKey, topicKnownCount } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
@@ -11,50 +11,92 @@ import SpeakButton from "../../shared/SpeakButton.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 
+// A header or cell is either a plain string or { it, en }; subject pronouns
+// stay plain strings and pick their English up from PRONOUN_GLOSS, so the
+// data doesn't repeat io/tu/lui/... in every conjugation table. Returns the
+// Italian plus the English to print under it, if there is one.
+function readCell(cell) {
+  if (typeof cell === "object") return { it: cell.it, en: cell.en };
+  return { it: cell, en: PRONOUN_GLOSS[cell] };
+}
+
+// The English sits under the Italian in small type — enough for a beginner
+// to decode "parlare" or "voi" without it competing with the conjugation
+// itself, which is what the table is actually teaching.
+function CellGloss({ en }) {
+  if (!en) return null;
+  return (
+    <span
+      style={{
+        display: "block",
+        fontFamily: "'Inter', sans-serif",
+        fontWeight: 400,
+        fontSize: 11,
+        letterSpacing: 0,
+        color: TOKENS.inkSoft,
+        opacity: 0.85,
+        marginTop: 1,
+      }}
+    >
+      {en}
+    </span>
+  );
+}
+
 function ExplanationTable({ table }) {
   return (
     <div style={{ overflowX: "auto", marginBottom: 18 }}>
       <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 320 }}>
         <thead>
           <tr>
-            {table.headers.map((h, i) => (
-              <th
-                key={i}
-                style={{
-                  textAlign: "left",
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                  color: TOKENS.inkSoft,
-                  borderBottom: `1.5px solid ${TOKENS.line}`,
-                  padding: "6px 10px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {h}
-              </th>
-            ))}
+            {table.headers.map((header, i) => {
+              const { it, en } = readCell(header);
+              return (
+                <th
+                  key={i}
+                  style={{
+                    textAlign: "left",
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: 0.5,
+                    color: TOKENS.inkSoft,
+                    borderBottom: `1.5px solid ${TOKENS.line}`,
+                    padding: "6px 10px",
+                    whiteSpace: "nowrap",
+                    verticalAlign: "bottom",
+                  }}
+                >
+                  {it}
+                  <CellGloss en={en} />
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {table.rows.map((row, i) => (
             <tr key={i}>
-              {row.map((cell, j) => (
-                <td
-                  key={j}
-                  style={{
-                    fontFamily: j === 0 ? "'Inter', sans-serif" : "'Fraunces', serif",
-                    fontWeight: j === 0 ? 500 : 600,
-                    fontSize: j === 0 ? 13 : 15,
-                    color: j === 0 ? TOKENS.inkSoft : TOKENS.ink,
-                    borderBottom: `1px solid ${TOKENS.line}`,
-                    padding: "7px 10px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {cell}
-                </td>
-              ))}
+              {row.map((cell, j) => {
+                const { it, en } = readCell(cell);
+                return (
+                  <td
+                    key={j}
+                    style={{
+                      fontFamily: j === 0 ? "'Inter', sans-serif" : "'Fraunces', serif",
+                      fontWeight: j === 0 ? 500 : 600,
+                      fontSize: j === 0 ? 13 : 15,
+                      color: j === 0 ? TOKENS.inkSoft : TOKENS.ink,
+                      borderBottom: `1px solid ${TOKENS.line}`,
+                      padding: "7px 10px",
+                      whiteSpace: "nowrap",
+                      verticalAlign: "top",
+                    }}
+                  >
+                    {it}
+                    <CellGloss en={en} />
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
@@ -313,6 +355,14 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
           </h2>
           <SpeakButton text={fillBlank(q.item)} color={level.accentDeep} size={17} />
         </div>
+        {/* The English is shown outright rather than behind a tap-to-reveal:
+            here the exercise is the conjugation, not reading comprehension,
+            and the hint already names the person, so the translation gives
+            nothing away. (Stories/conversations hide it — there the reading
+            IS the exercise.) */}
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.inkSoft, margin: "0 0 6px" }}>
+          {q.item.en}
+        </p>
         <p style={{ fontFamily: "'Inter', sans-serif", fontStyle: "italic", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 22px" }}>
           {q.item.hint}
         </p>

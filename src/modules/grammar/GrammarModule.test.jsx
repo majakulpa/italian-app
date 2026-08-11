@@ -55,6 +55,44 @@ describe("Lesson", () => {
     expect(screen.getByText(presentAre.explanation.examples[0].en)).toBeInTheDocument();
   });
 
+  it("translates the infinitive and the subject pronouns for a beginner", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+
+    // The header verb, glossed from the data.
+    expect(screen.getByText("to speak")).toBeInTheDocument();
+    // The pronoun column, glossed from PRONOUN_GLOSS rather than the data.
+    for (const en of ["I", "you", "he / she", "we", "you (plural)", "they"]) {
+      expect(screen.getByText(en)).toBeInTheDocument();
+    }
+  });
+
+  it("translates the row labels of a table that isn't a conjugation", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[1]); // Articoli
+
+    expect(screen.getByText("singular")).toBeInTheDocument();
+    expect(screen.getByText("masc. + vowel")).toBeInTheDocument();
+    // Pronoun glosses must not leak into a table with no pronouns in it.
+    expect(screen.queryByText("he / she")).not.toBeInTheDocument();
+  });
+
+  it("shows the drill sentence in English alongside a hint naming the verb", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    // Drill order is shuffled, so assert against whichever item came up.
+    const shown = presentAre.drills.find((d) => screen.queryByText(d.prompt));
+    expect(shown).toBeDefined();
+    expect(screen.getByText(shown.en)).toBeInTheDocument();
+    expect(screen.getByText(shown.hint)).toBeInTheDocument();
+    expect(shown.hint).toMatch(/\(to \w+\)/);
+  });
+
   it("starts the drill from the lesson screen", async () => {
     const user = userEvent.setup();
     renderGrammar();

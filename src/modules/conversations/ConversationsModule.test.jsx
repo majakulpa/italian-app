@@ -34,7 +34,7 @@ describe("ConversationsHome", () => {
   it("switches dialogues when a different level is selected", async () => {
     const user = userEvent.setup();
     renderConversations();
-    await user.click(screen.getByRole("button", { name: /A2 · Elementare/ }));
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
     expect(screen.getByText("Asking for directions")).toBeInTheDocument();
     expect(screen.queryByText("At the café")).not.toBeInTheDocument();
   });
@@ -94,7 +94,7 @@ describe("Dialogue", () => {
   it("lets the player open dialogues that start with their own line", async () => {
     const user = userEvent.setup();
     renderConversations();
-    await user.click(screen.getByRole("button", { name: /A2 · Elementare/ }));
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
     await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
 
     expect(screen.getByText("You start the conversation:")).toBeInTheDocument();

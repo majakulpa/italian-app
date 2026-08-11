@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronRight, Check, X, Flame } from "lucide-react";
-import { TOKENS } from "../../shared/theme.js";
+import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 import { loadProgress, saveProgress, touchStreak, markWord, drillKey, topicKnownCount } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
-import Postmark from "../../shared/Postmark.jsx";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
+import LevelPicker from "../../shared/LevelPicker.jsx";
+import TicketCard from "../../shared/TicketCard.jsx";
 
 function ExplanationTable({ table }) {
   return (
@@ -68,7 +69,7 @@ function GrammarHome({ onPick, onExit, progress }) {
   const streakIsLive = streakCount > 0 && lastDate;
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 20px 60px" }}>
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <button
           onClick={onExit}
@@ -84,7 +85,7 @@ function GrammarHome({ onPick, onExit, progress }) {
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriatic, marginBottom: 6, textTransform: "uppercase" }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
           Regole in tasca
         </p>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
@@ -92,31 +93,7 @@ function GrammarHome({ onPick, onExit, progress }) {
         </h1>
       </div>
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 28, flexWrap: "wrap" }}>
-        {GRAMMAR_LEVELS.map((lv) => {
-          const active = lv.id === level.id;
-          return (
-            <button
-              key={lv.id}
-              onClick={() => setLevel(lv)}
-              style={{
-                border: `1.5px solid ${active ? lv.accentDeep : TOKENS.line}`,
-                background: active ? lv.accent : "transparent",
-                color: active ? lv.accentDeep : TOKENS.inkSoft,
-                borderRadius: 999,
-                padding: "9px 18px",
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-            >
-              {lv.label} · {lv.name}
-            </button>
-          );
-        })}
-      </div>
+      <LevelPicker levels={GRAMMAR_LEVELS} active={level} onSelect={setLevel} />
 
       <p style={{ textAlign: "center", color: TOKENS.inkSoft, fontFamily: "'Inter', sans-serif", fontSize: 15, marginBottom: 28 }}>
         {level.tagline}
@@ -126,68 +103,51 @@ function GrammarHome({ onPick, onExit, progress }) {
         {level.topics.map((topic) => {
           const known = topicKnownCount(progress, level, topic);
           return (
-            <div
+            <TicketCard
               key={topic.id}
-              style={{
-                background: TOKENS.card,
-                border: `1px solid ${TOKENS.line}`,
-                borderRadius: 14,
-                padding: "18px 20px",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-              }}
+              level={level}
+              title={topic.name}
+              subtitle={known > 0 ? `${known} / ${topic.drills.length} mastered` : topic.tagline}
             >
-              <Postmark level={level.label} accentDeep={level.accentDeep} />
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: TOKENS.ink, margin: "0 0 2px" }}>
-                  {topic.name}
-                </h3>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
-                  {known > 0 ? `${known} / ${topic.drills.length} mastered` : topic.tagline}
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => onPick(level, topic, "lesson")}
-                  style={{
-                    border: `1.5px solid ${TOKENS.ink}`,
-                    background: "transparent",
-                    color: TOKENS.ink,
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <BookOpen size={15} /> Learn
-                </button>
-                <button
-                  onClick={() => onPick(level, topic, "drill")}
-                  style={{
-                    border: "none",
-                    background: TOKENS.ink,
-                    color: TOKENS.paper,
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  Drill <ChevronRight size={15} />
-                </button>
-              </div>
-            </div>
+              <button
+                onClick={() => onPick(level, topic, "lesson")}
+                style={{
+                  border: `1.5px solid ${TOKENS.ink}`,
+                  background: "transparent",
+                  color: TOKENS.ink,
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <BookOpen size={15} /> Learn
+              </button>
+              <button
+                onClick={() => onPick(level, topic, "drill")}
+                style={{
+                  border: "none",
+                  background: TOKENS.ink,
+                  color: TOKENS.paper,
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                Drill <ChevronRight size={15} />
+              </button>
+            </TicketCard>
           );
         })}
       </div>
@@ -366,13 +326,13 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
-                bg = "#EAF3EE";
+                bg = tint(TOKENS.malachite, 12);
                 border = TOKENS.malachite;
-                color = TOKENS.malachite;
+                color = TOKENS.malachiteDeep;
               } else if (isSelected) {
-                bg = "#F8EAE7";
+                bg = tint(TOKENS.corallo, 12);
                 border = TOKENS.corallo;
-                color = TOKENS.corallo;
+                color = TOKENS.corolloDeep;
               }
             }
             return (

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Flame, Headphones, Volume2 } from "lucide-react";
-import { TOKENS } from "../../shared/theme.js";
+import { TOKENS, tint } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
@@ -10,6 +10,8 @@ import Postmark from "../../shared/Postmark.jsx";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
+import LevelPicker from "../../shared/LevelPicker.jsx";
+import TicketCard from "../../shared/TicketCard.jsx";
 
 function VocabHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
@@ -17,7 +19,7 @@ function VocabHome({ onPick, onExit, progress }) {
   const streakIsLive = streakCount > 0 && lastDate;
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 20px 60px" }}>
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <button
           onClick={onExit}
@@ -33,7 +35,7 @@ function VocabHome({ onPick, onExit, progress }) {
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriatic, marginBottom: 6, textTransform: "uppercase" }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
           Parole in viaggio
         </p>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
@@ -41,31 +43,7 @@ function VocabHome({ onPick, onExit, progress }) {
         </h1>
       </div>
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 28, flexWrap: "wrap" }}>
-        {LEVELS.map((lv) => {
-          const active = lv.id === level.id;
-          return (
-            <button
-              key={lv.id}
-              onClick={() => setLevel(lv)}
-              style={{
-                border: `1.5px solid ${active ? lv.accentDeep : TOKENS.line}`,
-                background: active ? lv.accent : "transparent",
-                color: active ? lv.accentDeep : TOKENS.inkSoft,
-                borderRadius: 999,
-                padding: "9px 18px",
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-            >
-              {lv.label} · {lv.name}
-            </button>
-          );
-        })}
-      </div>
+      <LevelPicker levels={LEVELS} active={level} onSelect={setLevel} />
 
       <p style={{ textAlign: "center", color: TOKENS.inkSoft, fontFamily: "'Inter', sans-serif", fontSize: 15, marginBottom: 28 }}>
         {level.tagline}
@@ -75,28 +53,12 @@ function VocabHome({ onPick, onExit, progress }) {
         {level.categories.map((cat) => {
           const known = categoryKnownCount(progress, level, cat);
           return (
-          <div
-            key={cat.id}
-            style={{
-              background: TOKENS.card,
-              border: `1px solid ${TOKENS.line}`,
-              borderRadius: 14,
-              padding: "18px 20px",
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-            }}
-          >
-            <Postmark level={level.label} accentDeep={level.accentDeep} />
-            <div style={{ flex: 1 }}>
-              <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: TOKENS.ink, margin: "0 0 2px" }}>
-                {cat.name}
-              </h3>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
-                {known > 0 ? `${known} / ${cat.words.length} known` : `${cat.words.length} parole`}
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <TicketCard
+              key={cat.id}
+              level={level}
+              title={cat.name}
+              subtitle={known > 0 ? `${known} / ${cat.words.length} known` : `${cat.words.length} parole`}
+            >
               <button
                 onClick={() => onPick(level, cat, "flashcards")}
                 style={{
@@ -156,8 +118,7 @@ function VocabHome({ onPick, onExit, progress }) {
               >
                 Quiz <ChevronRight size={15} />
               </button>
-            </div>
-          </div>
+            </TicketCard>
           );
         })}
       </div>
@@ -275,7 +236,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
                 flex: 1,
                 border: `1.5px solid ${TOKENS.corallo}`,
                 background: "transparent",
-                color: TOKENS.corallo,
+                color: TOKENS.corolloDeep,
                 borderRadius: 10,
                 padding: "12px 0",
                 fontFamily: "'Inter', sans-serif",
@@ -294,9 +255,9 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
               onClick={() => advance(true)}
               style={{
                 flex: 1,
-                border: "none",
-                background: TOKENS.malachite,
-                color: "#fff",
+                border: `1.5px solid ${TOKENS.malachite}`,
+                background: tint(TOKENS.malachite, 14),
+                color: TOKENS.malachiteDeep,
                 borderRadius: 10,
                 padding: "12px 0",
                 fontFamily: "'Inter', sans-serif",
@@ -408,13 +369,13 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
-                bg = "#EAF3EE";
+                bg = tint(TOKENS.malachite, 12);
                 border = TOKENS.malachite;
-                color = TOKENS.malachite;
+                color = TOKENS.malachiteDeep;
               } else if (isSelected) {
-                bg = "#F8EAE7";
+                bg = tint(TOKENS.corallo, 12);
                 border = TOKENS.corallo;
-                color = TOKENS.corallo;
+                color = TOKENS.corolloDeep;
               }
             }
             return (
@@ -585,13 +546,13 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
-                bg = "#EAF3EE";
+                bg = tint(TOKENS.malachite, 12);
                 border = TOKENS.malachite;
-                color = TOKENS.malachite;
+                color = TOKENS.malachiteDeep;
               } else if (isSelected) {
-                bg = "#F8EAE7";
+                bg = tint(TOKENS.corallo, 12);
                 border = TOKENS.corallo;
-                color = TOKENS.corallo;
+                color = TOKENS.corolloDeep;
               }
             }
             return (

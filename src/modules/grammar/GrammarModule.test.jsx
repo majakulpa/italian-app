@@ -34,7 +34,7 @@ describe("GrammarHome", () => {
   it("switches topics when a different level is selected", async () => {
     const user = userEvent.setup();
     renderGrammar();
-    await user.click(screen.getByRole("button", { name: /B1 · Intermedio/ }));
+    await user.click(screen.getByRole("button", { name: /Intermedio/ }));
     expect(screen.getByText("Passato prossimo")).toBeInTheDocument();
     expect(screen.getByText("Comparativi")).toBeInTheDocument();
     expect(screen.queryByText("Presente: verbi in -ARE")).not.toBeInTheDocument();

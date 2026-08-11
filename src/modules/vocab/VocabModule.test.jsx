@@ -25,8 +25,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderVocab() {
-  return render(<VocabModule onExit={() => {}} />);
+function renderVocab(onExit = () => {}) {
+  return render(<VocabModule onExit={onExit} />);
 }
 
 describe("VocabHome", () => {
@@ -42,7 +42,7 @@ describe("VocabHome", () => {
   it("switches categories when a different level is selected", async () => {
     const user = userEvent.setup();
     renderVocab();
-    await user.click(screen.getByRole("button", { name: /A2 · Elementare/ }));
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
     expect(screen.getByText("Travel")).toBeInTheDocument();
     expect(screen.queryByText("Greetings & basics")).not.toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe("Quiz", () => {
     await user.click(correctButton);
 
     expect(screen.getByText("1 correct")).toBeInTheDocument();
-    expect(correctButton).toHaveStyle({ color: TOKENS.malachite });
+    expect(correctButton).toHaveStyle({ color: TOKENS.malachiteDeep });
 
     await user.click(screen.getByRole("button", { name: /Next word/ }));
     expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
@@ -142,8 +142,8 @@ describe("Quiz", () => {
     await user.click(wrongButton);
 
     expect(screen.getByText("0 correct")).toBeInTheDocument();
-    expect(wrongButton).toHaveStyle({ color: TOKENS.corallo });
-    expect(screen.getByRole("button", { name: word0.en })).toHaveStyle({ color: TOKENS.malachite });
+    expect(wrongButton).toHaveStyle({ color: TOKENS.corolloDeep });
+    expect(screen.getByRole("button", { name: word0.en })).toHaveStyle({ color: TOKENS.malachiteDeep });
   });
 
   it("completes the quiz and lists missed words for review", async () => {

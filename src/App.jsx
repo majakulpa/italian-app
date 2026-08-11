@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { BookOpen, MessageCircle, GraduationCap, ScrollText, ChevronRight } from "lucide-react";
-import { TOKENS, FONTS_IMPORT } from "./shared/theme.js";
+import { TOKENS, FONTS_IMPORT, THEME_STYLE } from "./shared/theme.js";
+import ThemeToggle from "./shared/ThemeToggle.jsx";
+import NavMenu from "./shared/NavMenu.jsx";
 import VocabModule from "./modules/vocab/VocabModule.jsx";
 import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
@@ -18,7 +20,7 @@ function ModuleMenu({ onSelect }) {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "56px 20px 60px" }}>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriatic, marginBottom: 8, textTransform: "uppercase" }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 8, textTransform: "uppercase" }}>
           Benvenuto
         </p>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 42, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
@@ -86,6 +88,11 @@ export default function App() {
   return (
     <div style={{ background: TOKENS.paper, minHeight: "100vh" }}>
       <style>{FONTS_IMPORT}</style>
+      <style>{THEME_STYLE}</style>
+      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10, display: "flex", gap: 8 }}>
+        <NavMenu modules={MODULES} active={active} onSelect={setActive} />
+        <ThemeToggle />
+      </div>
       {!active && <ModuleMenu onSelect={setActive} />}
       {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
       {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}

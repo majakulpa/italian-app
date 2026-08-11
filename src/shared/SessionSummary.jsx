@@ -1,6 +1,6 @@
 import React from "react";
 import { Trophy } from "lucide-react";
-import { TOKENS } from "./theme.js";
+import { TOKENS, tint } from "./theme.js";
 
 // End-of-session results screen shared by every drill-style module (vocab
 // quiz, grammar drill, ...). `missed` items are rendered as
@@ -26,7 +26,8 @@ export default function SessionSummary({
             width: 60,
             height: 60,
             borderRadius: "50%",
-            background: level.accent,
+            background: tint(level.accent, 16),
+            border: `1.5px solid ${level.accent}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

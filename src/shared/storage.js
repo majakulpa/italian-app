@@ -76,3 +76,28 @@ export function conversationKey(level, dialogue) {
 export function isConversationDone(progress, level, dialogue) {
   return progress.words[conversationKey(level, dialogue)] === "done";
 }
+
+// Explicit light/dark choice, separate from the progress blob so a reset of
+// one doesn't touch the other. No stored value means "follow the OS" —
+// see useThemeMode.js.
+const THEME_KEY = "italiano:theme:v1";
+
+export function loadThemeMode() {
+  try {
+    return localStorage.getItem(THEME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveThemeMode(mode) {
+  try {
+    if (mode) {
+      localStorage.setItem(THEME_KEY, mode);
+    } else {
+      localStorage.removeItem(THEME_KEY);
+    }
+  } catch {
+    // storage unavailable (private browsing, quota, etc.) — falls back to OS preference
+  }
+}

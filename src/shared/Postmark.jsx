@@ -1,4 +1,5 @@
 import React from "react";
+import { TOKENS, tint } from "./theme.js";
 
 // Small rotated "postmark" badge showing the level (A1/A2/B1) — used by
 // every module to keep the level visually identifiable across the app.
@@ -15,7 +16,7 @@ export default function Postmark({ level, accentDeep }) {
         justifyContent: "center",
         flexDirection: "column",
         transform: "rotate(-8deg)",
-        background: "rgba(255,255,255,0.5)",
+        background: tint(TOKENS.card, 50, "transparent"),
         flexShrink: 0,
       }}
     >

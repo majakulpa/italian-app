@@ -53,8 +53,29 @@ describe("MODULE_STATS", () => {
   // colliding; if two modules ever enumerated the same key, one would count
   // the other's progress as its own.
   it("enumerates a distinct key for every unit in the app", () => {
-    const all = MODULE_STATS.flatMap((mod) => mod.levels.flatMap((lv) => mod.unitKeys(lv)));
+    const all = MODULE_STATS.flatMap((mod) => mod.levels.flatMap((lv) => mod.units(lv).map((u) => u.key)));
     expect(new Set(all).size).toBe(all.length);
+  });
+
+  // srs.js reaches through `item` to render a due question and through
+  // `group` to draw its distractors, so a unit missing either would blow up
+  // in a review session rather than here.
+  it("carries the item and its sibling group on every scheduled unit", () => {
+    for (const mod of MODULE_STATS.filter((m) => m.scheduled)) {
+      for (const unit of mod.units(mod.levels[0])) {
+        expect({ id: mod.id, item: Boolean(unit.item), group: Boolean(unit.group) }).toEqual({
+          id: mod.id,
+          item: true,
+          group: true,
+        });
+      }
+    }
+  });
+
+  // Conversations have no wrong answer and a story is read rather than
+  // drilled, so neither belongs in a review queue.
+  it("schedules vocabulary and grammar only", () => {
+    expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar"]);
   });
 });
 

@@ -1,17 +1,31 @@
 // localStorage-backed progress tracking, shared by every module.
 // Progress shape: { words: { "<level>:<category>:<it>": "known" | "learning" },
+//                    schedule: { "<same key>": { box, due, last } },
 //                    streak: { count: number, lastDate: "YYYY-MM-DD" | null } }
+//
+// `words` and `schedule` are deliberately two maps rather than one map of
+// richer objects: the status string is read by every module home and every
+// counter in stats.js, so widening it would have meant migrating data that
+// people have already built up. A blob saved before the scheduler existed
+// simply has no `schedule` key and loads with an empty one — see srs.js for
+// what an item with no schedule entry means.
 
 const KEY = "italiano:progress:v1";
 
-const EMPTY_PROGRESS = { words: {}, streak: { count: 0, lastDate: null } };
+const EMPTY_PROGRESS = { words: {}, schedule: {}, streak: { count: 0, lastDate: null } };
 
 export function loadProgress() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return EMPTY_PROGRESS;
     const parsed = JSON.parse(raw);
-    return { ...EMPTY_PROGRESS, ...parsed, words: parsed.words || {}, streak: parsed.streak || EMPTY_PROGRESS.streak };
+    return {
+      ...EMPTY_PROGRESS,
+      ...parsed,
+      words: parsed.words || {},
+      schedule: parsed.schedule || {},
+      streak: parsed.streak || EMPTY_PROGRESS.streak,
+    };
   } catch {
     return EMPTY_PROGRESS;
   }
@@ -39,6 +53,13 @@ export function todayISO() {
 
 function daysBetween(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+// "2026-08-17" + 3 -> "2026-08-20". Anchored to UTC midnight, like todayISO()
+// above, so the two always agree on what day it is — and so a DST boundary
+// can't turn +1 day into 23 hours and round back to the same date.
+export function addDaysISO(iso, days) {
+  return new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 }
 
 // Call once per study session (entering flashcards or quiz) to update the streak.

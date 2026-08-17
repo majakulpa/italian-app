@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App.jsx";
 import { LEVELS } from "./data/vocab.js";
+import { wordKey } from "./shared/storage.js";
 
 const TOTAL_WORDS = LEVELS.flatMap((l) => l.categories).flatMap((c) => c.words).length;
 
@@ -45,6 +46,34 @@ describe("App", () => {
     // Opening the deck also started the daily streak, so the dashboard's
     // header picks that up on the same remount.
     expect(screen.getByText(/^1 day$/)).toBeInTheDocument();
+  });
+
+  // Review is a route rather than a MODULES entry, so nothing else covers
+  // that the dashboard's band actually reaches a session and gets back.
+  it("reaches the review session from the dashboard band and returns", async () => {
+    const user = userEvent.setup();
+    const level = LEVELS.find((l) => l.id === "A1");
+    const key = wordKey(level, level.categories[0], level.categories[0].words[0]);
+    localStorage.setItem(
+      "italiano:progress:v1",
+      JSON.stringify({ words: { [key]: "learning" }, schedule: {}, streak: { count: 0, lastDate: null } }),
+    );
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Review/ }));
+    expect(screen.getByText(/· REVIEW/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+  });
+
+  it("keeps Review out of the module switcher, which lists content modules only", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
+    expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories"]);
   });
 
   it("opens the Vocabulary module and returns to the menu via its back button", async () => {

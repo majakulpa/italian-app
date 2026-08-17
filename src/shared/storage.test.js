@@ -11,6 +11,7 @@ import {
   conversationKey,
   isConversationDone,
   todayISO,
+  addDaysISO,
 } from "./storage.js";
 
 const level = { id: "A1" };
@@ -34,33 +35,74 @@ beforeEach(() => {
   localStorage.clear();
 });
 
+const EMPTY = { words: {}, schedule: {}, streak: { count: 0, lastDate: null } };
+
 describe("loadProgress", () => {
   it("returns empty progress when nothing is stored", () => {
-    expect(loadProgress()).toEqual({ words: {}, streak: { count: 0, lastDate: null } });
+    expect(loadProgress()).toEqual(EMPTY);
   });
 
   it("returns stored progress", () => {
-    const progress = { words: { "A1:greetings:ciao": "known" }, streak: { count: 3, lastDate: "2026-08-05" } };
+    const progress = {
+      words: { "A1:greetings:ciao": "known" },
+      schedule: { "A1:greetings:ciao": { box: 2, due: "2026-08-06", last: "2026-08-05" } },
+      streak: { count: 3, lastDate: "2026-08-05" },
+    };
     localStorage.setItem("italiano:progress:v1", JSON.stringify(progress));
     expect(loadProgress()).toEqual(progress);
   });
 
   it("falls back to empty progress on corrupt JSON", () => {
     localStorage.setItem("italiano:progress:v1", "{not valid json");
-    expect(loadProgress()).toEqual({ words: {}, streak: { count: 0, lastDate: null } });
+    expect(loadProgress()).toEqual(EMPTY);
   });
 
   it("fills in missing fields from older/partial saved shapes", () => {
     localStorage.setItem("italiano:progress:v1", JSON.stringify({ words: { a: "known" } }));
-    expect(loadProgress()).toEqual({ words: { a: "known" }, streak: { count: 0, lastDate: null } });
+    expect(loadProgress()).toEqual({ ...EMPTY, words: { a: "known" } });
+  });
+
+  // The whole reason scheduling went into its own map: a blob saved before
+  // the scheduler existed has to keep loading, with its words intact and an
+  // empty schedule, without any migration step.
+  it("loads a pre-scheduler blob with its words intact and no schedule", () => {
+    const v1 = { words: { "A1:greetings:ciao": "known" }, streak: { count: 4, lastDate: "2026-08-05" } };
+    localStorage.setItem("italiano:progress:v1", JSON.stringify(v1));
+
+    expect(loadProgress()).toEqual({ ...v1, schedule: {} });
   });
 });
 
 describe("saveProgress / loadProgress roundtrip", () => {
   it("persists progress across save/load", () => {
-    const progress = { words: { "A1:greetings:ciao": "known" }, streak: { count: 1, lastDate: "2026-08-06" } };
+    const progress = {
+      words: { "A1:greetings:ciao": "known" },
+      schedule: { "A1:greetings:ciao": { box: 3, due: "2026-08-09", last: "2026-08-06" } },
+      streak: { count: 1, lastDate: "2026-08-06" },
+    };
     saveProgress(progress);
     expect(loadProgress()).toEqual(progress);
+  });
+});
+
+describe("addDaysISO", () => {
+  it("advances a date by whole days", () => {
+    expect(addDaysISO("2026-08-17", 3)).toBe("2026-08-20");
+  });
+
+  it("rolls over month and year boundaries", () => {
+    expect(addDaysISO("2026-08-31", 1)).toBe("2026-09-01");
+    expect(addDaysISO("2026-12-31", 1)).toBe("2027-01-01");
+  });
+
+  it("returns the same day for zero, which is what box 1 stores", () => {
+    expect(addDaysISO("2026-08-17", 0)).toBe("2026-08-17");
+  });
+
+  // Anchored to UTC midnight so it can't disagree with todayISO() — a local
+  // -time implementation would drift by a day for anyone west of UTC.
+  it("agrees with todayISO when adding nothing to today", () => {
+    expect(addDaysISO(todayISO(), 0)).toBe(todayISO());
   });
 });
 

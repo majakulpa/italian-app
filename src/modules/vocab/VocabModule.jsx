@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
-import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, touchStreak, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import { speakItalian, isSpeechSupported } from "../../shared/speech.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
@@ -618,7 +619,9 @@ export default function VocabModule({ onExit }) {
 
   const onPick = (level, category, mode) => setSession({ level, category, mode });
   const onBack = () => setSession(null);
-  const onMarkWord = (key, status) => setProgress((p) => markWord(p, key, status));
+  // Goes through reviewItem rather than markWord so every answer also moves
+  // the word's Leitner box — ordinary study is what feeds the review queue.
+  const onMarkWord = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
   const onStudySession = () => setProgress((p) => touchStreak(p));
 
   if (!session) return <VocabHome onPick={onPick} onExit={onExit} progress={progress} />;

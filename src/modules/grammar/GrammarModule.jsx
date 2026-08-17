@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronRight, Check, X } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
-import { loadProgress, saveProgress, touchStreak, markWord, drillKey, topicKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, touchStreak, drillKey, topicKnownCount } from "../../shared/storage.js";
+import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
@@ -456,7 +457,9 @@ export default function GrammarModule({ onExit }) {
 
   const onPick = (level, topic, mode) => setSession({ level, topic, mode });
   const onBack = () => setSession(null);
-  const onMarkDrill = (key, status) => setProgress((p) => markWord(p, key, status));
+  // Goes through reviewItem rather than markWord so every answer also moves
+  // the drill's Leitner box — ordinary study is what feeds the review queue.
+  const onMarkDrill = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
   const onStudySession = () => setProgress((p) => touchStreak(p));
 
   if (!session) return <GrammarHome onPick={onPick} onExit={onExit} progress={progress} />;

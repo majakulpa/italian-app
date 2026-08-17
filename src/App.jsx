@@ -4,6 +4,7 @@ import { TOKENS, FONTS_IMPORT, THEME_STYLE } from "./shared/theme.js";
 import ThemeToggle from "./shared/ThemeToggle.jsx";
 import NavMenu from "./shared/NavMenu.jsx";
 import Dashboard from "./Dashboard.jsx";
+import ReviewModule from "./modules/review/ReviewModule.jsx";
 import VocabModule from "./modules/vocab/VocabModule.jsx";
 import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
@@ -32,6 +33,10 @@ export default function App() {
         <ThemeToggle />
       </div>
       {!active && <Dashboard modules={MODULES} onSelect={setActive} />}
+      {/* Review is a route, not a module: it has no content or progress of
+          its own, so it stays out of MODULES (and out of the NavMenu that
+          renders from it) and is reached from the dashboard's Review band. */}
+      {active === "review" && <ReviewModule onExit={() => setActive(null)} />}
       {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
       {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}
       {active === "conversations" && <ConversationsModule onExit={() => setActive(null)} />}

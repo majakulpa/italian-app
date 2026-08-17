@@ -15,29 +15,47 @@ import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
 // App.jsx — stats.test.js pins that.
+//
+// `units` yields { key, item, group } rather than a bare key because the
+// spaced-repetition scheduler (srs.js) has to turn a due key back into the
+// word or drill to show, and into its sibling group to draw distractors from.
+// `group` is the category/topic an item belongs to, or null where a module's
+// unit *is* the group (a dialogue, a story).
+//
+// `scheduled` marks the modules the Leitner scheduler covers. Conversations
+// are excluded because they have no wrong answer by design, and stories
+// because a story is read rather than drilled.
 export const MODULE_STATS = [
   {
     id: "vocab",
     levels: LEVELS,
-    unitKeys: (level) => level.categories.flatMap((cat) => cat.words.map((w) => wordKey(level, cat, w))),
+    scheduled: true,
+    units: (level) =>
+      level.categories.flatMap((cat) => cat.words.map((w) => ({ key: wordKey(level, cat, w), item: w, group: cat }))),
     doneStatus: "known",
   },
   {
     id: "grammar",
     levels: GRAMMAR_LEVELS,
-    unitKeys: (level) => level.topics.flatMap((topic) => topic.drills.map((d) => drillKey(level, topic, d))),
+    scheduled: true,
+    units: (level) =>
+      level.topics.flatMap((topic) =>
+        topic.drills.map((d) => ({ key: drillKey(level, topic, d), item: d, group: topic })),
+      ),
     doneStatus: "known",
   },
   {
     id: "conversations",
     levels: CONVERSATION_LEVELS,
-    unitKeys: (level) => level.dialogues.map((d) => conversationKey(level, d)),
+    scheduled: false,
+    units: (level) => level.dialogues.map((d) => ({ key: conversationKey(level, d), item: d, group: null })),
     doneStatus: "done",
   },
   {
     id: "stories",
     levels: STORY_LEVELS,
-    unitKeys: (level) => level.stories.map((s) => storyKey(level, s)),
+    scheduled: false,
+    units: (level) => level.stories.map((s) => ({ key: storyKey(level, s), item: s, group: null })),
     doneStatus: "done",
   },
 ];
@@ -48,8 +66,8 @@ function tally(done, total) {
 
 // done/total for one module at one level.
 function countLevel(progress, mod, level) {
-  const keys = mod.unitKeys(level);
-  return tally(keys.filter((k) => progress.words[k] === mod.doneStatus).length, keys.length);
+  const units = mod.units(level);
+  return tally(units.filter((u) => progress.words[u.key] === mod.doneStatus).length, units.length);
 }
 
 // Averaging module percentages, rather than pooling every unit into one

@@ -33,11 +33,12 @@ install icon appears in the address bar.
 ```
 src/
   App.jsx                        App shell + the MODULES registry
-  Dashboard.jsx                  Home screen: streak, overall %, level ladder, module cards
+  Dashboard.jsx                  Home screen: streak, overall %, level ladder, module cards, review band
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
     storage.js                   localStorage progress/streak persistence, shared by all modules
     stats.js                     Reads that progress back across all four modules (dashboard counts)
+    srs.js                       Leitner scheduler: boxes, due dates, the review queue
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx, StreakChip.jsx
                                   Small presentational/utility pieces shared across modules
@@ -52,6 +53,7 @@ src/
     conversations/ConversationsModule.jsx  Chat-style guided dialogues (done)
     stories/StoriesModule.jsx          Reader + word glosses + comprehension quiz (done)
     stories/gloss.js                   Splits a paragraph into tappable glossed words
+    review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
 vite.config.js              PWA config (manifest, service worker) + Vitest config
@@ -126,6 +128,18 @@ categories/topics/dialogues/stories each.
   drift from what a module considers done. The overall and per-level
   percentages average the four modules rather than pooling every unit —
   otherwise vocabulary's 120 words would swamp the other three.
+- **Spaced repetition** — a five-box Leitner scheduler over vocabulary and
+  grammar. Getting an item right promotes it one box and pushes it further out
+  (same day, 1, 3, 7, 21 days); getting it wrong drops it straight back to box
+  1 whatever box it was in. Every vocab and grammar answer already goes through
+  `reviewItem` in `src/shared/srs.js`, so ordinary study feeds the queue
+  without any extra step. When something is due the dashboard shows a Review
+  band, and starting it opens one mixed session (capped at 20 items, most
+  overdue first) drawing from both modules. Conversations and stories are
+  deliberately out of it: a dialogue has no wrong answer by design, and a story
+  is read rather than drilled. Schedule data lives in its own `progress.schedule`
+  map, so a save from before the scheduler existed loads unchanged — those
+  items simply count as due the first time round.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
   mastered words, drill items, completed dialogues and finished stories,
   plus a daily study streak, shared across modules.
@@ -134,13 +148,17 @@ categories/topics/dialogues/stories each.
 
 ## Roadmap — suggested order for Claude Code
 
-1. **Spaced repetition** — a simple leitner-box or SM-2-style scheduler so
-   "still learning"/"learning" items resurface sooner than mastered ones,
-   across all modules.
-2. **Recorded audio** — the `SpeechSynthesis` pronunciation is in place;
+1. **Recorded audio** — the `SpeechSynthesis` pronunciation is in place;
    a recorded-audio pack would be a quality upgrade later.
-3. **More stories** — the reader takes any number per level; adding a story
+2. **More stories** — the reader takes any number per level; adding a story
    is one object in `src/data/stories.js`, no UI work.
+3. **Due items first inside decks** — the scheduler is in place but the
+   flashcard and drill sessions still shuffle a whole category. Ordering each
+   deck by what's due would make every session, not just Review, benefit from
+   it.
+4. **Typed recall / production** — every mode is recognition (pick an option,
+   flip a card). Typing the Italian, with accent-tolerant matching, is the
+   obvious missing exercise.
 
 ## Design notes
 

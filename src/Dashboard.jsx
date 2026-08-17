@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ChevronRight } from "lucide-react";
-import { TOKENS } from "./shared/theme.js";
+import { ChevronRight, Timer } from "lucide-react";
+import { TOKENS, tint } from "./shared/theme.js";
 import { loadProgress } from "./shared/storage.js";
 import { moduleStats, overallStats, levelLadder } from "./shared/stats.js";
+import { dueCount } from "./shared/srs.js";
 import StreakChip from "./shared/StreakChip.jsx";
 
 // The home screen: streak and overall completion, an A1–C1 ladder, and the
@@ -15,6 +16,7 @@ import StreakChip from "./shared/StreakChip.jsx";
 export default function Dashboard({ modules, onSelect }) {
   const [progress] = useState(loadProgress);
   const overall = overallStats(progress);
+  const due = dueCount(progress);
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "56px 20px 60px" }}>
@@ -45,6 +47,8 @@ export default function Dashboard({ modules, onSelect }) {
         </p>
       </div>
 
+      {due > 0 && <ReviewBand due={due} onSelect={onSelect} />}
+
       <LevelLadder progress={progress} />
 
       <div style={{ display: "grid", gap: 14 }}>
@@ -53,6 +57,42 @@ export default function Dashboard({ modules, onSelect }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// Shown only when something is actually due — a permanent "0 due" row would
+// be a nag on every visit and tell you nothing. Gold rather than a level
+// accent: a review mixes levels, and theme.js already reserves that colour
+// for streaks and celebration.
+function ReviewBand({ due, onSelect }) {
+  return (
+    <button
+      onClick={() => onSelect("review")}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        width: "100%",
+        textAlign: "left",
+        background: tint(TOKENS.limoncello, 14),
+        border: `1.5px solid ${TOKENS.limoncello}`,
+        borderRadius: 14,
+        padding: "14px 18px",
+        marginBottom: 24,
+        cursor: "pointer",
+      }}
+    >
+      <Timer size={20} color={TOKENS.limoncelloDeep} style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: TOKENS.ink, margin: "0 0 1px" }}>
+          Review
+        </h3>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
+          {due} item{due === 1 ? "" : "s"} due today
+        </p>
+      </div>
+      <ChevronRight size={18} color={TOKENS.limoncelloDeep} style={{ flexShrink: 0 }} />
+    </button>
   );
 }
 

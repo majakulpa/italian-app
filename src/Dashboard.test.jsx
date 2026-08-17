@@ -11,8 +11,8 @@ import { wordKey, storyKey } from "./shared/storage.js";
 // localStorage before rendering — the same approach App.test.jsx uses.
 const KEY = "italiano:progress:v1";
 
-function seed(words = {}, streak = { count: 0, lastDate: null }) {
-  localStorage.setItem(KEY, JSON.stringify({ words, streak }));
+function seed(words = {}, streak = { count: 0, lastDate: null }, schedule = {}) {
+  localStorage.setItem(KEY, JSON.stringify({ words, schedule, streak }));
 }
 
 // Counted straight from the data file rather than through stats.js, so this
@@ -81,6 +81,49 @@ describe("Dashboard", () => {
 
     expect(screen.getByLabelText(/^A1 /).getAttribute("aria-label")).not.toBe("A1 0% complete");
     expect(screen.getByLabelText(/^A2 /)).toHaveAttribute("aria-label", "A2 0% complete");
+  });
+
+  // The band is an action, so a permanent "0 due" row would be a nag that
+  // tells you nothing — it stays hidden until something is actually waiting.
+  it("hides the review band when nothing is due", () => {
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+    expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the review band with a count once items are due", () => {
+    seed({ [A1_WORD]: "learning" });
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    expect(screen.getByRole("button", { name: /Review/ })).toHaveTextContent("1 item due today");
+  });
+
+  it("counts only what is actually due, not everything studied", () => {
+    seed(
+      { [A1_WORD]: "known" },
+      { count: 0, lastDate: null },
+      { [A1_WORD]: { box: 4, due: "2099-01-01", last: "2026-08-17" } },
+    );
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();
+  });
+
+  it("opens the review session from the band", async () => {
+    const user = userEvent.setup();
+    const picked = [];
+    seed({ [A1_WORD]: "learning" });
+    render(<Dashboard modules={MODULES} onSelect={(id) => picked.push(id)} />);
+
+    await user.click(screen.getByRole("button", { name: /Review/ }));
+    expect(picked).toEqual(["review"]);
+  });
+
+  // A story is finished, not scheduled — it must never produce a review.
+  it("ignores stories and dialogues when counting what's due", () => {
+    seed({ [A1_STORY]: "done" });
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();
   });
 
   it("opens the module you pick", async () => {

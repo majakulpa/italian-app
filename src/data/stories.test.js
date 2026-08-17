@@ -5,8 +5,8 @@ import { tokenize, lookupGloss } from "../modules/stories/gloss.js";
 const allStories = STORY_LEVELS.flatMap((level) => level.stories.map((story) => ({ level, story })));
 
 describe("STORY_LEVELS", () => {
-  it("has A1/A2/B1 with two stories each and a level accent", () => {
-    expect(STORY_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1"]);
+  it("has A1 through C1 with two stories each and a level accent", () => {
+    expect(STORY_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1", "B2", "C1"]);
     for (const level of STORY_LEVELS) {
       expect(level.stories).toHaveLength(2);
       expect(level.accent).toBeTruthy();

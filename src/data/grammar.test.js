@@ -5,8 +5,8 @@ const allTopics = GRAMMAR_LEVELS.flatMap((level) => level.topics.map((topic) => 
 const allTables = allTopics.map(({ level, topic }) => ({ level, topic, table: topic.explanation.table }));
 
 describe("GRAMMAR_LEVELS", () => {
-  it("has A1/A2/B1, each with a level accent the modules can render", () => {
-    expect(GRAMMAR_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1"]);
+  it("has A1 through C1, each with a level accent the modules can render", () => {
+    expect(GRAMMAR_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1", "B2", "C1"]);
     for (const level of GRAMMAR_LEVELS) {
       expect(level.label).toBeTruthy();
       expect(level.name).toBeTruthy();

@@ -4,8 +4,8 @@ import { LEVELS } from "./vocab.js";
 const allCategories = LEVELS.flatMap((level) => level.categories.map((category) => ({ level, category })));
 
 describe("LEVELS", () => {
-  it("has A1/A2/B1, each with a level accent the modules can render", () => {
-    expect(LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1"]);
+  it("has A1 through C1, each with a level accent the modules can render", () => {
+    expect(LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1", "B2", "C1"]);
     for (const level of LEVELS) {
       expect(level.label).toBeTruthy();
       expect(level.name).toBeTruthy();

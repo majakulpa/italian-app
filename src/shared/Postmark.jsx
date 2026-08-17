@@ -1,7 +1,7 @@
 import React from "react";
 import { TOKENS, tint } from "./theme.js";
 
-// Small rotated "postmark" badge showing the level (A1/A2/B1) — used by
+// Small rotated "postmark" badge showing the level (A1–C1) — used by
 // every module to keep the level visually identifiable across the app.
 export default function Postmark({ level, accentDeep }) {
   return (

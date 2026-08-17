@@ -38,6 +38,11 @@ export const THEME_STYLE = `
   --color-malachite-deep: #0F4C2C;
   --color-limoncello: #E8A93B;
   --color-limoncello-deep: #8A5E12;
+
+  --color-viola: #6B3FA0;
+  --color-viola-deep: #46246F;
+  --color-laguna: #0E7C86;
+  --color-laguna-deep: #0A4A55;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,6 +58,8 @@ export const THEME_STYLE = `
     --color-corallo-deep: #FF9B9B;
     --color-malachite-deep: #7FE0AC;
     --color-limoncello-deep: #FFD98A;
+    --color-viola-deep: #C7A6F2;
+    --color-laguna-deep: #7FD8E4;
   }
 }
 
@@ -68,6 +75,8 @@ export const THEME_STYLE = `
   --color-corallo-deep: #FF9B9B;
   --color-malachite-deep: #7FE0AC;
   --color-limoncello-deep: #FFD98A;
+  --color-viola-deep: #C7A6F2;
+  --color-laguna-deep: #7FD8E4;
 }
 
 :root[data-theme="light"] {
@@ -82,6 +91,8 @@ export const THEME_STYLE = `
   --color-corallo-deep: #7A1F1F;
   --color-malachite-deep: #0F4C2C;
   --color-limoncello-deep: #8A5E12;
+  --color-viola-deep: #46246F;
+  --color-laguna-deep: #0A4A55;
 }
 `;
 
@@ -105,6 +116,12 @@ export const TOKENS = {
   // Gold — casual tone, streaks, celebratory accents. Not a level color.
   limoncello: "var(--color-limoncello)",
   limoncelloDeep: "var(--color-limoncello-deep)",
+  // Metro line purple — B2.
+  viola: "var(--color-viola)",
+  violaDeep: "var(--color-viola-deep)",
+  // Metro line teal — C1.
+  laguna: "var(--color-laguna)",
+  lagunaDeep: "var(--color-laguna-deep)",
 };
 
 // A tinted, theme-reactive background for a given accent token — e.g. the
@@ -115,12 +132,16 @@ export function tint(colorToken, percent = 15, base = TOKENS.card) {
   return `color-mix(in srgb, ${colorToken} ${percent}%, ${base})`;
 }
 
-// Per-level accent colors, reused by every module so A1/A2/B1 always mean
-// the same color everywhere in the app. `accent` is for fills/borders/
-// badges only — always pair long text with `accentDeep`, never `accent`
-// (that pairing is what caused the original contrast bug).
+// Per-level accent colors, reused by every module so A1…C1 always mean the
+// same color everywhere in the app. `accent` is for fills/borders/badges
+// only — always pair long text with `accentDeep`, never `accent` (that
+// pairing is what caused the original contrast bug). Adding a level here is
+// half the job: it also needs its --color-* pair declared in THEME_STYLE
+// above, in the base :root *and* in all three override blocks.
 export const LEVEL_ACCENTS = {
   A1: { accent: TOKENS.adriatic, accentDeep: TOKENS.adriaticDeep },
   A2: { accent: TOKENS.corallo, accentDeep: TOKENS.corolloDeep },
   B1: { accent: TOKENS.malachite, accentDeep: TOKENS.malachiteDeep },
+  B2: { accent: TOKENS.viola, accentDeep: TOKENS.violaDeep },
+  C1: { accent: TOKENS.laguna, accentDeep: TOKENS.lagunaDeep },
 };

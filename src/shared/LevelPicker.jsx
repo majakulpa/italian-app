@@ -1,7 +1,7 @@
 import React from "react";
 import { TOKENS, tint } from "./theme.js";
 
-// A1/A2/B1 level picker, styled as small transit-line roundels — shared by
+// A1–C1 level picker, styled as small transit-line roundels — shared by
 // every module's home screen (previously near-identical duplicated markup
 // in each one). The active pill uses a tinted background + colored border
 // rather than a solid accent fill: accent and accentDeep are both vivid

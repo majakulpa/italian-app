@@ -6,8 +6,8 @@ const allDialogues = CONVERSATION_LEVELS.flatMap((level) =>
 );
 
 describe("CONVERSATION_LEVELS", () => {
-  it("has A1/A2/B1, each with a level accent the modules can render", () => {
-    expect(CONVERSATION_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1"]);
+  it("has A1 through C1, each with a level accent the modules can render", () => {
+    expect(CONVERSATION_LEVELS.map((l) => l.id)).toEqual(["A1", "A2", "B1", "B2", "C1"]);
     for (const level of CONVERSATION_LEVELS) {
       expect(level.label).toBeTruthy();
       expect(level.name).toBeTruthy();

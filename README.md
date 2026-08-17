@@ -75,28 +75,39 @@ the `MODULES` array in `src/App.jsx` with `ready: true`.
 
 ## What's built
 
-- **Vocabulary** — A1/A2/B1 levels, 2 categories per level (72 words with
-  example sentences), flashcard mode (flip, mark known/still learning),
+Every module runs across five levels — A1, A2, B1, B2, C1 — with two
+categories/topics/dialogues/stories each.
+
+- **Vocabulary** — 120 words with example sentences (greetings, family,
+  travel, food, work, opinions, news & media, city & environment, idioms,
+  bureaucracy), flashcard mode (flip, mark known/still learning),
   multiple-choice quiz mode with a missed-words review list, and a listening
   mode (hear the word via `SpeechSynthesis`, pick its meaning — no Italian
   text shown until you answer).
-- **Grammar** — A1/A2/B1 levels, 2 topics per level (present tense of -are/
-  -ere/-ire verbs, essere vs avere, articles, passato prossimo, comparatives).
+- **Grammar** — 10 topics: present tense of -are/-ere/-ire verbs, essere vs
+  avere, articles, passato prossimo, comparatives, congiuntivo presente,
+  condizionale, periodo ipotetico, and the passive with impersonal si.
   Each topic has a short explanation (conjugation table + bullet points +
   example sentences) and an 8-question fill-in-the-blank drill with a
   missed-items review list.
-- **Conversations** — A1/A2/B1 levels, 2 guided dialogues per level (café,
-  introductions, directions, restaurant, making plans, job interview). Each
-  turn offers a more formal and a more casual way to say the same thing,
-  with light feedback on the register — no wrong answers, just style. Chat
-  transcript builds up turn by turn; a recap at the end tallies formal vs
-  casual picks and re-lists your responses.
-- **Stories** — A1/A2/B1 levels, 2 short original stories per level (a
-  tourist's day in Rome and a Sicilian fairy tale; a missed train in Naples
-  and a love story by letter; murder mysteries in Venice and in the
-  Piedmont vineyards). Tenses are graded to match the grammar module — A1
-  in the present, A2 in the passato prossimo, B1 mixing imperfetto and
-  passato prossimo. The whole story scrolls on one page: each paragraph has
+- **Conversations** — 10 guided dialogues (café, introductions, directions,
+  restaurant, making plans, job interview, a broken boiler, disagreeing in a
+  meeting, negotiating a contract, a debate over dinner). Each turn offers a
+  more formal and a more casual way to say the same thing, with light
+  feedback on the register — no wrong answers, just style. Chat transcript
+  builds up turn by turn; a recap at the end tallies formal vs casual picks
+  and re-lists your responses. A1–B1 dialogues run three turns, B2/C1 four.
+- **Stories** — 10 short original stories (a tourist's day in Rome and a
+  Sicilian fairy tale; a missed train in Naples and a love story by letter;
+  murder mysteries in Venice and in the Piedmont vineyards; a public-sector
+  exam and a house on Lake Como; a manuscript thief in Florence and a
+  reportage from an emptying village). Tenses are graded to match the
+  grammar module — A1 in the present, A2 in the passato prossimo, B1 mixing
+  imperfetto and passato prossimo, B2 adding congiuntivo and condizionale,
+  C1 bringing in the passato remoto, the passive and impersonal si (one C1
+  reader is literary, the other journalistic — register is a C1 skill too).
+  From B1 up the comprehension questions are themselves in Italian.
+  The whole story scrolls on one page: each paragraph has
   a tap-to-reveal English translation and a pronounce button, and glossed
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
@@ -123,3 +134,8 @@ Colors, fonts, and per-level accent colors live in `src/shared/theme.js`
 — keep new modules pulling from there so the app stays visually
 consistent (postmark badges, warm paper background, Fraunces for
 headings/Italian text, Inter for UI, IBM Plex Mono for small labels).
+
+Level accents read as metro lines: A1 blue, A2 red, B1 green, B2 purple,
+C1 teal. Adding a level means adding its `--color-*` pair to `THEME_STYLE`
+(the base `:root` **and** all three override blocks) plus an entry in
+`LEVEL_ACCENTS` — the data files only spread what's already there.

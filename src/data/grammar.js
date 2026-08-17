@@ -283,4 +283,191 @@ export const GRAMMAR_LEVELS = [
       },
     ],
   },
+  {
+    id: "B2",
+    label: "B2",
+    name: "Superiore",
+    tagline: "Congiuntivo and condizionale",
+    ...LEVEL_ACCENTS.B2,
+    topics: [
+      {
+        id: "congiuntivo-presente",
+        name: "Congiuntivo presente",
+        tagline: "The mood of doubt, opinion and wishes",
+        explanation: {
+          summary:
+            "The congiuntivo is used in a subordinate clause after expressions of opinion, doubt, emotion or will — anything that isn't presented as plain fact. Verbs of certainty (so che, è vero che, è sicuro che) keep the indicative instead.",
+          table: {
+            headers: [
+              "",
+              { it: "parlare", en: "to speak" },
+              { it: "essere", en: "to be" },
+              { it: "avere", en: "to have" },
+            ],
+            rows: [
+              ["io", "parli", "sia", "abbia"],
+              ["tu", "parli", "sia", "abbia"],
+              ["lui / lei", "parli", "sia", "abbia"],
+              ["noi", "parliamo", "siamo", "abbiamo"],
+              ["voi", "parliate", "siate", "abbiate"],
+              ["loro", "parlino", "siano", "abbiano"],
+            ],
+          },
+          points: [
+            "Endings: -are → -i, -i, -i, -iamo, -iate, -ino; -ere/-ire → -a, -a, -a, -iamo, -iate, -ano",
+            "The first three persons are identical, so the subject pronoun usually stays: penso che tu abbia ragione",
+            "Triggers: penso/credo che, spero che, voglio che, è importante che, benché/sebbene, prima che, nonostante",
+            "Irregular: faccia (fare), vada (andare), possa (potere), sappia (sapere), dica (dire), venga (venire)",
+            "No congiuntivo after certainty: so che è a Roma, not so che sia a Roma",
+          ],
+          examples: [
+            { it: "Penso che sia troppo tardi per chiamare.", en: "I think it's too late to call." },
+            { it: "Benché faccia freddo, usciamo.", en: "Even though it's cold, we're going out." },
+          ],
+        },
+        drills: [
+          { id: "1", prompt: "Penso che Marco ___ ragione.", en: "I think Marco is right — Italian says \"has reason\".", hint: "avere (to have) — congiuntivo, lui", options: ["abbia", "ha", "avrà", "abbiamo"], answer: "abbia" },
+          { id: "2", prompt: "Credo che tu ___ molto stanco.", en: "I think you're very tired.", hint: "essere (to be) — congiuntivo, tu", options: ["sia", "sei", "sarai", "siate"], answer: "sia" },
+          { id: "3", prompt: "È importante che voi ___ in orario.", en: "It's important that you (plural) arrive on time.", hint: "arrivare (to arrive) — congiuntivo, voi", options: ["arriviate", "arrivate", "arrivano", "arriverete"], answer: "arriviate" },
+          { id: "4", prompt: "Benché ___ freddo, andiamo al mare.", en: "Even though it's cold, we're going to the seaside.", hint: "fare (to do, to make) — congiuntivo, lui (impersonal \"it\")", options: ["faccia", "fa", "farà", "facciamo"], answer: "faccia" },
+          { id: "5", prompt: "Voglio che loro ___ la verità.", en: "I want them to tell the truth.", hint: "dire (to say, to tell) — congiuntivo, loro", options: ["dicano", "dicono", "diranno", "dica"], answer: "dicano" },
+          { id: "6", prompt: "Spero che loro ___ il lavoro entro venerdì.", en: "I hope they finish the work by Friday.", hint: "finire (to finish) — congiuntivo, loro", options: ["finiscano", "finiscono", "finiranno", "finiamo"], answer: "finiscano" },
+          { id: "7", prompt: "Sebbene lei ___ molto, non è mai soddisfatta.", en: "Although she studies a lot, she's never satisfied.", hint: "studiare (to study) — congiuntivo, lei", options: ["studi", "studia", "studino", "studierà"], answer: "studi" },
+          { id: "8", prompt: "So che lui ___ a Roma da tre anni.", en: "I know he has lived in Rome for three years.", hint: "abitare (to live) — after «so che» you stay in the indicative, lui", options: ["abita", "abiti", "abitino", "abitasse"], answer: "abita" },
+        ],
+      },
+      {
+        id: "condizionale",
+        name: "Condizionale",
+        tagline: "Would: politeness, hypotheses and unconfirmed news",
+        explanation: {
+          summary:
+            "The condizionale is Italian's \"would\". It softens requests, states what you would do, and — in the press — reports something not yet confirmed. Built on the same stem as the future, with its own endings.",
+          table: {
+            headers: [
+              "",
+              { it: "parlare", en: "to speak" },
+              { it: "essere", en: "to be" },
+              { it: "avere", en: "to have" },
+            ],
+            rows: [
+              ["io", "parlerei", "sarei", "avrei"],
+              ["tu", "parleresti", "saresti", "avresti"],
+              ["lui / lei", "parlerebbe", "sarebbe", "avrebbe"],
+              ["noi", "parleremmo", "saremmo", "avremmo"],
+              ["voi", "parlereste", "sareste", "avreste"],
+              ["loro", "parlerebbero", "sarebbero", "avrebbero"],
+            ],
+          },
+          points: [
+            "Endings on the future stem: -ei, -esti, -ebbe, -emmo, -este, -ebbero",
+            "Irregular stems, shared with the future: andr- (andare), far- (fare), verr- (venire), vorr- (volere), potr- (potere), dovr- (dovere)",
+            "Politeness: Vorrei un caffè. Potrebbe aiutarmi? — much softer than voglio / può",
+            "Watch the pair verremo (future: we will come) vs verremmo (conditional: we would come) — one letter apart",
+            "Condizionale passato = sarei/avrei + participle, for \"would have\": Avrei voluto venire.",
+          ],
+          examples: [
+            { it: "Al posto tuo, non lo farei.", en: "In your place, I wouldn't do it." },
+            { it: "Secondo il giornale, il ministro si dimetterebbe oggi.", en: "According to the paper, the minister is (reportedly) resigning today." },
+          ],
+        },
+        drills: [
+          { id: "1", prompt: "___ un caffè, per favore.", en: "I'd like a coffee, please.", hint: "volere (to want) — condizionale, io", options: ["Vorrei", "Voglio", "Vorrebbe", "Volevo"], answer: "Vorrei" },
+          { id: "2", prompt: "Signora, ___ chiudere la finestra, per favore?", en: "Madam, could you close the window, please?", hint: "potere (to be able to) — condizionale, lei (polite form)", options: ["potrebbe", "potresti", "potrei", "potrebbero"], answer: "potrebbe" },
+          { id: "3", prompt: "Noi ___ volentieri, ma non abbiamo tempo.", en: "We would gladly come, but we don't have time.", hint: "venire (to come) — condizionale, noi", options: ["verremmo", "verremo", "veniamo", "verrebbero"], answer: "verremmo" },
+          { id: "4", prompt: "Tu che cosa ___ al mio posto?", en: "What would you do in my place?", hint: "fare (to do, to make) — condizionale, tu", options: ["faresti", "fai", "farai", "farebbe"], answer: "faresti" },
+          { id: "5", prompt: "Loro ___ più tardi, se potessero.", en: "They would arrive later, if they could.", hint: "arrivare (to arrive) — condizionale, loro", options: ["arriverebbero", "arriveranno", "arrivano", "arriverebbe"], answer: "arriverebbero" },
+          { id: "6", prompt: "___ venire ieri, ma ho lavorato fino a tardi.", en: "I would have liked to come yesterday, but I worked late.", hint: "volere (to want) — condizionale passato, io", options: ["Avrei voluto", "Vorrei", "Ho voluto", "Sarei voluto"], answer: "Avrei voluto" },
+          { id: "7", prompt: "Lei ___ già a casa, ma il treno è in ritardo.", en: "She would already be home, but the train is late.", hint: "essere (to be) — condizionale, lei", options: ["sarebbe", "è", "sarà", "sarebbero"], answer: "sarebbe" },
+          { id: "8", prompt: "Secondo il giornale, il sindaco ___ domani.", en: "According to the paper, the mayor is (reportedly) speaking tomorrow.", hint: "parlare (to speak) — condizionale for unconfirmed news, lui", options: ["parlerebbe", "parla", "parlerà", "parlerebbero"], answer: "parlerebbe" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "C1",
+    label: "C1",
+    name: "Avanzato",
+    tagline: "Hypotheticals, the passive and impersonal si",
+    ...LEVEL_ACCENTS.C1,
+    topics: [
+      {
+        id: "periodo-ipotetico",
+        name: "Periodo ipotetico",
+        tagline: "If I had time — the three kinds of if-sentence",
+        explanation: {
+          summary:
+            "Italian has three if-patterns: a real one (indicative throughout), a possible or unreal one (congiuntivo imperfetto + condizionale), and an impossible one about the past (congiuntivo trapassato + condizionale passato). The one rule never to break: se is never followed by a condizionale.",
+          table: {
+            headers: ["", { it: "se…", en: "the if-clause" }, { it: "…allora", en: "the result" }],
+            rows: [
+              [{ it: "1º — realtà", en: "type 1 — real, likely" }, "se ho tempo", "vengo / verrò"],
+              [{ it: "2º — possibilità", en: "type 2 — possible or unreal" }, "se avessi tempo", "verrei"],
+              [{ it: "3º — impossibilità", en: "type 3 — impossible, in the past" }, "se avessi avuto tempo", "sarei venuto"],
+            ],
+          },
+          points: [
+            "Congiuntivo imperfetto: parlassi, parlassi, parlasse, parlassimo, parlaste, parlassero — and fossi…, avessi…",
+            "Congiuntivo trapassato: avessi parlato / fossi andato",
+            "Never «se + condizionale» — the condizionale belongs in the result clause only",
+            "come se always takes the congiuntivo imperfetto: fa come se niente fosse",
+            "Type 2 covers both a real possibility and a pure fantasy — context, not grammar, tells them apart",
+          ],
+          examples: [
+            { it: "Se avessi più tempo, imparerei il russo.", en: "If I had more time, I'd learn Russian." },
+            { it: "Se me lo avessi detto, ti avrei aspettato.", en: "If you had told me, I would have waited for you." },
+          ],
+        },
+        drills: [
+          { id: "1", prompt: "Se ___ più tempo, imparerei il russo.", en: "If I had more time, I'd learn Russian.", hint: "avere (to have) — congiuntivo imperfetto, io", options: ["avessi", "avrei", "ho", "avrò"], answer: "avessi" },
+          { id: "2", prompt: "Se fossi al tuo posto, non ___ quell'offerta.", en: "If I were in your place, I wouldn't accept that offer.", hint: "accettare (to accept) — condizionale, io", options: ["accetterei", "accettassi", "accetto", "accetterò"], answer: "accetterei" },
+          { id: "3", prompt: "Se me lo ___, ti avrei aspettato.", en: "If you had told me, I would have waited for you.", hint: "dire (to say, to tell) — congiuntivo trapassato, tu", options: ["avessi detto", "avresti detto", "hai detto", "dicessi"], answer: "avessi detto" },
+          { id: "4", prompt: "Se ___ meno, dormirebbe meglio.", en: "If he worked less, he'd sleep better.", hint: "lavorare (to work) — congiuntivo imperfetto, lui", options: ["lavorasse", "lavorerebbe", "lavora", "lavorerà"], answer: "lavorasse" },
+          { id: "5", prompt: "Se non ci fosse stato lo sciopero, ___ in orario.", en: "If there hadn't been a strike, we would have arrived on time.", hint: "arrivare (to arrive) — condizionale passato, noi", options: ["saremmo arrivati", "fossimo arrivati", "siamo arrivati", "arriveremmo"], answer: "saremmo arrivati" },
+          { id: "6", prompt: "Parla come se ___ tutto.", en: "He talks as if he knew everything.", hint: "sapere (to know) — after «come se»: congiuntivo imperfetto, lui", options: ["sapesse", "sa", "saprebbe", "sapeva"], answer: "sapesse" },
+          { id: "7", prompt: "Se voi ___ presto, troverete posto.", en: "If you (plural) arrive early, you'll find a seat.", hint: "arrivare (to arrive) — a real hypothesis takes the indicative, voi", options: ["arrivate", "arrivaste", "arrivereste", "arriviate"], answer: "arrivate" },
+          { id: "8", prompt: "Se loro ___ la verità, sarebbero più tranquilli.", en: "If they knew the truth, they'd be calmer.", hint: "sapere (to know) — congiuntivo imperfetto, loro", options: ["sapessero", "saprebbero", "sanno", "sapranno"], answer: "sapessero" },
+        ],
+      },
+      {
+        id: "passivo-si",
+        name: "Passivo e «si» impersonale",
+        tagline: "Saying what was done without saying who did it",
+        explanation: {
+          summary:
+            "The passive puts the object first: essere (or venire) plus a past participle that agrees with the subject, with the agent introduced by da. When there is no agent worth naming, Italian much prefers si — the passivante si with a stated object, the impersonale si without one.",
+          table: {
+            headers: ["", { it: "attivo", en: "active" }, { it: "passivo", en: "passive" }],
+            rows: [
+              [{ it: "presente", en: "present" }, "Il critico recensisce il film", "Il film è recensito dal critico"],
+              [{ it: "passato", en: "past" }, "Il critico ha recensito il film", "Il film è stato recensito dal critico"],
+              [{ it: "con venire", en: "with venire — stresses the action" }, "Recensiscono il film ogni anno", "Il film viene recensito ogni anno"],
+              [{ it: "con «si»", en: "with «si» — no agent named" }, "Vendono i biglietti online", "I biglietti si vendono online"],
+            ],
+          },
+          points: [
+            "The participle agrees with the subject: la legge è stata approvata, i fondi sono stati approvati",
+            "venire replaces essere in simple tenses only, and stresses the action rather than the resulting state",
+            "andare + participle means \"must be\": va fatto subito, le domande vanno inviate entro venerdì",
+            "The agent takes da: firmato dal direttore",
+            "The passivante si agrees with its object: si vende la casa → si vendono le case; in the past the impersonal si takes essere: si è mangiato bene",
+          ],
+          examples: [
+            { it: "La legge è stata approvata ieri sera.", en: "The law was passed last night." },
+            { it: "In Italia si cena tardi.", en: "In Italy people have dinner late." },
+          ],
+        },
+        drills: [
+          { id: "1", prompt: "Il contratto ___ firmato dal direttore la settimana scorsa.", en: "The contract was signed by the director last week.", hint: "essere (to be) — passive in the passato prossimo, lui", options: ["è stato", "è", "ha", "viene"], answer: "è stato" },
+          { id: "2", prompt: "La legge è stata ___ dal parlamento.", en: "The law was passed by parliament.", hint: "approvare (to approve, to pass) — participle agreeing with «la legge»", options: ["approvata", "approvato", "approvate", "approvando"], answer: "approvata" },
+          { id: "3", prompt: "I biglietti ___ solo online.", en: "Tickets are only sold online.", hint: "vendere (to sell) — passivante «si» with a plural object", options: ["si vendono", "si vende", "si è venduto", "si venderebbe"], answer: "si vendono" },
+          { id: "4", prompt: "In Italia ___ tardi.", en: "In Italy people have dinner late.", hint: "cenare (to have dinner) — impersonal «si»", options: ["si cena", "si cenano", "si è cenato", "ci cena"], answer: "si cena" },
+          { id: "5", prompt: "Questo lavoro ___ fatto subito.", en: "This job must be done right away.", hint: "andare (to go) — «andare + participle» for what must be done, lui", options: ["va", "è", "viene", "ha"], answer: "va" },
+          { id: "6", prompt: "Il film ___ recensito ogni anno dagli studenti.", en: "The film is reviewed every year by the students.", hint: "venire (to come) — passive with venire, lui", options: ["viene", "va", "ha", "sono"], answer: "viene" },
+          { id: "7", prompt: "Ieri ___ molto bene in quella trattoria.", en: "Yesterday we ate very well in that trattoria.", hint: "mangiare (to eat) — impersonal «si» in the past, which takes essere", options: ["si è mangiato", "si ha mangiato", "si mangiano", "si mangerebbe"], answer: "si è mangiato" },
+          { id: "8", prompt: "Il quadro è stato dipinto ___ un allievo di Giotto.", en: "The painting was painted by a pupil of Giotto.", hint: "by (the agent of a passive sentence)", options: ["da", "di", "con", "per"], answer: "da" },
+        ],
+      },
+    ],
+  },
 ];

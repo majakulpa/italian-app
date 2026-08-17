@@ -16,6 +16,34 @@ function renderMenu(active = null, onSelect = () => {}) {
 }
 
 describe("NavMenu", () => {
+  // The menu is a keyboard trap otherwise: it has no visible close control,
+  // so Escape is the only way out for anyone not using a pointer.
+  it("closes on Escape", async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  // Escape is the only key the document-level handler acts on — a stray
+  // keystroke while browsing the menu shouldn't dismiss it. (Pressing Enter
+  // here would re-trigger the still-focused toggle button, which is a
+  // different path, so this uses a key bound to nothing.)
+  it("ignores unrelated keys while open", async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    screen.getByRole("menuitem", { name: /Vocabulary/ }).focus();
+    await user.keyboard("a");
+
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
   it("is closed by default and opens on click", async () => {
     const user = userEvent.setup();
     renderMenu();

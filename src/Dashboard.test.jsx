@@ -97,6 +97,15 @@ describe("Dashboard", () => {
     expect(screen.getByRole("button", { name: /Review/ })).toHaveTextContent("1 item due today");
   });
 
+  it("pluralises the count past one", () => {
+    const level = LEVELS.find((l) => l.id === "A1");
+    const second = wordKey(level, level.categories[0], level.categories[0].words[1]);
+    seed({ [A1_WORD]: "learning", [second]: "learning" });
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    expect(screen.getByRole("button", { name: /Review/ })).toHaveTextContent("2 items due today");
+  });
+
   it("counts only what is actually due, not everything studied", () => {
     seed(
       { [A1_WORD]: "known" },

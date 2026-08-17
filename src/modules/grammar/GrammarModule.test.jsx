@@ -154,6 +154,59 @@ describe("Lesson", () => {
 });
 
 describe("Drill", () => {
+  // The options are divs with role="button", so they get no keyboard
+  // activation for free — Enter and Space are wired by hand and nothing else
+  // would catch that handler being dropped.
+  it("answers with the keyboard as well as the pointer", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    screen.getByRole("button", { name: item0.answer }).focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+  });
+
+  it("ignores keys that aren't Enter or Space", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    screen.getByRole("button", { name: presentAre.drills[0].answer }).focus();
+    await user.keyboard("a");
+
+    expect(screen.getByText("0 correct")).toBeInTheDocument();
+  });
+
+  it("answers on Space too", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    screen.getByRole("button", { name: item0.answer }).focus();
+    await user.keyboard(" ");
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+  });
+
+  // Same double-answer guard as the vocab quiz — a second click must not
+  // re-grade the drill or move its Leitner box a second time.
+  it("ignores a second pick once an answer is in", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    await user.click(screen.getByRole("button", { name: item0.answer }));
+    const other = item0.options.find((o) => o !== item0.answer);
+    await user.click(screen.getByRole("button", { name: other }));
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+  });
+
   it("marks a correct answer, updates the score, and advances", async () => {
     const user = userEvent.setup();
     renderGrammar();

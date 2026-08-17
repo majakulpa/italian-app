@@ -30,6 +30,17 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.js"],
-    globals: true
+    globals: true,
+    coverage: {
+      // Everything the app actually ships. main.jsx is the two-line React
+      // mount and src/test/ is the harness itself — neither is app behaviour,
+      // and counting them would only ever dilute the number.
+      include: ["src/**"],
+      exclude: ["**/*.test.{js,jsx}", "src/test/**", "src/main.jsx"],
+      // The suite is at 100% on all four metrics; this keeps it there rather
+      // than letting it quietly erode. Lower a threshold deliberately if a
+      // branch genuinely isn't worth reaching, don't delete the block.
+      thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 }
+    }
   }
 });

@@ -118,6 +118,31 @@ describe("Reader", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
+  // The gloss bar is a fixed overlay at the bottom of the viewport, so
+  // Escape is the reflex for dismissing it without hunting for the X.
+  it("closes the gloss bar on Escape", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("keeps the gloss bar open on any other key", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+    await user.keyboard("a");
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
   it("reads a paragraph aloud without opening a gloss", async () => {
     vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
     const speakSpy = vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
@@ -132,6 +157,23 @@ describe("Reader", () => {
 });
 
 describe("Questions", () => {
+  // Same double-answer guard the other graded screens have: a second click
+  // must not re-grade the question or swap the explanation.
+  it("ignores a second pick once an answer is in", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await user.click(screen.getByRole("button", { name: /Comprehension questions/ }));
+
+    const first = roma.questions[0];
+    await user.click(screen.getByRole("button", { name: first.answer }));
+    const other = first.options.find((o) => o !== first.answer);
+    await user.click(screen.getByRole("button", { name: other }));
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+    expect(screen.getByText(first.explain)).toBeInTheDocument();
+  });
+
   it("shows the explanation after an answer and counts correct picks", async () => {
     const user = userEvent.setup();
     renderStories();

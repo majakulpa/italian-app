@@ -64,13 +64,23 @@ vite.config.js              PWA config (manifest, service worker) + Vitest confi
 ```bash
 npm test          # run once
 npm run test:watch
+npm run test:coverage
 ```
 
-Vitest + React Testing Library. Covers persistence/streak logic, speech
-support detection, the module UI flows, and the story data itself — every
-gloss key has to occur in its own paragraph and every comprehension answer
-has to be one of its options (see `*.test.js(x)` files next to the code
-they test).
+Vitest + React Testing Library. Covers persistence/streak logic, the Leitner
+scheduler, speech support detection, the module UI flows, and the data itself
+— every gloss key has to occur in its own paragraph, every comprehension
+answer has to be one of its options, and the four data files have to agree on
+the level ladder (see `*.test.js(x)` files next to the code they test).
+
+`npm run test:coverage` is gated at 100% statements/branches/functions/lines,
+so uncovered code fails the run rather than sliding by. If a branch genuinely
+isn't worth reaching, lower the threshold in `vite.config.js` deliberately
+rather than deleting the block.
+
+A test that can't fail is worth nothing, so anything load-bearing gets checked
+against a deliberately broken build before it's trusted — break the rule, watch
+the test go red, put it back.
 
 To add a module: create `src/modules/<name>/<Name>Module.jsx` exporting a
 component that accepts an `onExit` prop (call it to return to the home

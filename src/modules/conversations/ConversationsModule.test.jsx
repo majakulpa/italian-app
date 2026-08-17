@@ -58,6 +58,44 @@ describe("ConversationsHome", () => {
 });
 
 describe("Dialogue", () => {
+  // The options are divs with role="button", so Enter and Space are wired by
+  // hand rather than coming free with a real <button>.
+  it("picks a response with Enter as well as a click", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const pick = cafe.steps[0].options[0];
+    screen.getByText(pick.it).closest('[role="button"]').focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+    expect(screen.getByText(pick.feedback)).toBeInTheDocument();
+  });
+
+  it("ignores keys that aren't Enter or Space", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    screen.getByText(cafe.steps[0].options[0].it).closest('[role="button"]').focus();
+    await user.keyboard("a");
+
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+  });
+
+  it("picks a response with Space too", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const pick = cafe.steps[0].options[0];
+    screen.getByText(pick.it).closest('[role="button"]').focus();
+    await user.keyboard(" ");
+
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+  });
+
   it("shows the opening line and lets the user pick a response", async () => {
     const user = userEvent.setup();
     renderConversations();

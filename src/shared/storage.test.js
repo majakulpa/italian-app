@@ -12,6 +12,8 @@ import {
   isConversationDone,
   todayISO,
   addDaysISO,
+  loadThemeMode,
+  saveThemeMode,
 } from "./storage.js";
 
 const level = { id: "A1" };
@@ -60,6 +62,14 @@ describe("loadProgress", () => {
   it("fills in missing fields from older/partial saved shapes", () => {
     localStorage.setItem("italiano:progress:v1", JSON.stringify({ words: { a: "known" } }));
     expect(loadProgress()).toEqual({ ...EMPTY, words: { a: "known" } });
+  });
+
+  // A blob with only a streak — what you'd have after opening a session and
+  // never answering anything — must not spread `words: undefined` over the
+  // empty defaults and crash the first lookup.
+  it("fills in words and schedule when a save has neither", () => {
+    localStorage.setItem("italiano:progress:v1", JSON.stringify({ streak: { count: 2, lastDate: "2026-08-05" } }));
+    expect(loadProgress()).toEqual({ words: {}, schedule: {}, streak: { count: 2, lastDate: "2026-08-05" } });
   });
 
   // The whole reason scheduling went into its own map: a blob saved before
@@ -231,5 +241,44 @@ describe("touchStreak", () => {
     const progress = { words: {}, streak: { count: 5, lastDate: "2026-07-01" } };
     const next = touchStreak(progress);
     expect(next.streak).toEqual({ count: 1, lastDate: "2026-08-06" });
+  });
+});
+
+// The theme choice deliberately lives under its own key, so resetting
+// progress can't wipe it and vice versa.
+describe("loadThemeMode / saveThemeMode", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("round-trips an explicit choice", () => {
+    saveThemeMode("dark");
+    expect(loadThemeMode()).toBe("dark");
+  });
+
+  // No stored value is what "follow the OS" means (see useThemeMode.js), so
+  // clearing has to remove the key rather than store an empty string.
+  it("clears the stored choice back to following the OS", () => {
+    saveThemeMode("light");
+    saveThemeMode(null);
+
+    expect(loadThemeMode()).toBeNull();
+    expect(localStorage.getItem("italiano:theme:v1")).toBeNull();
+  });
+
+  it("reads as no choice when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    expect(loadThemeMode()).toBeNull();
+  });
+
+  // Private browsing throws on write; the app should fall back to the OS
+  // preference rather than crash on a theme toggle.
+  it("swallows a write failure instead of throwing", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    expect(() => saveThemeMode("dark")).not.toThrow();
   });
 });

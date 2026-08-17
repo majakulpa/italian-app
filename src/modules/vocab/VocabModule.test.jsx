@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import VocabModule from "./VocabModule.jsx";
 import { LEVELS } from "../../data/vocab.js";
 import { TOKENS } from "../../shared/theme.js";
+import { loadProgress, wordKey, todayISO } from "../../shared/storage.js";
 import * as speech from "../../shared/speech.js";
 
 const a1 = LEVELS.find((l) => l.id === "A1");
@@ -76,6 +77,43 @@ describe("Flashcards", () => {
     expect(screen.getByText(`"${firstWord.ex}"`)).toBeInTheDocument();
   });
 
+  // The other half of the flashcard grade: "Still learning" has to advance
+  // without counting as known, and — since the scheduler went in — has to
+  // leave the word in box 1 so it comes straight back in the next review.
+  it("marking a word still learning advances without counting it as known", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /Still learning/ }));
+
+    expect(screen.getByText("0 known")).toBeInTheDocument();
+    expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
+
+    const saved = loadProgress();
+    const key = wordKey(a1, greetings, greetings.words[0]);
+    expect(saved.words[key]).toBe("learning");
+    expect(saved.schedule[key].box).toBe(1);
+  });
+
+  // Every vocab answer now goes through srs.reviewItem, so studying normally
+  // is what fills the review queue — nothing else in this module's tests
+  // would notice if that wiring came undone.
+  it("schedules a word into box 2 when it's marked known", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /I knew it/ }));
+
+    const saved = loadProgress();
+    const key = wordKey(a1, greetings, greetings.words[0]);
+    expect(saved.schedule[key].box).toBe(2);
+    expect(saved.schedule[key].due).not.toBe(todayISO());
+  });
+
   it("marking a word known increases the known count and advances to the next card", async () => {
     const user = userEvent.setup();
     renderVocab();
@@ -109,6 +147,24 @@ describe("Flashcards", () => {
 });
 
 describe("Quiz", () => {
+  // Every graded screen guards against a second pick. Without it a stray
+  // double-click would grade the item twice — and since answers now move a
+  // Leitner box, a second click on a wrong option would undo the promotion
+  // the first click had just earned.
+  it("ignores a second pick once an answer is in", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    const word0 = greetings.words[0];
+    await user.click(screen.getByRole("button", { name: word0.en }));
+    const other = greetings.words.find((w) => w.en !== word0.en);
+    await user.click(screen.getByRole("button", { name: other.en }));
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+    expect(loadProgress().schedule[wordKey(a1, greetings, word0)].box).toBe(2);
+  });
+
   it("marks a correct answer, updates the score, and moves to the next question", async () => {
     const user = userEvent.setup();
     renderVocab();
@@ -174,6 +230,19 @@ describe("Quiz", () => {
 });
 
 describe("ListeningQuiz", () => {
+  it("ignores a second pick once an answer is in", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    const word0 = greetings.words[0];
+    await user.click(screen.getByRole("button", { name: word0.en }));
+    const other = greetings.words.find((w) => w.en !== word0.en);
+    await user.click(screen.getByRole("button", { name: other.en }));
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+  });
+
   it("auto-plays the word and lets the user replay it", async () => {
     const user = userEvent.setup();
     renderVocab();

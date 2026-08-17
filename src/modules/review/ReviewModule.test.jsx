@@ -156,6 +156,46 @@ describe("ReviewModule", () => {
     expect(saved.schedule[DRILL_KEY].box).toBe(2);
   });
 
+  // Without the guard in choose(), a second click would grade the item again
+  // — and clicking a wrong option after a right one would demote a box the
+  // answer had just earned.
+  it("ignores a second pick, leaving the first answer's box alone", async () => {
+    const user = userEvent.setup();
+    seedDue({ [WORD_KEY]: "learning" });
+    renderReview();
+
+    await user.click(screen.getByRole("button", { name: word.en }));
+    const wrong = greetings.words.find((w) => w.en !== word.en);
+    await user.click(screen.getByRole("button", { name: wrong.en }));
+
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+    const saved = loadProgress();
+    expect(saved.words[WORD_KEY]).toBe("known");
+    expect(saved.schedule[WORD_KEY].box).toBe(2);
+  });
+
+  it("leaves the empty state via its own button", async () => {
+    const user = userEvent.setup();
+    const exits = [];
+    renderReview(() => exits.push("exit"));
+
+    await user.click(screen.getByRole("button", { name: "Back to home" }));
+    expect(exits).toEqual(["exit"]);
+  });
+
+  it("leaves the summary via its own button", async () => {
+    const user = userEvent.setup();
+    const exits = [];
+    seedDue({ [WORD_KEY]: "learning" });
+    renderReview(() => exits.push("exit"));
+
+    await user.click(screen.getByRole("button", { name: word.en }));
+    await user.click(screen.getByRole("button", { name: /See results/ }));
+    await user.click(screen.getByRole("button", { name: "Back to home" }));
+
+    expect(exits).toEqual(["exit"]);
+  });
+
   it("starts the daily streak when a session opens", () => {
     seedDue({ [WORD_KEY]: "learning" });
     renderReview();

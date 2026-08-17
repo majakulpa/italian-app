@@ -141,6 +141,13 @@ describe("levelStats", () => {
     const progress = withWords({ [firstDialogueKey()]: "done" });
     expect(levelStats(progress, "A2").done).toBe(0);
   });
+
+  // The ladder is built from the vocab levels, so a level id no module knows
+  // about should only ever come from a typo — but it should read as an empty
+  // rung rather than dividing by zero and rendering "NaN%".
+  it("reports an unknown level as empty instead of blowing up", () => {
+    expect(levelStats(EMPTY, "Z9")).toEqual({ done: 0, total: 0, pct: 0 });
+  });
 });
 
 describe("overallStats", () => {

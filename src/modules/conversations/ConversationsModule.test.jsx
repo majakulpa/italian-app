@@ -9,6 +9,8 @@ const a1 = CONVERSATION_LEVELS.find((l) => l.id === "A1");
 const cafe = a1.dialogues.find((d) => d.id === "cafe");
 const a2 = CONVERSATION_LEVELS.find((l) => l.id === "A2");
 const directions = a2.dialogues.find((d) => d.id === "directions");
+const c1 = CONVERSATION_LEVELS.find((l) => l.id === "C1");
+const contratto = c1.dialogues.find((d) => d.id === "contratto");
 
 beforeEach(() => {
   localStorage.clear();
@@ -100,6 +102,50 @@ describe("Dialogue", () => {
     expect(screen.getByText("You start the conversation:")).toBeInTheDocument();
     const firstOption = directions.steps[0].options[0];
     expect(screen.getByText(firstOption.it)).toBeInTheDocument();
+  });
+});
+
+// A1–B1 dialogues run three turns; the B2/C1 ones run four. The step
+// counter and the recap both come from dialogue.steps.length, so a dialogue
+// of a different length is the case where a hardcoded 3 would show up.
+describe("a longer dialogue", () => {
+  it("counts its own steps rather than assuming three", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getByRole("button", { name: /Avanzato/ }));
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    expect(contratto.steps).toHaveLength(4);
+    expect(screen.getByText("1 / 4")).toBeInTheDocument();
+
+    await user.click(screen.getByText(contratto.steps[0].options[0].it));
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
+  });
+
+  it("tallies every turn in the recap, mixed tones included", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getByRole("button", { name: /Avanzato/ }));
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    // Alternate formal/casual so the two counts have to be tallied
+    // separately rather than just echoing the step count.
+    const picks = contratto.steps.map((step, i) =>
+      step.options.find((o) => o.tone === (i % 2 === 0 ? "formal" : "casual"))
+    );
+    for (const pick of picks) {
+      await user.click(screen.getByText(pick.it));
+    }
+
+    expect(screen.getByText("Conversation complete")).toBeInTheDocument();
+    // Two of each, and every response listed back with its feedback. The
+    // recap puts both in one paragraph ("<response> — <feedback>"), so the
+    // feedback isn't a text node of its own to query for.
+    expect(screen.getAllByText("2")).toHaveLength(2);
+    for (const pick of picks) {
+      const line = screen.getByText(pick.it).closest("p");
+      expect(line.textContent).toContain(pick.feedback);
+    }
   });
 });
 

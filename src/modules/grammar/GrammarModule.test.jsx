@@ -7,6 +7,8 @@ import * as speech from "../../shared/speech.js";
 
 const a1 = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const presentAre = a1.topics.find((t) => t.id === "present-are");
+const c1 = GRAMMAR_LEVELS.find((l) => l.id === "C1");
+const ipotetico = c1.topics.find((t) => t.id === "periodo-ipotetico");
 
 beforeEach(() => {
   localStorage.clear();
@@ -38,6 +40,17 @@ describe("GrammarHome", () => {
     expect(screen.getByText("Passato prossimo")).toBeInTheDocument();
     expect(screen.getByText("Comparativi")).toBeInTheDocument();
     expect(screen.queryByText("Presente: verbi in -ARE")).not.toBeInTheDocument();
+  });
+
+  it("reaches the top of the ladder, not just the first three levels", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getByRole("button", { name: /Avanzato/ }));
+
+    for (const topic of c1.topics) {
+      expect(screen.getByText(topic.name)).toBeInTheDocument();
+    }
+    expect(screen.getByText(c1.tagline)).toBeInTheDocument();
   });
 });
 
@@ -80,6 +93,26 @@ describe("Lesson", () => {
     expect(screen.queryByText("he / she")).not.toBeInTheDocument();
   });
 
+  // The if-sentence table has no pronoun column at all: every label is an
+  // { it, en } pair, including the row labels. Nothing else exercises a
+  // table where PRONOUN_GLOSS contributes nothing.
+  it("translates a table whose every label is spelled out in the data", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getByRole("button", { name: /Avanzato/ }));
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+
+    expect(screen.getByText(ipotetico.explanation.summary)).toBeInTheDocument();
+    for (const header of ipotetico.explanation.table.headers.filter((h) => h !== "")) {
+      expect(screen.getByText(header.it)).toBeInTheDocument();
+      expect(screen.getByText(header.en)).toBeInTheDocument();
+    }
+    for (const [label] of ipotetico.explanation.table.rows) {
+      expect(screen.getByText(label.it)).toBeInTheDocument();
+      expect(screen.getByText(label.en)).toBeInTheDocument();
+    }
+  });
+
   it("shows the drill sentence in English alongside a hint naming the verb", async () => {
     const user = userEvent.setup();
     renderGrammar();
@@ -118,6 +151,22 @@ describe("Drill", () => {
 
     await user.click(screen.getByRole("button", { name: /Next/ }));
     expect(screen.getByText(presentAre.drills[1].prompt)).toBeInTheDocument();
+  });
+
+  // Advanced answers are whole phrases ("si è mangiato", "avessi detto"),
+  // not single words, so they carry spaces and accents through the option
+  // button's accessible name.
+  it("grades a multi-word answer at the top of the ladder", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getByRole("button", { name: /Avanzato/ }));
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = ipotetico.drills[0];
+    expect(screen.getByText(item0.prompt)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: item0.answer }));
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
   });
 
   it("marks a wrong answer without crediting the score", async () => {

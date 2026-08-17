@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, ChevronRight, Check, Flame, User } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, User } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
 import { loadProgress, saveProgress, touchStreak, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
@@ -9,11 +9,10 @@ import SpeakButton from "../../shared/SpeakButton.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
+import StreakChip from "../../shared/StreakChip.jsx";
 
 function ConversationsHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(CONVERSATION_LEVELS[0]);
-  const { count: streakCount, lastDate } = progress.streak;
-  const streakIsLive = streakCount > 0 && lastDate;
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
@@ -24,11 +23,7 @@ function ConversationsHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        {streakIsLive && (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, color: TOKENS.limoncelloDeep, fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13 }}>
-            <Flame size={15} /> {streakCount} day{streakCount === 1 ? "" : "s"}
-          </div>
-        )}
+        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>

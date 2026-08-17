@@ -32,12 +32,14 @@ install icon appears in the address bar.
 
 ```
 src/
-  App.jsx                        App shell + module menu (home screen)
+  App.jsx                        App shell + the MODULES registry
+  Dashboard.jsx                  Home screen: streak, overall %, level ladder, module cards
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
     storage.js                   localStorage progress/streak persistence, shared by all modules
+    stats.js                     Reads that progress back across all four modules (dashboard counts)
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
-    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
+    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx, StreakChip.jsx
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
@@ -69,9 +71,12 @@ has to be one of its options (see `*.test.js(x)` files next to the code
 they test).
 
 To add a module: create `src/modules/<name>/<Name>Module.jsx` exporting a
-component that accepts an `onExit` prop (call it to return to the module
-menu), add its data file under `src/data/` if needed, then register it in
-the `MODULES` array in `src/App.jsx` with `ready: true`.
+component that accepts an `onExit` prop (call it to return to the home
+screen), add its data file under `src/data/` if needed, then register it in
+the `MODULES` array in `src/App.jsx` with `ready: true`. Give it a matching
+entry in `MODULE_STATS` (`src/shared/stats.js`) too, or its dashboard card
+will have no progress to show — `stats.test.js` fails if the two lists
+disagree.
 
 ## What's built
 
@@ -112,6 +117,15 @@ categories/topics/dialogues/stories each.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
+- **Dashboard** — the home screen reads that progress back: the day streak and
+  an overall completion figure in a header band, an A1–C1 ladder of roundels
+  showing how far each level is, and a progress bar with a real count on each
+  module card. Read-only, and it re-reads storage every time you come back from
+  a module. `src/shared/stats.js` is the only place that counts: its registry
+  reuses the same key builders the modules write with, so the dashboard can't
+  drift from what a module considers done. The overall and per-level
+  percentages average the four modules rather than pooling every unit —
+  otherwise vocabulary's 120 words would swamp the other three.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
   mastered words, drill items, completed dialogues and finished stories,
   plus a daily study streak, shared across modules.

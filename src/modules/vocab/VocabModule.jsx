@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Flame, Headphones, Volume2 } from "lucide-react";
+import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, touchStreak, markWord, wordKey, categoryKnownCount } from "../../shared/storage.js";
@@ -12,11 +12,10 @@ import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
+import StreakChip from "../../shared/StreakChip.jsx";
 
 function VocabHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
-  const { count: streakCount, lastDate } = progress.streak;
-  const streakIsLive = streakCount > 0 && lastDate;
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
@@ -27,11 +26,7 @@ function VocabHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        {streakIsLive && (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, color: TOKENS.limoncelloDeep, fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13 }}>
-            <Flame size={15} /> {streakCount} day{streakCount === 1 ? "" : "s"}
-          </div>
-        )}
+        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>

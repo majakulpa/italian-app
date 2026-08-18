@@ -93,7 +93,7 @@ disagree.
 ## What's built
 
 Every module runs across five levels — A1, A2, B1, B2, C1 — with two
-categories/topics/dialogues/stories each.
+categories/dialogues/stories each, and four grammar topics.
 
 - **Vocabulary** — 120 words with example sentences (greetings, family,
   travel, food, work, opinions, news & media, city & environment, idioms,
@@ -101,12 +101,17 @@ categories/topics/dialogues/stories each.
   multiple-choice quiz mode with a missed-words review list, and a listening
   mode (hear the word via `SpeechSynthesis`, pick its meaning — no Italian
   text shown until you answer).
-- **Grammar** — 10 topics: present tense of -are/-ere/-ire verbs, essere vs
-  avere, articles, passato prossimo, comparatives, congiuntivo presente,
-  condizionale, periodo ipotetico, and the passive with impersonal si.
-  Each topic has a short explanation (conjugation table + bullet points +
-  example sentences) and an 8-question fill-in-the-blank drill with a
-  missed-items review list.
+- **Grammar** — 20 topics, four per level, following the order a textbook
+  would take them in. Verb forms carry the ladder: present tense of
+  -are/-ere/-ire verbs, the irregulars (andare, fare, stare, venire), essere
+  vs avere, modals, reflexives, passato prossimo, imperfetto against it,
+  futuro, congiuntivo presente, condizionale, imperativo, periodo ipotetico,
+  passato remoto and the pronominal verbs (farcela, andarsene, cavarsela).
+  Around them the structural topics: noun/adjective agreement, articles,
+  comparatives, direct/indirect/combined pronouns, and the passive with
+  impersonal si. Each topic has a short explanation (conjugation table +
+  bullet points + example sentences) and an 8-question fill-in-the-blank
+  drill with a missed-items review list — 160 drills in all.
 - **Conversations** — 10 guided dialogues (café, introductions, directions,
   restaurant, making plans, job interview, a broken boiler, disagreeing in a
   meeting, negotiating a contract, a debate over dinner). Each turn offers a

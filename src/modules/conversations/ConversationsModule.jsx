@@ -119,7 +119,7 @@ function ThemBubble({ speakerName, line, level }) {
           gap: 6,
         }}
       >
-        <p style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink, margin: 0 }}>{line.it}</p>
+        <p lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink, margin: 0 }}>{line.it}</p>
         <SpeakButton text={line.it} color={level.accentDeep} size={14} />
       </div>
       <TranslationToggle en={line.en} align="left" />
@@ -145,7 +145,7 @@ function YouBubble({ pick, level }) {
           gap: 6,
         }}
       >
-        <p style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: level.accentDeep, margin: 0 }}>{pick.it}</p>
+        <p lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: level.accentDeep, margin: 0 }}>{pick.it}</p>
         <SpeakButton text={pick.it} color={level.accentDeep} size={14} />
       </div>
       <TranslationToggle en={pick.en} align="right" />
@@ -202,6 +202,7 @@ function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
         secondary={casualCount}
         secondaryLabel="casual picks"
         missed={picks.map((p, i) => ({ id: `${i}-${p.it}`, primary: p.it, secondary: p.feedback }))}
+        missedLang="it"
         missedHeading="YOUR RESPONSES"
         backLabel="Back to dialogues"
         onBack={onBack}
@@ -234,45 +235,58 @@ function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
 
         <div style={{ display: "grid", gap: 10 }}>
           {currentStep.options.map((opt, i) => (
+            // The card is a plain container: the reply itself is a real
+            // <button>, and the speaker and the translation toggle sit beside
+            // it rather than inside it. Controls nested inside a control are
+            // announced unpredictably, and the two inner ones each need to be
+            // reachable without triggering the choice.
             <div
               // Keying on stepIndex too (not just i) forces a fresh instance
               // per step, so a revealed translation doesn't carry over onto
               // the next step's option in the same list position.
               key={`${stepIndex}-${i}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => choose(opt)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") choose(opt);
-              }}
               style={{
-                textAlign: "left",
-                border: `1.5px solid ${TOKENS.line}`,
+                border: `1.5px solid ${TOKENS.controlLine}`,
                 background: TOKENS.card,
                 borderRadius: 10,
                 padding: "13px 16px",
-                cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 gap: 3,
               }}
             >
-              <span
+              <button
+                onClick={() => choose(opt)}
                 style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                  color: opt.tone === "formal" ? TOKENS.adriaticDeep : TOKENS.limoncelloDeep,
+                  textAlign: "left",
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 3,
+                  width: "100%",
                 }}
               >
-                {opt.tone}
+                <span
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: opt.tone === "formal" ? TOKENS.adriaticDeep : TOKENS.limoncelloDeep,
+                  }}
+                >
+                  {opt.tone}
+                </span>
+                <span lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink }}>{opt.it}</span>
+              </button>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <SpeakButton text={opt.it} color={TOKENS.inkSoft} size={14} style={{ padding: 0 }} />
+                <TranslationToggle en={opt.en} align="left" />
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: TOKENS.ink }}>{opt.it}</span>
-                <SpeakButton text={opt.it} color={TOKENS.inkSoft} size={14} />
-              </span>
-              <TranslationToggle en={opt.en} align="left" />
             </div>
           ))}
         </div>

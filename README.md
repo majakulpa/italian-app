@@ -160,6 +160,9 @@ categories/dialogues/stories each, and four grammar topics.
   plus a daily study streak, shared across modules.
 - **Pronunciation** — speaker icons next to Italian text play it aloud via
   the browser's `SpeechSynthesis` API.
+- **Accessibility** — the app targets WCAG 2.1 AA, and the suite holds it
+  there. See the section below for what that means in practice and where each
+  half is checked.
 
 ## Roadmap — suggested order for Claude Code
 
@@ -174,6 +177,50 @@ categories/dialogues/stories each, and four grammar topics.
 4. **Typed recall / production** — every mode is recognition (pick an option,
    flip a card). Typing the Italian, with accent-tolerant matching, is the
    obvious missing exercise.
+
+## Accessibility
+
+The target is WCAG 2.1 Level AA, checked two ways because no single tool
+covers it:
+
+- **Structure** — `src/a11y.test.jsx` runs axe-core (WCAG 2.1 A + AA rule
+  set) over every screen the app can be in: the dashboard, the open nav menu,
+  each module's home, lesson, drill/quiz and summary, the story reader with a
+  gloss open, and a review session. `src/test/a11y.js` is the runner; a
+  failure prints the rule, the offending markup and axe's own fix advice.
+- **Colour** — jsdom has no paint, so axe can only ever report contrast as
+  "incomplete". `src/shared/theme.test.js` closes that gap arithmetically
+  instead: it parses the hex values out of `THEME_STYLE`, resolves the same
+  `color-mix()` tints the components ask for, and checks every pairing the
+  design system promises — text on each surface (4.5:1), white on a level
+  fill, feedback text on its tinted background, and control boundaries
+  (3:1, SC 1.4.11). `src/test/contrast.js` holds the maths.
+
+What that translated into in the app:
+
+- `TOKENS.controlLine` is a second hairline, dark enough to clear 3:1 against
+  every surface, used for anything you can click — answer options, the
+  flashcard, module cards, the level picker, the menu and theme buttons.
+  `TOKENS.line` stays as-is for decorative rules (table borders, perforations,
+  dividers). An answered option swaps its boundary for `malachiteDeep` /
+  `corolloDeep` rather than the fill accents, which only manage 2.5:1 on the
+  dark card.
+- Answer feedback is never colour alone: `shared/AnswerMark.jsx` pairs the
+  tick/cross with visually hidden text, and `shared/AnswerStatus.jsx` is a
+  `role="status"` live region that speaks the result after each answer
+  (SC 4.1.3), since answering repaints the options without moving focus.
+- Italian inside an English page is marked `lang="it"` — words, examples,
+  conjugation tables, drill prompts and options, dialogue lines, story
+  paragraphs and glosses (SC 3.1.2). Without it a screen reader reads *gli*
+  and *ciao* with English phonetics. `SessionSummary` takes a `missedLang`
+  prop rather than assuming: a story's A1 comprehension answer is English.
+- Every control is a real `<button>`. The grammar drill and conversation
+  options used to be `div`s with `role="button"` wrapped around further
+  buttons (a speaker, a translation toggle) — nested interactive controls,
+  which axe flags and screen readers announce unpredictably. The flashcard's
+  "tap to reveal" is a button too; before, flipping a card needed a mouse.
+- `SR_ONLY` in `src/shared/theme.js` is the visually-hidden style those
+  pieces share, and the app shell wraps its content in a `<main>` landmark.
 
 ## Design notes
 

@@ -1,0 +1,311 @@
+import { describe, it, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App from "./App.jsx";
+import VocabModule from "./modules/vocab/VocabModule.jsx";
+import GrammarModule from "./modules/grammar/GrammarModule.jsx";
+import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
+import StoriesModule from "./modules/stories/StoriesModule.jsx";
+import ReviewModule from "./modules/review/ReviewModule.jsx";
+import { expectNoViolations } from "./test/a11y.js";
+import { LEVELS } from "./data/vocab.js";
+import { GRAMMAR_LEVELS } from "./data/grammar.js";
+import { STORY_LEVELS } from "./data/stories.js";
+import { CONVERSATION_LEVELS } from "./data/conversations.js";
+import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
+import * as speech from "./shared/speech.js";
+
+// Accessibility is the one property that isn't any single component's — a
+// screen is only usable if the shell, the module and the shared pieces all
+// behave, and a regression usually arrives with a component that renders
+// fine in isolation. So the axe scans live together here, one per screen the
+// app can actually be in, in the same spirit as levels.test.js holding the
+// cross-module data invariants.
+//
+// These scans cover the structural half of WCAG 2.1 AA — names, roles,
+// states, headings, focusability. The colour half can't run in jsdom (no
+// paint) and is checked arithmetically in shared/theme.test.js instead.
+
+// An axe pass over a whole screen is heavier than an ordinary assertion —
+// a story reader is a few hundred nodes — and the default 5s runs out on a
+// loaded machine long before anything is actually wrong.
+vi.setConfig({ testTimeout: 30000 });
+
+const a1Vocab = LEVELS.find((l) => l.id === "A1");
+const greetings = a1Vocab.categories.find((c) => c.id === "greetings");
+const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
+const presentAre = a1Grammar.topics.find((t) => t.id === "present-are");
+const a1Story = STORY_LEVELS.find((l) => l.id === "A1").stories[0];
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.spyOn(Math, "random").mockReturnValue(0.99);
+  // jsdom has no SpeechSynthesis, and the speaker buttons are part of what's
+  // being audited — pretend it's there, as it is in every browser this ships to.
+  vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+  vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("the app shell", () => {
+  it("has an accessible dashboard", async () => {
+    const { container } = render(<App />);
+    await expectNoViolations(container, { fragment: false });
+  });
+
+  it("has an accessible navigation menu when it's open", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await expectNoViolations(container, { fragment: false });
+  });
+
+  it("has an accessible dashboard with progress and a review band showing", async () => {
+    saveProgress({
+      words: {
+        [wordKey(a1Vocab, greetings, greetings.words[0])]: "known",
+        [drillKey(a1Grammar, presentAre, presentAre.drills[0])]: "known",
+      },
+      streak: { count: 3, lastDate: "2026-08-18" },
+      schedule: {
+        [wordKey(a1Vocab, greetings, greetings.words[0])]: { box: 1, due: "2020-01-01" },
+      },
+    });
+    const { container } = render(<App />);
+    await expectNoViolations(container, { fragment: false });
+  });
+});
+
+describe("the vocabulary module", () => {
+  it("has an accessible home screen", async () => {
+    const { container } = render(<VocabModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has accessible flashcards, front and back", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VocabModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+    await expectNoViolations(container);
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible quiz, unanswered and answered", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VocabModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: greetings.words[0].en }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible listening round", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VocabModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: "Listen" })[0]);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible end-of-quiz summary", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VocabModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    for (const word of greetings.words) {
+      await user.click(screen.getByRole("button", { name: word.en }));
+      await user.click(screen.getByRole("button", { name: /Next word|See results/ }));
+    }
+    await expectNoViolations(container);
+  });
+});
+
+describe("the grammar module", () => {
+  it("has an accessible home screen", async () => {
+    const { container } = render(<GrammarModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible lesson, conjugation table and all", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<GrammarModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible drill, unanswered and answered", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<GrammarModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: presentAre.drills[0].answer }));
+    await expectNoViolations(container);
+  });
+});
+
+describe("the conversations module", () => {
+  it("has an accessible home screen", async () => {
+    const { container } = render(<ConversationsModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible dialogue, and its recap once it's finished", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ConversationsModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+    await expectNoViolations(container);
+
+    // Answer every turn by taking the first reply offered, until the recap.
+    // A reply button is named by its register followed by the Italian line.
+    for (let i = 0; i < 8 && !screen.queryByRole("button", { name: /Practice again/ }); i++) {
+      const options = screen.queryAllByRole("button", { name: /^(formal|casual) / });
+      if (options.length === 0) break;
+      await user.click(options[0]);
+    }
+    await expectNoViolations(container);
+  });
+});
+
+describe("the stories module", () => {
+  it("has an accessible home screen", async () => {
+    const { container } = render(<StoriesModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible reader, with a translation shown and a gloss open", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<StoriesModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await expectNoViolations(container);
+
+    await user.click(screen.getAllByRole("button", { name: /Show translation/ })[0]);
+    await expectNoViolations(container);
+
+    const glossed = Object.keys(a1Story.paragraphs[0].gloss)[0];
+    await user.click(screen.getAllByRole("button", { name: glossed })[0]);
+    await expectNoViolations(container);
+  });
+
+  it("has accessible comprehension questions and results", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<StoriesModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await user.click(screen.getByRole("button", { name: /Comprehension questions/ }));
+    await expectNoViolations(container);
+
+    for (const question of a1Story.questions) {
+      await user.click(screen.getByRole("button", { name: question.answer }));
+      await user.click(screen.getByRole("button", { name: /See results|Next question/ }));
+    }
+    await expectNoViolations(container);
+  });
+});
+
+describe("the review session", () => {
+  it("has an accessible mixed session and summary", async () => {
+    const word = greetings.words[0];
+    saveProgress({
+      words: { [wordKey(a1Vocab, greetings, word)]: "known" },
+      streak: { count: 1, lastDate: "2026-08-18" },
+      schedule: { [wordKey(a1Vocab, greetings, word)]: { box: 1, due: "2020-01-01" } },
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<ReviewModule onExit={() => {}} />);
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: word.en }));
+    await user.click(screen.getByRole("button", { name: /See results/ }));
+    await expectNoViolations(container);
+  });
+});
+
+// WCAG 3.1.2, Language of Parts: the document is lang="en", so every run of
+// Italian inside it has to say so, or a screen reader pronounces "gli" and
+// "ciao" with English phonetics. There's no axe rule for this — it can't tell
+// which language a string is in — so each module states where its Italian is.
+describe("Italian text is marked as Italian", () => {
+  const italianAncestor = (node) => node.closest('[lang="it"]');
+
+  it("marks the word, the example and the prompt in the vocabulary module", async () => {
+    const user = userEvent.setup();
+    render(<VocabModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    const word = greetings.words[0];
+    expect(italianAncestor(screen.getByText(word.it))).not.toBeNull();
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    expect(italianAncestor(screen.getByText(`"${word.ex}"`))).not.toBeNull();
+    // The English gloss is not Italian, and must not claim to be.
+    expect(italianAncestor(screen.getByText(word.exEn))).toBeNull();
+  });
+
+  it("marks the drill prompt, the options and the conjugation table in grammar", async () => {
+    const user = userEvent.setup();
+    render(<GrammarModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+
+    // A cell of the conjugation table, and an example sentence.
+    expect(italianAncestor(screen.getByText("parlo"))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(`"${presentAre.explanation.examples[0].it}"`))).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /Start drill/ }));
+    const drill = presentAre.drills[0];
+    expect(italianAncestor(screen.getByText(drill.prompt))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(drill.answer))).not.toBeNull();
+    // The English translation of the prompt sits right beside it.
+    expect(italianAncestor(screen.getByText(drill.en))).toBeNull();
+  });
+
+  it("marks both sides of the dialogue in conversations", async () => {
+    const user = userEvent.setup();
+    render(<ConversationsModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    const dialogue = CONVERSATION_LEVELS[0].dialogues[0];
+    expect(italianAncestor(screen.getByText(dialogue.steps[0].them.it))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(dialogue.steps[0].options[0].it))).not.toBeNull();
+  });
+
+  it("marks the story text and the word gloss in stories", async () => {
+    const user = userEvent.setup();
+    render(<StoriesModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+
+    const glossed = Object.keys(a1Story.paragraphs[0].gloss)[0];
+    const word = screen.getAllByRole("button", { name: glossed })[0];
+    expect(italianAncestor(word)).not.toBeNull();
+
+    await user.click(word);
+    // The gloss bar repeats the headword in Italian and its meaning in English.
+    const meaning = a1Story.paragraphs[0].gloss[glossed];
+    expect(italianAncestor(screen.getByText(meaning))).toBeNull();
+  });
+});
+
+describe("keyboard reachability", () => {
+  // Every control the audit scans has to be operable without a mouse. axe
+  // checks names and roles; this checks the other half — that nothing
+  // interactive is left out of the tab order.
+  it("leaves no interactive control out of the tab order", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /Grammar/ }));
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+
+    const controls = screen.getAllByRole("button");
+    for (const control of controls) {
+      control.focus();
+      if (document.activeElement !== control) {
+        throw new Error(`Control is not focusable: ${control.textContent || control.getAttribute("aria-label")}`);
+      }
+    }
+  });
+});

@@ -154,9 +154,9 @@ describe("Lesson", () => {
 });
 
 describe("Drill", () => {
-  // The options are divs with role="button", so they get no keyboard
-  // activation for free — Enter and Space are wired by hand and nothing else
-  // would catch that handler being dropped.
+  // The options are real <button>s, so Enter and Space are the browser's own
+  // activation — these cases pin that they stay real buttons rather than
+  // going back to a div with a hand-wired keydown handler.
   it("answers with the keyboard as well as the pointer", async () => {
     const user = userEvent.setup();
     renderGrammar();

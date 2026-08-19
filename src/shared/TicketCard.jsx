@@ -31,7 +31,9 @@ export default function TicketCard({ level, title, subtitle, children }) {
         }}
       >
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 700 }}>{level.label}</span>
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: 1, opacity: 0.85 }}>LINEA</span>
+        {/* No opacity here: dimming white on the accent fill drops it to
+            4.26:1, under AA for text this small. */}
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: 1 }}>LINEA</span>
       </div>
 
       <div style={{ position: "relative", width: 0, borderLeft: `1.5px dashed ${TOKENS.line}`, margin: "10px 0", flexShrink: 0 }}>

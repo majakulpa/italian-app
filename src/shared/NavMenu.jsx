@@ -38,7 +38,7 @@ export default function NavMenu({ modules, active, onSelect }) {
         aria-expanded={open}
         aria-label="Menu"
         style={{
-          border: `1px solid ${TOKENS.line}`,
+          border: `1px solid ${TOKENS.controlLine}`,
           background: TOKENS.card,
           color: TOKENS.inkSoft,
           borderRadius: "50%",
@@ -98,6 +98,7 @@ function NavItem({ label, icon: Icon, isActive, disabled, onClick }) {
       role="menuitem"
       onClick={onClick}
       disabled={disabled}
+      aria-current={isActive ? "true" : undefined}
       style={{
         display: "flex",
         alignItems: "center",
@@ -123,7 +124,7 @@ function NavItem({ label, icon: Icon, isActive, disabled, onClick }) {
           SOON
         </span>
       )}
-      {isActive && <Check size={14} color={TOKENS.adriaticDeep} />}
+      {isActive && <Check size={14} color={TOKENS.adriaticDeep} aria-hidden="true" />}
     </button>
   );
 }

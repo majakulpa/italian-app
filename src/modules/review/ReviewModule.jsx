@@ -7,6 +7,8 @@ import { shuffle } from "../../shared/shuffle.js";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
+import AnswerMark from "../../shared/AnswerMark.jsx";
+import AnswerStatus from "../../shared/AnswerStatus.jsx";
 
 // The summary and the empty state aren't at any one level — a review mixes
 // them — so they borrow the gold that theme.js reserves for streaks and
@@ -25,6 +27,7 @@ function toQuestion(unit) {
       hint: null,
       options: shuffle([unit.item, ...distractors]).map((w) => w.en),
       answer: unit.item.en,
+      optionsAreItalian: false,
       recap: { primary: unit.item.it, secondary: unit.item.en },
     };
   }
@@ -34,6 +37,7 @@ function toQuestion(unit) {
     hint: unit.item.hint,
     options: shuffle(unit.item.options),
     answer: unit.item.answer,
+    optionsAreItalian: true,
     recap: { primary: unit.item.prompt.replace("___", unit.item.answer), secondary: unit.item.en },
   };
 }
@@ -73,6 +77,7 @@ export default function ReviewModule({ onExit }) {
         secondary={queue.length - correctCount}
         secondaryLabel="to see again"
         missed={missed}
+        missedLang="it"
         backLabel="Back to home"
         onBack={onExit}
       />
@@ -128,7 +133,7 @@ export default function ReviewModule({ onExit }) {
           }}
         >
           <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: 0 }}>
-            <span style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: TOKENS.ink, lineHeight: 1.4 }}>
+            <span lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: TOKENS.ink, lineHeight: 1.4 }}>
               {q.prompt}
             </span>
             {q.speak && <SpeakButton text={q.speak} color={unit.level.accentDeep} size={17} />}
@@ -148,16 +153,16 @@ export default function ReviewModule({ onExit }) {
             const isAnswer = option === q.answer;
             const isPicked = selected === option;
             let bg = TOKENS.card;
-            let border = TOKENS.line;
+            let border = TOKENS.controlLine;
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
                 bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachite;
+                border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
               } else if (isPicked) {
                 bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corallo;
+                border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
               }
             }
@@ -184,13 +189,15 @@ export default function ReviewModule({ onExit }) {
                   width: "100%",
                 }}
               >
-                {option}
-                {selected && isAnswer && <Check size={16} />}
-                {selected && isPicked && !isAnswer && <X size={16} />}
+                <span lang={q.optionsAreItalian ? "it" : undefined}>{option}</span>
+                {selected && isAnswer && <AnswerMark state="correct" />}
+                {selected && isPicked && !isAnswer && <AnswerMark state="incorrect" />}
               </button>
             );
           })}
         </div>
+
+        <AnswerStatus correct={selected === null ? null : selected === q.answer} answer={q.answer} />
 
         {selected && (
           <button

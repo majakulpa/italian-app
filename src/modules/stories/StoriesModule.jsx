@@ -8,6 +8,8 @@ import { tokenize, splitToken, lookupGloss } from "./gloss.js";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
+import AnswerMark from "../../shared/AnswerMark.jsx";
+import AnswerStatus from "../../shared/AnswerStatus.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
@@ -101,7 +103,7 @@ function Paragraph({ paragraph, level, onWordTap }) {
 
   return (
     <div style={{ marginBottom: 26 }}>
-      <p style={{ fontFamily: "'Fraunces', serif", fontSize: 18, lineHeight: 1.75, color: TOKENS.ink, margin: 0 }}>
+      <p lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 18, lineHeight: 1.75, color: TOKENS.ink, margin: 0 }}>
         {pieces.map((piece, i) => {
           const entry = lookupGloss(paragraph.gloss, piece);
           if (!entry) return <React.Fragment key={i}>{piece}</React.Fragment>;
@@ -171,7 +173,7 @@ function GlossBar({ entry, level, onClose }) {
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-            <span style={{ fontFamily: "'Fraunces', serif", fontSize: 19, fontWeight: 600, color: level.accentDeep }}>
+            <span lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 19, fontWeight: 600, color: level.accentDeep }}>
               {entry.word}
             </span>
             <SpeakButton text={entry.word} color={level.accentDeep} size={15} />
@@ -311,16 +313,16 @@ function Questions({ level, story, onBack, onMarkDone }) {
             const isSelected = selected === opt;
             const isAnswer = opt === q.answer;
             let bg = TOKENS.card;
-            let border = TOKENS.line;
+            let border = TOKENS.controlLine;
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
                 bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachite;
+                border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
               } else if (isSelected) {
                 bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corallo;
+                border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
               }
             }
@@ -346,12 +348,14 @@ function Questions({ level, story, onBack, onMarkDone }) {
                 }}
               >
                 {opt}
-                {selected && isAnswer && <Check size={16} style={{ flexShrink: 0 }} />}
-                {selected && isSelected && !isAnswer && <X size={16} style={{ flexShrink: 0 }} />}
+                {selected && isAnswer && <AnswerMark state="correct" />}
+                {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
               </button>
             );
           })}
         </div>
+
+        <AnswerStatus correct={selected === null ? null : selected === q.answer} answer={q.answer} />
 
         {selected && (
           <>

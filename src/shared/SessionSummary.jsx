@@ -14,6 +14,10 @@ export default function SessionSummary({
   secondary,
   secondaryLabel,
   missed,
+  // The bold half of each missed row is Italian in most sessions, but not in
+  // the stories module, where an A1/A2 comprehension answer is in English —
+  // so the caller says, rather than this component assuming (WCAG 3.1.2).
+  missedLang,
   missedHeading = "TO REVIEW",
   backLabel = "Back",
   onBack,
@@ -58,7 +62,7 @@ export default function SessionSummary({
           </p>
           {missed.map((item) => (
             <p key={item.id} style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.ink, margin: "0 0 6px" }}>
-              <strong>{item.primary}</strong> — {item.secondary}
+              <strong lang={missedLang}>{item.primary}</strong> — {item.secondary}
             </p>
           ))}
         </div>

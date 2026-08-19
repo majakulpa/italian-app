@@ -20,7 +20,7 @@ export default function LevelPicker({ levels, active, onSelect }) {
               display: "flex",
               alignItems: "center",
               gap: 8,
-              border: `1.5px solid ${isActive ? lv.accent : TOKENS.line}`,
+              border: `1.5px solid ${isActive ? lv.accentDeep : TOKENS.controlLine}`,
               background: isActive ? tint(lv.accent, 14) : "transparent",
               color: isActive ? lv.accentDeep : TOKENS.inkSoft,
               borderRadius: 999,

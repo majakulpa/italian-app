@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { TOKENS, THEME_STYLE, LEVEL_ACCENTS, tint } from "./theme.js";
+import { parsePalettes, contrastRatio, mix, round, AA_TEXT, AA_NON_TEXT } from "../test/contrast.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
@@ -92,5 +93,101 @@ describe("LEVEL_ACCENTS", () => {
       // the comment in theme.js warns about, so they must not be the same.
       expect(accents.accent).not.toBe(accents.accentDeep);
     }
+  });
+});
+
+// WCAG 2.1 AA, the colour half. axe can't judge contrast in jsdom (no paint,
+// so it returns "incomplete" — see src/test/a11y.js), which would leave the
+// palette unchecked exactly where a change is most likely to break it. These
+// cases do it arithmetically instead, on the hex values THEME_STYLE ships.
+describe("palette contrast (WCAG 2.1 AA)", () => {
+  const palettes = parsePalettes(THEME_STYLE);
+  const MODES = Object.entries(palettes).map(([mode, vars]) => [mode, vars]);
+
+  const SURFACES = ["--color-paper", "--color-paper-deep", "--color-card"];
+  // Every colour the app paints body text, labels or headings in.
+  const TEXT = [
+    "--color-ink",
+    "--color-ink-soft",
+    "--color-adriatic-deep",
+    "--color-corallo-deep",
+    "--color-malachite-deep",
+    "--color-limoncello-deep",
+    "--color-viola-deep",
+    "--color-laguna-deep",
+  ];
+  // The level fills, which carry white text in the ticket stub and the level
+  // picker's roundel. limoncello is deliberately absent: it's a gold used for
+  // streaks and tints, never behind white text.
+  const LEVEL_FILLS = ["--color-adriatic", "--color-corallo", "--color-malachite", "--color-viola", "--color-laguna"];
+
+  it.each(MODES)("%s: every text colour clears 4.5:1 on every surface", (_mode, vars) => {
+    const failures = [];
+    for (const text of TEXT) {
+      for (const surface of SURFACES) {
+        const ratio = contrastRatio(vars[text], vars[surface]);
+        if (ratio < AA_TEXT) failures.push(`${text} on ${surface}: ${round(ratio)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it.each(MODES)("%s: white on a level fill clears 4.5:1", (_mode, vars) => {
+    const failures = LEVEL_FILLS.map((fill) => [fill, contrastRatio(vars[fill], "#ffffff")])
+      .filter(([, ratio]) => ratio < AA_TEXT)
+      .map(([fill, ratio]) => `#fff on ${fill}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // The answered-question states paint their text over tint(accent, 12%) and
+  // the flashcard's "I knew it" over tint(malachite, 14%) — a mix, so the
+  // ratio isn't either colour's on its own.
+  it.each(MODES)("%s: feedback text clears 4.5:1 on its tinted background", (_mode, vars) => {
+    const pairs = [
+      ["--color-malachite-deep", "--color-malachite"],
+      ["--color-corallo-deep", "--color-corallo"],
+      ["--color-limoncello-deep", "--color-limoncello"],
+    ];
+    const failures = [];
+    for (const [text, accent] of pairs) {
+      for (const percent of [12, 14, 15]) {
+        const background = mix(vars[accent], vars["--color-card"], percent);
+        const ratio = contrastRatio(vars[text], background);
+        if (ratio < AA_TEXT) failures.push(`${text} on ${percent}% ${accent}: ${round(ratio)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  // 1.4.11: the boundary of a control is what tells you it's a control, so it
+  // needs 3:1 — which is why anything clickable draws with controlLine rather
+  // than the decorative hairline.
+  it.each(MODES)("%s: the control boundary clears 3:1 on every surface", (_mode, vars) => {
+    const failures = SURFACES.map((surface) => [surface, contrastRatio(vars["--color-control-line"], vars[surface])])
+      .filter(([, ratio]) => ratio < AA_NON_TEXT)
+      .map(([surface, ratio]) => `control-line on ${surface}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // An answered option swaps its boundary for the state colour, and the
+  // level picker marks the active level the same way — same job, same 3:1.
+  // These are the *-deep variants precisely because the fill accents only
+  // manage 2.5:1 against the dark card.
+  it.each(MODES)("%s: a state or selection border clears 3:1 on the card", (_mode, vars) => {
+    const failures = [
+      "--color-malachite-deep",
+      "--color-corallo-deep",
+      "--color-limoncello-deep",
+      "--color-adriatic-deep",
+      "--color-viola-deep",
+      "--color-laguna-deep",
+    ]
+      .map((accent) => [accent, contrastRatio(vars[accent], vars["--color-card"])])
+      .filter(([, ratio]) => ratio < AA_NON_TEXT)
+      .map(([accent, ratio]) => `${accent} border on card: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
   });
 });

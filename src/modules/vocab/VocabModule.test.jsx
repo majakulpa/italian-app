@@ -199,7 +199,7 @@ describe("Quiz", () => {
 
     expect(screen.getByText("0 correct")).toBeInTheDocument();
     expect(wrongButton).toHaveStyle({ color: TOKENS.corolloDeep });
-    expect(screen.getByRole("button", { name: word0.en })).toHaveStyle({ color: TOKENS.malachiteDeep });
+    expect(screen.getByRole("button", { name: `${word0.en} correct answer` })).toHaveStyle({ color: TOKENS.malachiteDeep });
   });
 
   it("completes the quiz and lists missed words for review", async () => {

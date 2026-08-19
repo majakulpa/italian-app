@@ -35,7 +35,10 @@ export default defineConfig({
       // Everything the app actually ships. main.jsx is the two-line React
       // mount and src/test/ is the harness itself — neither is app behaviour,
       // and counting them would only ever dilute the number.
-      include: ["src/**"],
+      // Scoped to source files: "src/**" also hands the reporter whatever
+      // else lands in the tree (a stray .DS_Store), which it then tries to
+      // parse as JavaScript.
+      include: ["src/**/*.{js,jsx}"],
       exclude: ["**/*.test.{js,jsx}", "src/test/**", "src/main.jsx"],
       // The suite is at 100% on all four metrics; this keeps it there rather
       // than letting it quietly erode. Lower a threshold deliberately if a

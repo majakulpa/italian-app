@@ -7,6 +7,8 @@ import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import { speakItalian, isSpeechSupported } from "../../shared/speech.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
+import AnswerMark from "../../shared/AnswerMark.jsx";
+import AnswerStatus from "../../shared/AnswerStatus.jsx";
 import Postmark from "../../shared/Postmark.jsx";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
@@ -178,7 +180,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
           onClick={() => setFlipped((f) => !f)}
           style={{
             background: TOKENS.card,
-            border: `1px solid ${TOKENS.line}`,
+            border: `1px solid ${TOKENS.controlLine}`,
             borderRadius: 18,
             padding: "32px 26px 22px",
             cursor: "pointer",
@@ -195,7 +197,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingRight: 50 }}>
             {!flipped ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+                <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
                   {word.it}
                 </h2>
                 <SpeakButton text={word.it} color={level.accentDeep} size={20} />
@@ -207,7 +209,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
                 </h2>
                 <PerforatedDivider />
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: "0 0 4px" }}>
+                  <p lang="it" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: "0 0 4px" }}>
                     "{word.ex}"
                   </p>
                   <SpeakButton text={word.ex} color={TOKENS.inkSoft} size={15} style={{ marginBottom: 4 }} />
@@ -219,9 +221,31 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
             )}
           </div>
 
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "14px 0 0", display: "flex", alignItems: "center", gap: 5 }}>
+          {/* The card flips on a tap anywhere, but that tap target is a
+              plain div — this is the same action as a real button, so it can
+              be reached and fired from the keyboard too. */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlipped((f) => !f);
+            }}
+            aria-expanded={flipped}
+            style={{
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 12,
+              color: TOKENS.inkSoft,
+              margin: "14px 0 0",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
             <RotateCw size={13} /> {flipped ? "Tap to see the word again" : "Tap to reveal translation"}
-          </p>
+          </button>
         </div>
 
         {flipped && (
@@ -230,7 +254,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
               onClick={() => advance(false)}
               style={{
                 flex: 1,
-                border: `1.5px solid ${TOKENS.corallo}`,
+                border: `1.5px solid ${TOKENS.corolloDeep}`,
                 background: "transparent",
                 color: TOKENS.corolloDeep,
                 borderRadius: 10,
@@ -251,7 +275,7 @@ function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
               onClick={() => advance(true)}
               style={{
                 flex: 1,
-                border: `1.5px solid ${TOKENS.malachite}`,
+                border: `1.5px solid ${TOKENS.malachiteDeep}`,
                 background: tint(TOKENS.malachite, 14),
                 color: TOKENS.malachiteDeep,
                 borderRadius: 10,
@@ -330,6 +354,7 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((w) => ({ id: w.it, primary: w.it, secondary: w.en }))}
+        missedLang="it"
         missedHeading="WORDS TO REVIEW"
         backLabel="Back to categories"
         onBack={onBack}
@@ -350,7 +375,7 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
           What does this mean?
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 22 }}>
-          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+          <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
             {q.word.it}
           </h2>
           <SpeakButton text={q.word.it} color={level.accentDeep} size={19} />
@@ -361,16 +386,16 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
             const isSelected = selected && selected.it === opt.it;
             const isAnswer = opt.it === q.word.it;
             let bg = TOKENS.card;
-            let border = TOKENS.line;
+            let border = TOKENS.controlLine;
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
                 bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachite;
+                border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
               } else if (isSelected) {
                 bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corallo;
+                border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
               }
             }
@@ -395,12 +420,14 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
                 }}
               >
                 {opt.en}
-                {selected && isAnswer && <Check size={16} />}
-                {selected && isSelected && !isAnswer && <X size={16} />}
+                {selected && isAnswer && <AnswerMark state="correct" />}
+                {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
               </button>
             );
           })}
         </div>
+
+        <AnswerStatus correct={selected === null ? null : selected.it === q.word.it} answer={q.word.en} />
 
         {selected && (
           <button
@@ -483,6 +510,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((w) => ({ id: w.it, primary: w.it, secondary: w.en }))}
+        missedLang="it"
         missedHeading="WORDS TO REVIEW"
         backLabel="Back to categories"
         onBack={onBack}
@@ -528,7 +556,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
         </p>
 
         {selected && (
-          <p style={{ textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 18, color: TOKENS.ink, margin: "-8px 0 20px" }}>
+          <p lang="it" style={{ textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 18, color: TOKENS.ink, margin: "-8px 0 20px" }}>
             {q.word.it}
           </p>
         )}
@@ -538,16 +566,16 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
             const isSelected = selected && selected.it === opt.it;
             const isAnswer = opt.it === q.word.it;
             let bg = TOKENS.card;
-            let border = TOKENS.line;
+            let border = TOKENS.controlLine;
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
                 bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachite;
+                border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
               } else if (isSelected) {
                 bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corallo;
+                border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
               }
             }
@@ -572,12 +600,14 @@ function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) 
                 }}
               >
                 {opt.en}
-                {selected && isAnswer && <Check size={16} />}
-                {selected && isSelected && !isAnswer && <X size={16} />}
+                {selected && isAnswer && <AnswerMark state="correct" />}
+                {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
               </button>
             );
           })}
         </div>
+
+        <AnswerStatus correct={selected === null ? null : selected.it === q.word.it} answer={q.word.en} />
 
         {selected && (
           <button

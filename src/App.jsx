@@ -32,15 +32,19 @@ export default function App() {
         <NavMenu modules={MODULES} active={active} onSelect={setActive} />
         <ThemeToggle />
       </div>
-      {!active && <Dashboard modules={MODULES} onSelect={setActive} />}
-      {/* Review is a route, not a module: it has no content or progress of
-          its own, so it stays out of MODULES (and out of the NavMenu that
-          renders from it) and is reached from the dashboard's Review band. */}
-      {active === "review" && <ReviewModule onExit={() => setActive(null)} />}
-      {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
-      {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}
-      {active === "conversations" && <ConversationsModule onExit={() => setActive(null)} />}
-      {active === "stories" && <StoriesModule onExit={() => setActive(null)} />}
+      {/* One landmark around whatever screen is showing, so a screen-reader
+          user can jump straight to the content past the fixed nav buttons. */}
+      <main>
+        {!active && <Dashboard modules={MODULES} onSelect={setActive} />}
+        {/* Review is a route, not a module: it has no content or progress of
+            its own, so it stays out of MODULES (and out of the NavMenu that
+            renders from it) and is reached from the dashboard's Review band. */}
+        {active === "review" && <ReviewModule onExit={() => setActive(null)} />}
+        {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
+        {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}
+        {active === "conversations" && <ConversationsModule onExit={() => setActive(null)} />}
+        {active === "stories" && <StoriesModule onExit={() => setActive(null)} />}
+      </main>
     </div>
   );
 }

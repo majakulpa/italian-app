@@ -13,7 +13,7 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       style={{
-        border: `1px solid ${TOKENS.line}`,
+        border: `1px solid ${TOKENS.controlLine}`,
         background: TOKENS.card,
         color: TOKENS.inkSoft,
         borderRadius: "50%",

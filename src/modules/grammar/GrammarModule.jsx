@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, BookOpen, ChevronRight, Check, X } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
 import { loadProgress, saveProgress, touchStreak, drillKey, topicKnownCount } from "../../shared/storage.js";
@@ -9,6 +9,8 @@ import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
+import AnswerMark from "../../shared/AnswerMark.jsx";
+import AnswerStatus from "../../shared/AnswerStatus.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import StreakChip from "../../shared/StreakChip.jsx";
@@ -68,7 +70,7 @@ function ExplanationTable({ table }) {
                     verticalAlign: "bottom",
                   }}
                 >
-                  {it}
+                  <span lang="it">{it}</span>
                   <CellGloss en={en} />
                 </th>
               );
@@ -94,7 +96,7 @@ function ExplanationTable({ table }) {
                       verticalAlign: "top",
                     }}
                   >
-                    {it}
+                    <span lang="it">{it}</span>
                     <CellGloss en={en} />
                   </td>
                 );
@@ -229,7 +231,7 @@ function Lesson({ level, topic, onBack, onPick, onStudySession }) {
             {explanation.examples.map((ex, i) => (
               <div key={i} style={{ marginBottom: i === explanation.examples.length - 1 ? 0 : 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: 0 }}>
+                  <p lang="it" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: TOKENS.ink, margin: 0 }}>
                     "{ex.it}"
                   </p>
                   <SpeakButton text={ex.it} color={level.accentDeep} size={15} />
@@ -326,6 +328,7 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((item) => ({ id: item.id, primary: fillBlank(item), secondary: item.hint }))}
+        missedLang="it"
         missedHeading="TO REVIEW"
         backLabel="Back to topics"
         onBack={onBack}
@@ -346,7 +349,7 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
           Complete the sentence
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: 0, letterSpacing: 0.2 }}>
+          <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: 0, letterSpacing: 0.2 }}>
             {q.item.prompt}
           </h2>
           <SpeakButton text={fillBlank(q.item)} color={level.accentDeep} size={17} />
@@ -368,54 +371,65 @@ function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
             const isSelected = selected === opt;
             const isAnswer = opt === q.item.answer;
             let bg = TOKENS.card;
-            let border = TOKENS.line;
+            let border = TOKENS.controlLine;
             let color = TOKENS.ink;
             if (selected) {
               if (isAnswer) {
                 bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachite;
+                border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
               } else if (isSelected) {
                 bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corallo;
+                border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
               }
             }
+            // The option is a real <button> rather than a div with
+            // role="button", and the speaker sits beside it rather than
+            // inside it: a control nested in a control is announced
+            // unpredictably, and Enter/Space come free on the real thing.
             return (
               <div
                 key={opt}
-                role="button"
-                tabIndex={0}
-                onClick={() => choose(opt)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") choose(opt);
-                }}
                 style={{
-                  textAlign: "left",
                   border: `1.5px solid ${border}`,
                   background: bg,
-                  color,
                   borderRadius: 10,
-                  padding: "13px 16px",
-                  fontFamily: "'Fraunces', serif",
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: selected ? "default" : "pointer",
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  paddingRight: 10,
                 }}
               >
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {opt}
-                  <SpeakButton text={opt} color={color} size={15} />
-                </span>
-                {selected && isAnswer && <Check size={16} />}
-                {selected && isSelected && !isAnswer && <X size={16} />}
+                <button
+                  onClick={() => choose(opt)}
+                  style={{
+                    flex: 1,
+                    textAlign: "left",
+                    border: "none",
+                    background: "transparent",
+                    color,
+                    padding: "13px 6px 13px 16px",
+                    fontFamily: "'Fraunces', serif",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: selected ? "default" : "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span lang="it">{opt}</span>
+                  {selected && isAnswer && <AnswerMark state="correct" />}
+                  {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
+                </button>
+                <SpeakButton text={opt} color={color} size={15} />
               </div>
             );
           })}
         </div>
+
+        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} />
 
         {selected && (
           <button

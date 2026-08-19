@@ -116,7 +116,7 @@ describe("ReviewModule", () => {
     await user.click(wrongButton);
 
     expect(wrongButton).toHaveStyle({ color: TOKENS.corolloDeep });
-    expect(screen.getByRole("button", { name: word.en })).toHaveStyle({ color: TOKENS.malachiteDeep });
+    expect(screen.getByRole("button", { name: `${word.en} correct answer` })).toHaveStyle({ color: TOKENS.malachiteDeep });
   });
 
   it("scores a correct answer green and leaves the rest neutral", async () => {

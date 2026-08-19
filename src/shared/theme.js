@@ -29,6 +29,7 @@ export const THEME_STYLE = `
   --color-paper-deep: #EAE3D2;
   --color-card: #FFFDF8;
   --color-line: #D9D0BA;
+  --color-control-line: #8C7B5A;
 
   --color-adriatic: #2A63E4;
   --color-adriatic-deep: #1E3E8C;
@@ -37,7 +38,7 @@ export const THEME_STYLE = `
   --color-malachite: #187A48;
   --color-malachite-deep: #0F4C2C;
   --color-limoncello: #E8A93B;
-  --color-limoncello-deep: #8A5E12;
+  --color-limoncello-deep: #855A10;
 
   --color-viola: #6B3FA0;
   --color-viola-deep: #46246F;
@@ -53,6 +54,7 @@ export const THEME_STYLE = `
     --color-paper-deep: #1C2C38;
     --color-card: #1F313D;
     --color-line: #3A4E5A;
+    --color-control-line: #7C8F9B;
 
     --color-adriatic-deep: #8FB4FF;
     --color-corallo-deep: #FF9B9B;
@@ -70,6 +72,7 @@ export const THEME_STYLE = `
   --color-paper-deep: #1C2C38;
   --color-card: #1F313D;
   --color-line: #3A4E5A;
+  --color-control-line: #7C8F9B;
 
   --color-adriatic-deep: #8FB4FF;
   --color-corallo-deep: #FF9B9B;
@@ -86,11 +89,12 @@ export const THEME_STYLE = `
   --color-paper-deep: #EAE3D2;
   --color-card: #FFFDF8;
   --color-line: #D9D0BA;
+  --color-control-line: #8C7B5A;
 
   --color-adriatic-deep: #1E3E8C;
   --color-corallo-deep: #7A1F1F;
   --color-malachite-deep: #0F4C2C;
-  --color-limoncello-deep: #8A5E12;
+  --color-limoncello-deep: #855A10;
   --color-viola-deep: #46246F;
   --color-laguna-deep: #0A4A55;
 }
@@ -103,6 +107,11 @@ export const TOKENS = {
   paperDeep: "var(--color-paper-deep)",
   card: "var(--color-card)",
   line: "var(--color-line)",
+  // Hairline for anything decorative — dividers, table rules, the edge of a
+  // card. `controlLine` is its counterpart for anything you can click: the
+  // boundary of a control has to clear 3:1 against the surfaces around it
+  // (WCAG 1.4.11), which a hairline this pale never could.
+  controlLine: "var(--color-control-line)",
 
   // Metro line blue — A1, and the "formal" tone color.
   adriatic: "var(--color-adriatic)",
@@ -122,6 +131,22 @@ export const TOKENS = {
   // Metro line teal — C1.
   laguna: "var(--color-laguna)",
   lagunaDeep: "var(--color-laguna-deep)",
+};
+
+// Text that only a screen reader gets: the tick on a correct answer, the
+// "completed" state of a card, the live announcement after an answer. Clipped
+// to a 1px box rather than display:none or visibility:hidden, both of which
+// take it out of the accessibility tree along with the layout.
+export const SR_ONLY = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
 };
 
 // A tinted, theme-reactive background for a given accent token — e.g. the

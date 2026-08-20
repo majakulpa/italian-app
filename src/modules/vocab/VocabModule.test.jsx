@@ -77,6 +77,24 @@ describe("Flashcards", () => {
     expect(screen.getByText(`"${firstWord.ex}"`)).toBeInTheDocument();
   });
 
+  // Flipping has two ways in, and they're for different people: the prompt
+  // line is a real button so the card can be turned from the keyboard, and
+  // the whole card stays tappable because that's the gesture a phone invites.
+  // Dropping either one is a regression only this pair of cases would catch.
+  it("flips the card when the card itself is tapped, not just the prompt", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    const firstWord = greetings.words[0];
+    // Anywhere on the card surface — here the word itself, which is plain
+    // text inside it rather than a control of its own.
+    await user.click(screen.getByText(firstWord.it));
+
+    expect(screen.getByText(firstWord.en)).toBeInTheDocument();
+    expect(screen.getByText(`"${firstWord.ex}"`)).toBeInTheDocument();
+  });
+
   // The other half of the flashcard grade: "Still learning" has to advance
   // without counting as known, and — since the scheduler went in — has to
   // leave the word in box 1 so it comes straight back in the next review.

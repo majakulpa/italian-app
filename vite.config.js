@@ -31,6 +31,12 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.js"],
     globals: true,
+    // Vitest's 5s default is measured against a single render; several tests
+    // here click through a whole deck (24-odd userEvent interactions), and
+    // under v8 coverage instrumentation that alone runs past five seconds.
+    // The suite's own tests take ~10s in total — this ceiling only exists to
+    // stop a slow machine reporting a timeout as a failure.
+    testTimeout: 20000,
     coverage: {
       // Everything the app actually ships. main.jsx is the two-line React
       // mount and src/test/ is the harness itself — neither is app behaviour,

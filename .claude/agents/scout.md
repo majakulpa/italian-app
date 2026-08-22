@@ -72,12 +72,38 @@ with `AnswerMark` / `AnswerStatus`), and clickable boundaries use
 
 - Work on a branch, never commit to `main` directly.
 - One logical change per commit, matching the existing history style.
-- **Do not `git push` and do not open a PR unless the invocation explicitly
-  told you to.** The repo owner approves every push. When you're done
-  without that instruction, stop at the commit and report the exact
-  `git push` / `gh pr create` commands you would have run.
-- Never merge. `.github/CODEOWNERS` means only the human owner's approval
-  counts; bot reviews are advisory.
+- **Always finish by pushing the branch and opening a PR against `main`.**
+  `git push -u origin <branch>` then `gh pr create --base main`. Don't stop
+  at the commit and don't wait to be asked — a change nobody can review
+  isn't done. Report the PR URL.
+- Never merge, and never push to `main`. `.github/CODEOWNERS` means only the
+  human owner's approval counts; bot reviews are advisory. Opening the PR is
+  yours; merging it is theirs.
+
+## Every PR carries its testing evidence
+
+A PR body without evidence is a claim. The body must show:
+
+- **The failing test.** What broke it, and the actual red output — the
+  assertion and the line. You broke the code deliberately (step 6 above), so
+  paste what you saw.
+- **`npm test`.** Real counts: files, tests, pass/fail.
+- **`npm run test:coverage`** for anything that added lines — the four
+  percentages, and confirmation the 100% gate held.
+- **Browser verification** for anything touching the UI, at 375x812.
+
+### Screenshots
+
+If the change alters what's on screen, the PR needs **before and after
+screenshots** — before from `main`, after from the branch, same viewport,
+same screen state. Capture them with Playwright against the dev server,
+write them to disk as PNGs, and embed them in the PR body.
+
+If the rendered pixels are genuinely unchanged — a screen-reader-only fix,
+an ARIA correction, a refactor — **say so explicitly and prove it another
+way**: the before/after accessibility tree, the DOM diff, the computed
+styles. Two identical screenshots are not evidence of anything. Never claim
+visual parity you didn't check in a browser.
 
 ## When the reviewer pushes back
 

@@ -212,12 +212,20 @@ What that translated into in the app:
   The story reader's word gloss has the same problem and the same answer:
   tapping a glossed word opens a bar at the bottom of the screen without
   moving focus, so `GlossAnnouncer` in `StoriesModule.jsx` reads the word
-  and its meaning out. Both live regions stay mounted and start empty — a
-  region that appears with its text already inside it has no change of
-  contents to report, and screen readers pass over it in silence, so
-  mounting the region together with the message is the one thing that
-  doesn't work. The visible gloss bar is a labelled `group` and carries no
-  live role, so the gloss is announced once rather than twice.
+  and its meaning out. Both go through `shared/LiveStatus.jsx`, which is
+  where the rule lives: the region stays mounted and starts empty. A region
+  that appears with its text already inside has no change of contents to
+  report, and whether it gets announced at all then depends on the
+  AT/browser pair — some announce it, some say nothing. Mounted first and
+  filled later is the only shape that works everywhere. The visible gloss
+  bar is a labelled `group` and carries no live role, so the gloss is
+  announced once rather than twice.
+
+  Only the gloss headword is marked `lang="it"`. Roughly a fifth of the
+  meanings in `data/stories.js` end in a parenthetical, and those mix
+  Italian lemmas (`arrives (arrivare)`) with English clarifications
+  (`window (of a vehicle)`), so the markup can't tell them apart — marking
+  the lemma needs its own data field first.
 - Italian inside an English page is marked `lang="it"` — words, examples,
   conjugation tables, drill prompts and options, dialogue lines, story
   paragraphs and glosses (SC 3.1.2). Without it a screen reader reads *gli*

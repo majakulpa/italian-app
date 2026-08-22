@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, ChevronRight, Check, Clock, X } from "lucide-react";
-import { TOKENS, tint, SR_ONLY } from "../../shared/theme.js";
+import { TOKENS, tint } from "../../shared/theme.js";
 import { STORY_LEVELS } from "../../data/stories.js";
 import { loadProgress, saveProgress, touchStreak, markWord, storyKey, isStoryDone } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
+import LiveStatus from "../../shared/LiveStatus.jsx";
 import { tokenize, splitToken, lookupGloss } from "./gloss.js";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
@@ -202,17 +203,23 @@ function GlossBar({ entry, level, onClose }) {
 // Tapping a glossed word deliberately leaves focus in the paragraph — the
 // bar opens at the bottom of the screen and nothing moves. That silence is
 // fine for a sighted reader, who sees the bar appear, and useless for a
-// screen reader unless the gloss is spoken (WCAG 2.1 SC 4.1.3).
+// screen reader unless the gloss is spoken (WCAG 2.1 SC 4.1.3). LiveStatus
+// holds the region open for the reader's whole lifetime so this has a change
+// of contents to announce; see the contract there.
 //
-// Announcing it takes a live region that was already on the page before the
-// gloss arrived: assistive tech registers the region when it enters the
-// accessibility tree, and a region inserted with its content already inside
-// has nothing to report as changed. So this stays mounted for the whole
-// reader and is empty until there's a word to read out — the same shape as
-// shared/AnswerStatus.jsx, for the same reason.
+// Only the headword is marked as Italian. The meaning is English prose, but
+// about one gloss in five ends in a parenthetical — and those are a mix of
+// Italian infinitives ("arrives (arrivare)") and English clarifications
+// ("window (of a vehicle)"), so nothing here can tell them apart. Marking
+// the lemma properly means splitting it into its own field in
+// src/data/stories.js, which is a data change, not a markup one.
+//
+// Re-tapping the same word, or another word with the same meaning, produces
+// identical contents: React mutates nothing and the region stays quiet.
+// Nothing moves on screen either, so both halves are consistent.
 function GlossAnnouncer({ entry }) {
   return (
-    <p role="status" aria-live="polite" style={SR_ONLY}>
+    <LiveStatus>
       {entry ? (
         <>
           <span lang="it">{entry.word}</span>
@@ -221,7 +228,7 @@ function GlossAnnouncer({ entry }) {
       ) : (
         ""
       )}
-    </p>
+    </LiveStatus>
   );
 }
 

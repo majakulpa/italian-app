@@ -142,10 +142,15 @@ describe("Reader", () => {
     expect(live).toHaveTextContent(`valigia: ${roma.paragraphs[0].gloss.valigia}`);
 
     // Closing empties it rather than tearing it down, so the next gloss is
-    // still a change of contents in a region that's already registered.
+    // still a change of contents in a region that's already registered —
+    // which only means anything if the reopen actually speaks, so check it.
     await user.click(screen.getByRole("button", { name: "Close gloss" }));
     expect(screen.getByRole("status")).toBe(live);
     expect(live).toHaveTextContent("");
+
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+    expect(screen.getByRole("status")).toBe(live);
+    expect(live).toHaveTextContent(`arriva: ${roma.paragraphs[0].gloss.arriva}`);
   });
 
   // The headword is Italian and its meaning is English; the announcement
@@ -158,12 +163,16 @@ describe("Reader", () => {
     await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
 
     const live = screen.getByRole("status");
-    expect(live.closest('[lang="it"]')).toBeNull();
-
     const italian = live.querySelector('[lang="it"]');
-    expect(italian).toHaveTextContent("arriva");
-    // The English meaning sits outside that span, not inside it.
-    expect(italian.textContent).not.toContain(roma.paragraphs[0].gloss.arriva);
+    expect(italian.textContent).toBe("arriva");
+
+    // The meaning follows the headword as a plain-text sibling inside the
+    // same region, so the announcement reads as one phrase with only the
+    // Italian word marked. Asserting the sibling rather than merely "the
+    // meaning isn't inside the span" is what makes this fail against the
+    // visible bar, where the headword's sibling is the speak button and the
+    // meaning lives in a separate paragraph.
+    expect(italian.nextSibling.textContent).toBe(`: ${roma.paragraphs[0].gloss.arriva}`);
   });
 
   it("closes the gloss bar", async () => {

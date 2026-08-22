@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, ChevronRight, Check, Clock, X } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import { TOKENS, tint, SR_ONLY } from "../../shared/theme.js";
 import { STORY_LEVELS } from "../../data/stories.js";
 import { loadProgress, saveProgress, touchStreak, markWord, storyKey, isStoryDone } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
@@ -147,6 +147,10 @@ function Paragraph({ paragraph, level, onWordTap }) {
 
 // Sits at the bottom of the viewport so tapping a word never reflows the
 // text you're reading. Tapping another word swaps its contents in place.
+//
+// This is the visual half only. The spoken half is GlossAnnouncer below —
+// this bar is mounted and unmounted with the gloss, which is exactly what a
+// live region must not do, so it can't be one itself.
 function GlossBar({ entry, level, onClose }) {
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -158,7 +162,8 @@ function GlossBar({ entry, level, onClose }) {
 
   return (
     <div
-      role="status"
+      role="group"
+      aria-label="Word gloss"
       style={{
         position: "fixed",
         left: 0,
@@ -191,6 +196,32 @@ function GlossBar({ entry, level, onClose }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// Tapping a glossed word deliberately leaves focus in the paragraph — the
+// bar opens at the bottom of the screen and nothing moves. That silence is
+// fine for a sighted reader, who sees the bar appear, and useless for a
+// screen reader unless the gloss is spoken (WCAG 2.1 SC 4.1.3).
+//
+// Announcing it takes a live region that was already on the page before the
+// gloss arrived: assistive tech registers the region when it enters the
+// accessibility tree, and a region inserted with its content already inside
+// has nothing to report as changed. So this stays mounted for the whole
+// reader and is empty until there's a word to read out — the same shape as
+// shared/AnswerStatus.jsx, for the same reason.
+function GlossAnnouncer({ entry }) {
+  return (
+    <p role="status" aria-live="polite" style={SR_ONLY}>
+      {entry ? (
+        <>
+          <span lang="it">{entry.word}</span>
+          {`: ${entry.meaning}`}
+        </>
+      ) : (
+        ""
+      )}
+    </p>
   );
 }
 
@@ -238,6 +269,7 @@ function Reader({ level, story, onBack, onStartQuestions }) {
         </button>
       </div>
 
+      <GlossAnnouncer entry={glossEntry} />
       {glossEntry && <GlossBar entry={glossEntry} level={level} onClose={() => setGlossEntry(null)} />}
     </div>
   );

@@ -209,6 +209,15 @@ What that translated into in the app:
   tick/cross with visually hidden text, and `shared/AnswerStatus.jsx` is a
   `role="status"` live region that speaks the result after each answer
   (SC 4.1.3), since answering repaints the options without moving focus.
+  The story reader's word gloss has the same problem and the same answer:
+  tapping a glossed word opens a bar at the bottom of the screen without
+  moving focus, so `GlossAnnouncer` in `StoriesModule.jsx` reads the word
+  and its meaning out. Both live regions stay mounted and start empty — a
+  region that appears with its text already inside it has no change of
+  contents to report, and screen readers pass over it in silence, so
+  mounting the region together with the message is the one thing that
+  doesn't work. The visible gloss bar is a labelled `group` and carries no
+  live role, so the gloss is announced once rather than twice.
 - Italian inside an English page is marked `lang="it"` — words, examples,
   conjugation tables, drill prompts and options, dialogue lines, story
   paragraphs and glosses (SC 3.1.2). Without it a screen reader reads *gli*

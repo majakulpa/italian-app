@@ -68,6 +68,12 @@ describe("StoriesHome", () => {
   });
 });
 
+// The visible gloss bar, which comes and goes with the gloss. The live
+// region that announces it is a separate, permanently mounted node (see
+// GlossAnnouncer), so a role="status" query would no longer tell these
+// tests anything about whether the bar is on screen.
+const glossBar = () => screen.queryByRole("group", { name: "Word gloss" });
+
 describe("Reader", () => {
   it("renders the whole story with English hidden", async () => {
     const user = userEvent.setup();
@@ -99,13 +105,74 @@ describe("Reader", () => {
     await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
 
     await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
-    const bar = screen.getByRole("status");
+    const bar = glossBar();
     expect(within(bar).getByText("arriva")).toBeInTheDocument();
     expect(within(bar).getByText(roma.paragraphs[0].gloss.arriva)).toBeInTheDocument();
 
     await user.click(screen.getAllByRole("button", { name: "valigia" })[0]);
-    expect(within(screen.getByRole("status")).getByText(roma.paragraphs[0].gloss.valigia)).toBeInTheDocument();
+    expect(within(glossBar()).getByText(roma.paragraphs[0].gloss.valigia)).toBeInTheDocument();
     expect(screen.queryByText(roma.paragraphs[0].gloss.arriva)).not.toBeInTheDocument();
+  });
+
+  // A gloss opens without moving focus and without reflowing the page, so
+  // the live region is the only thing that tells a screen-reader user it
+  // happened (WCAG 2.1 SC 4.1.3). For it to be announced at all it has to
+  // have been on the page, and empty, before the word was tapped — a region
+  // that arrives already carrying its text has no content change to report,
+  // and real screen readers stay silent. Hence the node-identity check:
+  // going back to mounting the region with the gloss would pass every other
+  // assertion here and still say nothing out loud.
+  it("announces a gloss through a live region that was already on the page", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+
+    const live = screen.getByRole("status");
+    expect(live).toHaveTextContent("");
+    expect(glossBar()).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+
+    expect(screen.getByRole("status")).toBe(live);
+    expect(live).toHaveTextContent(`arriva: ${roma.paragraphs[0].gloss.arriva}`);
+
+    // Swapping words is a content change in the same region, so it speaks again.
+    await user.click(screen.getAllByRole("button", { name: "valigia" })[0]);
+    expect(screen.getByRole("status")).toBe(live);
+    expect(live).toHaveTextContent(`valigia: ${roma.paragraphs[0].gloss.valigia}`);
+
+    // Closing empties it rather than tearing it down, so the next gloss is
+    // still a change of contents in a region that's already registered —
+    // which only means anything if the reopen actually speaks, so check it.
+    await user.click(screen.getByRole("button", { name: "Close gloss" }));
+    expect(screen.getByRole("status")).toBe(live);
+    expect(live).toHaveTextContent("");
+
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+    expect(screen.getByRole("status")).toBe(live);
+    expect(live).toHaveTextContent(`arriva: ${roma.paragraphs[0].gloss.arriva}`);
+  });
+
+  // The headword is Italian and its meaning is English; the announcement
+  // carries both, so the Italian half has to be marked (SC 3.1.2) or a
+  // screen reader reads "valigia" with English phonetics.
+  it("marks only the Italian half of the announcement as Italian", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
+
+    const live = screen.getByRole("status");
+    const italian = live.querySelector('[lang="it"]');
+    expect(italian.textContent).toBe("arriva");
+
+    // The meaning follows the headword as a plain-text sibling inside the
+    // same region, so the announcement reads as one phrase with only the
+    // Italian word marked. Asserting the sibling rather than merely "the
+    // meaning isn't inside the span" is what makes this fail against the
+    // visible bar, where the headword's sibling is the speak button and the
+    // meaning lives in a separate paragraph.
+    expect(italian.nextSibling.textContent).toBe(`: ${roma.paragraphs[0].gloss.arriva}`);
   });
 
   it("closes the gloss bar", async () => {
@@ -115,7 +182,7 @@ describe("Reader", () => {
 
     await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
     await user.click(screen.getByRole("button", { name: "Close gloss" }));
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(glossBar()).not.toBeInTheDocument();
   });
 
   // The gloss bar is a fixed overlay at the bottom of the viewport, so
@@ -126,10 +193,10 @@ describe("Reader", () => {
     await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
 
     await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(glossBar()).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(glossBar()).not.toBeInTheDocument();
   });
 
   it("keeps the gloss bar open on any other key", async () => {
@@ -140,7 +207,7 @@ describe("Reader", () => {
     await user.click(screen.getAllByRole("button", { name: "arriva" })[0]);
     await user.keyboard("a");
 
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(glossBar()).toBeInTheDocument();
   });
 
   it("reads a paragraph aloud without opening a gloss", async () => {
@@ -152,7 +219,7 @@ describe("Reader", () => {
 
     await user.click(screen.getByRole("button", { name: `Pronounce "${roma.paragraphs[0].it}"` }));
     expect(speakSpy).toHaveBeenCalledWith(roma.paragraphs[0].it);
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(glossBar()).not.toBeInTheDocument();
   });
 });
 

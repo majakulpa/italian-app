@@ -33,14 +33,14 @@ install icon appears in the address bar.
 ```
 src/
   App.jsx                        App shell + the MODULES registry
-  Dashboard.jsx                  Home screen: streak, overall %, level ladder, module cards, review band
+  Dashboard.jsx                  Home screen: overall %, level ladder, module cards, review band
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
-    storage.js                   localStorage progress/streak persistence, shared by all modules
+    storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
     stats.js                     Reads that progress back across all four modules (dashboard counts)
     srs.js                       Leitner scheduler: boxes, due dates, the review queue
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
-    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx, StreakChip.jsx
+    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
@@ -67,7 +67,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-Vitest + React Testing Library. Covers persistence/streak logic, the Leitner
+Vitest + React Testing Library. Covers persistence and migration, the Leitner
 scheduler, speech support detection, the module UI flows, and the data itself
 — every gloss key has to occur in its own paragraph, every comprehension
 answer has to be one of its options, and the four data files have to agree on
@@ -134,8 +134,8 @@ categories/dialogues/stories each, and four grammar topics.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
-- **Dashboard** — the home screen reads that progress back: the day streak and
-  an overall completion figure in a header band, an A1–C1 ladder of roundels
+- **Dashboard** — the home screen reads that progress back: an overall
+  completion figure in a header band, an A1–C1 ladder of roundels
   showing how far each level is, and a progress bar with a real count on each
   module card. Read-only, and it re-reads storage every time you come back from
   a module. `src/shared/stats.js` is the only place that counts: its registry
@@ -157,7 +157,12 @@ categories/dialogues/stories each, and four grammar topics.
   items simply count as due the first time round.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
   mastered words, drill items, completed dialogues and finished stories,
-  plus a daily study streak, shared across modules.
+  shared across modules. The blob is versioned and migrated on load, so a
+  save written by an older build keeps everything it earned.
+
+  There is deliberately no streak. Hours logged and days-in-a-row correlated
+  with almost nothing in the evidence review, and a metric that rewards
+  showing up rather than knowing more is a metric this app shouldn't optimise.
 - **Pronunciation** — speaker icons next to Italian text play it aloud via
   the browser's `SpeechSynthesis` API.
 - **Accessibility** — the app targets WCAG 2.1 AA, and the suite holds it

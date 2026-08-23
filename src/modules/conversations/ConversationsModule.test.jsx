@@ -25,21 +25,6 @@ function renderConversations() {
 }
 
 describe("ConversationsHome", () => {
-  // See the note in GrammarModule.test.jsx: the streak badge is shared markup,
-  // so each module home has to check that it still renders its own.
-  it("shows a running streak, and nothing before one has started", () => {
-    const { unmount } = renderConversations();
-    expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
-    unmount();
-
-    localStorage.setItem(
-      "italiano:progress:v1",
-      JSON.stringify({ words: {}, streak: { count: 5, lastDate: "2026-08-17" } }),
-    );
-    renderConversations();
-    expect(screen.getByText(/^5 days$/)).toBeInTheDocument();
-  });
-
   it("shows A1 dialogues by default with taglines", () => {
     renderConversations();
     expect(screen.getByText("Conversations")).toBeInTheDocument();

@@ -4,9 +4,8 @@ import { TOKENS, tint } from "./shared/theme.js";
 import { loadProgress } from "./shared/storage.js";
 import { moduleStats, overallStats, levelLadder } from "./shared/stats.js";
 import { dueCount } from "./shared/srs.js";
-import StreakChip from "./shared/StreakChip.jsx";
 
-// The home screen: streak and overall completion, an A1–C1 ladder, and the
+// The home screen: overall completion, an A1–C1 ladder, and the
 // module list with real counts on each card. Read-only — it reports progress,
 // it never writes any.
 //
@@ -41,7 +40,6 @@ export default function Dashboard({ modules, onSelect }) {
           minHeight: 20,
         }}
       >
-        <StreakChip progress={progress} />
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0, marginLeft: "auto" }}>
           <span style={{ fontWeight: 700, color: TOKENS.ink }}>{overall.pct}%</span> complete
         </p>

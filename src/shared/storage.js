@@ -1,7 +1,7 @@
 // localStorage-backed progress tracking, shared by every module.
-// Progress shape: { words: { "<level>:<category>:<it>": "known" | "learning" },
-//                    schedule: { "<same key>": { box, due, last } },
-//                    streak: { count: number, lastDate: "YYYY-MM-DD" | null } }
+// Progress shape (version 2): { version: 2,
+//                    words: { "<level>:<category>:<it>": "met" | "learning" | "known" },
+//                    schedule: { "<same key>": { box, due, last } } }
 //
 // `words` and `schedule` are deliberately two maps rather than one map of
 // richer objects: the status string is read by every module home and every
@@ -9,23 +9,38 @@
 // people have already built up. A blob saved before the scheduler existed
 // simply has no `schedule` key and loads with an empty one — see srs.js for
 // what an item with no schedule entry means.
+//
+// The five-state word model the dashboard and coverage figure are built on is
+// *derived* from these two maps rather than stored beside them — see
+// wordState.js. Storing a state as well as a box would let the two disagree.
 
+// The localStorage slot. Deliberately still "v1": it is where a learner's
+// progress lives, and renaming it would strand every existing save. The shape
+// inside it is versioned by the `version` field, migrated on load.
 const KEY = "italiano:progress:v1";
 
-const EMPTY_PROGRESS = { words: {}, schedule: {}, streak: { count: 0, lastDate: null } };
+export const PROGRESS_VERSION = 2;
+
+const EMPTY_PROGRESS = { version: PROGRESS_VERSION, words: {}, schedule: {} };
+
+// Read an older blob forward. v1 carried a `streak: { count, lastDate }`
+// counter; v2 drops it, because days-logged turned out to correlate with
+// almost nothing (see the evidence review) and nothing in the app reads it any
+// more. Everything a v1 user actually earned lives in `words` and `schedule`,
+// and both come through untouched — the migration only stops copying a key.
+function migrate(parsed) {
+  return {
+    version: PROGRESS_VERSION,
+    words: parsed.words || {},
+    schedule: parsed.schedule || {},
+  };
+}
 
 export function loadProgress() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return EMPTY_PROGRESS;
-    const parsed = JSON.parse(raw);
-    return {
-      ...EMPTY_PROGRESS,
-      ...parsed,
-      words: parsed.words || {},
-      schedule: parsed.schedule || {},
-      streak: parsed.streak || EMPTY_PROGRESS.streak,
-    };
+    return migrate(JSON.parse(raw));
   } catch {
     return EMPTY_PROGRESS;
   }
@@ -51,25 +66,11 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function daysBetween(a, b) {
-  return Math.round((new Date(b) - new Date(a)) / 86400000);
-}
-
 // "2026-08-17" + 3 -> "2026-08-20". Anchored to UTC midnight, like todayISO()
 // above, so the two always agree on what day it is — and so a DST boundary
 // can't turn +1 day into 23 hours and round back to the same date.
 export function addDaysISO(iso, days) {
   return new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
-}
-
-// Call once per study session (entering flashcards or quiz) to update the streak.
-export function touchStreak(progress) {
-  const today = todayISO();
-  const { count, lastDate } = progress.streak;
-  if (lastDate === today) return progress;
-  const gap = lastDate ? daysBetween(lastDate, today) : null;
-  const nextCount = gap === 1 ? count + 1 : 1;
-  return { ...progress, streak: { count: nextCount, lastDate: today } };
 }
 
 export function categoryKnownCount(progress, level, category) {

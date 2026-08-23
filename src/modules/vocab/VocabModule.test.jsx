@@ -48,9 +48,8 @@ describe("VocabHome", () => {
     expect(screen.queryByText("Greetings & basics")).not.toBeInTheDocument();
   });
 
-  it("has no streak badge and no known-count until something is studied", () => {
+  it("shows a category's full word count before anything is studied", () => {
     renderVocab();
-    expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
     expect(screen.getAllByText(`${greetings.words.length} parole`).length).toBeGreaterThan(0);
   });
 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ChevronRight, Check, X } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
-import { loadProgress, saveProgress, touchStreak, todayISO } from "../../shared/storage.js";
+import { loadProgress, saveProgress, todayISO } from "../../shared/storage.js";
 import { dueItems, reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import TopBar from "../../shared/TopBar.jsx";
@@ -57,11 +57,6 @@ export default function ReviewModule({ onExit }) {
   useEffect(() => {
     saveProgress(progress);
   }, [progress]);
-
-  useEffect(() => {
-    if (queue.length > 0) setProgress((p) => touchStreak(p));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   if (queue.length === 0) {
     return <NothingDue onExit={onExit} />;

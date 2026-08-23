@@ -11,8 +11,8 @@ import { wordKey, storyKey } from "./shared/storage.js";
 // localStorage before rendering — the same approach App.test.jsx uses.
 const KEY = "italiano:progress:v1";
 
-function seed(words = {}, streak = { count: 0, lastDate: null }, schedule = {}) {
-  localStorage.setItem(KEY, JSON.stringify({ words, schedule, streak }));
+function seed(words = {}, schedule = {}) {
+  localStorage.setItem(KEY, JSON.stringify({ words, schedule }));
 }
 
 // Counted straight from the data file rather than through stats.js, so this
@@ -47,17 +47,6 @@ describe("Dashboard", () => {
 
     expect(screen.getByRole("button", { name: /Vocabulary/ })).toHaveTextContent(`1 / ${TOTAL_WORDS}`);
     expect(screen.getByRole("button", { name: /Stories/ })).toHaveTextContent("0 /");
-  });
-
-  it("shows the streak when one is running and hides it otherwise", () => {
-    seed({}, { count: 3, lastDate: "2026-08-17" });
-    const { unmount } = render(<Dashboard modules={MODULES} onSelect={() => {}} />);
-    expect(screen.getByText(/3 days/)).toBeInTheDocument();
-
-    unmount();
-    localStorage.clear();
-    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
-    expect(screen.queryByText(/days/)).not.toBeInTheDocument();
   });
 
   it("draws the whole A1–C1 ladder, empty on a fresh account", () => {
@@ -107,11 +96,7 @@ describe("Dashboard", () => {
   });
 
   it("counts only what is actually due, not everything studied", () => {
-    seed(
-      { [A1_WORD]: "known" },
-      { count: 0, lastDate: null },
-      { [A1_WORD]: { box: 4, due: "2099-01-01", last: "2026-08-17" } },
-    );
+    seed({ [A1_WORD]: "known" }, { [A1_WORD]: { box: 4, due: "2099-01-01", last: "2026-08-17" } });
     render(<Dashboard modules={MODULES} onSelect={() => {}} />);
 
     expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();

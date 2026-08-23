@@ -10,7 +10,7 @@ import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
 // Pure arithmetic over a seeded progress object — no rendering, so these can
 // pin the exact numbers the dashboard will show.
 
-const EMPTY = { words: {}, streak: { count: 0, lastDate: null } };
+const EMPTY = { words: {} };
 
 function withWords(entries) {
   return { ...EMPTY, words: entries };

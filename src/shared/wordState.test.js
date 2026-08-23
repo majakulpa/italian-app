@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WORD_STATES, stateForBox, wordState, countStates } from "./wordState.js";
+import { WORD_STATES, stateForBox, wordState, strongest } from "./wordState.js";
 import { reviewItem, BOX_DAYS, MAX_BOX } from "./srs.js";
 
 const KEY = "A1:greetings:ciao";
@@ -79,24 +79,17 @@ describe("wordState over a real run of answers", () => {
   });
 });
 
-describe("countStates", () => {
-  it("tallies a run of keys with every state present, zeroes included", () => {
-    const progress = {
-      ...EMPTY,
-      words: { a: "met", b: "known", c: "known" },
-      schedule: { b: { box: 5 }, c: { box: 3 } },
-    };
-
-    expect(countStates(progress, ["a", "b", "c", "d"])).toEqual({
-      unseen: 1,
-      met: 1,
-      learning: 0,
-      known: 1,
-      solid: 1,
-    });
+describe("strongest", () => {
+  it("keeps whichever state is further along", () => {
+    expect(strongest("met", "known")).toBe("known");
+    expect(strongest("known", "met")).toBe("known");
   });
 
-  it("counts nothing for no keys", () => {
-    expect(countStates(EMPTY, [])).toEqual({ unseen: 0, met: 0, learning: 0, known: 0, solid: 0 });
+  it("treats no state at all as weaker than any state", () => {
+    expect(strongest(undefined, "met")).toBe("met");
+  });
+
+  it("returns the second when the two are equal, which is the same answer", () => {
+    expect(strongest("learning", "learning")).toBe("learning");
   });
 });

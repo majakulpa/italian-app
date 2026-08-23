@@ -45,11 +45,10 @@ export function wordState(progress, key) {
   return STATUS_STATE[progress.words[key]] ?? "unseen";
 }
 
-// Tallies a run of keys into { unseen, met, learning, known, solid }. Every
-// state is present with a zero rather than absent, so a caller can render the
-// full legend without guarding each lookup.
-export function countStates(progress, keys) {
-  const counts = Object.fromEntries(WORD_STATES.map((s) => [s, 0]));
-  for (const key of keys) counts[wordState(progress, key)] += 1;
-  return counts;
+// Which of two states is the stronger evidence, treating "no state at all" as
+// weaker than any of them. The same word can turn up in more than one deck,
+// and studying it in one place must not be undone by having ignored it in
+// another — coverage.js folds duplicate lemmas together with this.
+export function strongest(a, b) {
+  return WORD_STATES.indexOf(a) > WORD_STATES.indexOf(b) ? a : b;
 }

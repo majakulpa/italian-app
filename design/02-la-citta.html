@@ -456,6 +456,63 @@ footer{border-top:3px solid var(--line);background:var(--surf);padding:2.6rem 0;
   first thing you see. Locked districts show a padlock and say what opens them. Each district owns
   its colour from here onward.</p></div>
 
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>GIORNO 1</span></div>
+    <div class="ph-body">
+      <div class="row"><h1 class="h">Ciao, Maja 👋</h1><span class="pill">livello 1</span></div>
+      <div class="c" style="gap:4px">
+        <div class="row"><span class="k">Copertura</span><span class="pill">62 parole</span></div>
+        <div class="row"><span class="big" style="font-size:28px">3,1%</span>
+          <span class="sm">di<br>italiano<br>vero</span></div>
+        <div class="mtr"><i style="width:3%;background:#00A87C"></i></div>
+      </div>
+      <svg viewBox="0 0 200 172" style="width:100%;height:auto;border:2.5px solid #141024;border-radius:14px;background:#FFEBD3;box-shadow:3px 3px 0 #141024">
+        <path d="M30 148 L36 104 L92 118 L92 60" stroke="#C9C2E0" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/>
+        <path d="M92 118 L148 92 L150 40" stroke="#C9C2E0" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/>
+        <path d="M92 118 L152 144" stroke="#C9C2E0" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/>
+        <g stroke="#141024" stroke-width="3">
+          <circle cx="30" cy="148" r="13" fill="#FF4D3D"/>
+          <circle cx="36" cy="104" r="10" fill="#C9C2E0"/>
+          <circle cx="92" cy="118" r="10" fill="#C9C2E0"/>
+          <circle cx="92" cy="60" r="11" fill="#6B2FE8"/>
+          <circle cx="148" cy="92" r="10" fill="#C9C2E0"/>
+          <circle cx="150" cy="40" r="10" fill="#C9C2E0"/>
+          <circle cx="152" cy="144" r="10" fill="#C9C2E0"/>
+        </g>
+        <g font-family="Avenir Next, sans-serif" font-size="7.5" font-weight="700" fill="#141024">
+          <text x="30" y="152" text-anchor="middle" font-size="11">▶</text>
+          <text x="30" y="170" text-anchor="middle">Il Bar</text>
+          <text x="36" y="108" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="36" y="126" text-anchor="middle" fill="#5B5470">Mercato</text>
+          <text x="92" y="122" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="92" y="139" text-anchor="middle" fill="#5B5470">Piazza</text>
+          <text x="92" y="64" text-anchor="middle" font-size="10" fill="#fff">✎</text>
+          <text x="92" y="42" text-anchor="middle">L'Officina</text>
+          <text x="148" y="96" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="148" y="113" text-anchor="middle" fill="#5B5470">Stazione</text>
+          <text x="150" y="44" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="150" y="22" text-anchor="middle" fill="#5B5470">Farmacia</text>
+          <text x="152" y="148" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="152" y="165" text-anchor="middle" fill="#5B5470">Cinema</text>
+        </g>
+      </svg>
+      <div class="c tom">
+        <div class="row"><span class="h2">Il Bar</span><span class="pill">scena 1</span></div>
+        <p class="sm" style="opacity:.9">Ordinare un caffè. Ti servono 9 parole — ne sai già 4.</p>
+      </div>
+      <div class="c flat">
+        <p class="sm"><b>🔒 Il Cinema</b> si apre a <b>600 parole solide</b>. Sotto quella soglia
+        non riesco a scriverti una storia che tu capisca davvero.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn tom">Vai al Bar →</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>01b · Giorno 1</b>What a real beginner sees. Only Il Bar and L'Officina are
+  open; everything else states its condition. Il Cinema is locked for a measured reason, not for
+  pacing — see below.</p></div>
+
   <div class="ph-wrap" id="scene"><div class="ph alt"><div class="ph-scr">
     <div class="ph-bar"><span>9:41</span><span>IL MERCATO</span></div>
     <div class="ph-body">
@@ -815,6 +872,35 @@ footer{border-top:3px solid var(--line);background:var(--surf);padding:2.6rem 0;
   <p>The Italian in screen 14 is <strong>not invented for the mockup</strong>. It's the opening of
   <code>B_constr_1.txt</code> from the experiment, which measured 99.6% coverage against the
   600-word lexicon with zero grammar-stage violations.</p>
+
+  <h3>When it opens — and why that number</h3>
+  <p>Il Cinema is the <strong>last</strong> district to unlock, and the threshold isn't a pacing
+  guess. It comes straight out of the sweep in section 01.</p>
+
+  <div class="tsc"><table>
+    <caption>Coverage of constrained Italian, by how many words the learner knows</caption>
+    <thead><tr><th class="n">Words known</th><th class="n">Best achievable coverage</th><th>Readable?</th></tr></thead>
+    <tbody>
+      <tr><td class="n">400</td><td class="n bad">90.1%</td><td>No — roughly 1 unknown word in 10. That's decoding, not reading.</td></tr>
+      <tr><td class="n">600</td><td class="n good">97.2%</td><td>Yes — comfortably past Nation's 95% floor.</td></tr>
+      <tr><td class="n">1 000</td><td class="n good">98.5%</td><td>Yes, with room to introduce new words on purpose.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Below about 600 known words there simply isn't enough vocabulary to build a story out of.
+  The generator would either write nonsense or lean on words you don't have &mdash; and a story
+  you have to decode word-by-word kills the one thing the serial is for, which is wanting to know
+  what happens next.</p>
+
+  <div class="warn">
+    <span class="tag">The unlock condition</span>
+    <p><strong>600 solid words</strong> — not merely met, but survived a spacing interval — plus
+    <strong>two districts finished</strong>. The word count makes the story possible; the districts
+    make sure you've spoken Italian out loud before you're asked to read a page of it.</p>
+    <p>That's roughly 25&ndash;35 hours in. Until then Il Cinema shows on the map with a padlock
+    and a live counter — <span class="it">mancano 538 parole</span> — because a visible locked
+    door you're walking toward beats a door you didn't know was there.</p>
+  </div>
 </section>
 </div></div>
 
@@ -845,9 +931,9 @@ footer{border-top:3px solid var(--line);background:var(--surf);padding:2.6rem 0;
     </div>
     <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
   </div></div>
-  <p class="ph-cap"><b>13 · Episode hub</b>The readability figure is the hook: the app tells you
-  before you start that this sits at 96% of words you know. Nothing is ever released below 95% —
-  that threshold is a promise, not a target.</p></div>
+  <p class="ph-cap"><b>13 · Episode hub</b>This is the district as it looks <em>after</em> the
+  600-word gate, around 25–35 hours in. The readability figure is the hook: nothing is ever
+  released below 95%, and that threshold is a promise rather than a target.</p></div>
 
   <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr" style="background:#FDFBF6">
     <div class="ph-bar"><span>9:41</span><span>EP 7 · 1/4</span></div>

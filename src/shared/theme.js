@@ -122,7 +122,7 @@ export const TOKENS = {
   // Metro line green — B1, and quiz/drill "correct" feedback.
   malachite: "var(--color-malachite)",
   malachiteDeep: "var(--color-malachite-deep)",
-  // Gold — casual tone, streaks, celebratory accents. Not a level color.
+  // Gold — casual tone, review prompts, celebratory accents. Not a level color.
   limoncello: "var(--color-limoncello)",
   limoncelloDeep: "var(--color-limoncello-deep)",
   // Metro line purple — B2.

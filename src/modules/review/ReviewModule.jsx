@@ -11,7 +11,7 @@ import AnswerMark from "../../shared/AnswerMark.jsx";
 import AnswerStatus from "../../shared/AnswerStatus.jsx";
 
 // The summary and the empty state aren't at any one level — a review mixes
-// them — so they borrow the gold that theme.js reserves for streaks and
+// them — so they borrow the gold that theme.js reserves for prompts and
 // celebration rather than pretending to be A1 or C1.
 const GOLD = { label: "SRS", accent: TOKENS.limoncello, accentDeep: TOKENS.limoncelloDeep };
 

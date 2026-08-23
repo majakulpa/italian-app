@@ -118,7 +118,7 @@ describe("palette contrast (WCAG 2.1 AA)", () => {
   ];
   // The level fills, which carry white text in the ticket stub and the level
   // picker's roundel. limoncello is deliberately absent: it's a gold used for
-  // streaks and tints, never behind white text.
+  // the review band and tints, never behind white text.
   const LEVEL_FILLS = ["--color-adriatic", "--color-corallo", "--color-malachite", "--color-viola", "--color-laguna"];
 
   it.each(MODES)("%s: every text colour clears 4.5:1 on every surface", (_mode, vars) => {

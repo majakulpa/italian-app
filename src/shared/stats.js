@@ -108,17 +108,6 @@ export function levelStats(progress, levelId) {
   };
 }
 
-// The single headline figure on the dashboard, averaged the same way.
-export function overallStats(progress) {
-  const perModule = MODULE_STATS.map((mod) => moduleStats(progress, mod.id));
-
-  return {
-    done: perModule.reduce((sum, t) => sum + t.done, 0),
-    total: perModule.reduce((sum, t) => sum + t.total, 0),
-    pct: averagePct(perModule),
-  };
-}
-
 // The level ladder the dashboard draws, in ladder order. Derived from the
 // vocab levels rather than a hardcoded list — levels.test.js already
 // guarantees all four modules offer the same ids in the same order, and this

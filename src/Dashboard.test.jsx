@@ -6,6 +6,9 @@ import { MODULES } from "./App.jsx";
 import { LEVELS } from "./data/vocab.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { wordKey, storyKey } from "./shared/storage.js";
+import { reviewItem } from "./shared/srs.js";
+import { coverage } from "./shared/coverage.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET } from "./data/fondamentale.js";
 
 // The dashboard reads storage once on mount, so every test seeds
 // localStorage before rendering — the same approach App.test.jsx uses.
@@ -29,16 +32,66 @@ const A1_WORD = (() => {
   return wordKey(level, level.categories[0], level.categories[0].words[0]);
 })();
 
+// A vocab word that is also in the fondamentale list, so studying it moves
+// the coverage figure. Found rather than hardcoded: which of the 120 vocab
+// words overlap the lexicon changes as the lexicon grows past 300.
+const LEXICON_WORD = (() => {
+  const lemmas = new Set(FONDAMENTALE.map((e) => e.it.replace(/^(il|lo|la|i|gli|le) /, "")));
+  for (const level of LEVELS) {
+    for (const category of level.categories) {
+      const word = category.words.find((w) => lemmas.has(w.it));
+      if (word) return { key: wordKey(level, category, word), word };
+    }
+  }
+  throw new Error("no vocab word overlaps the fondamentale list");
+})();
+
+// Right five times running puts an item in the top Leitner box, which is what
+// "solid" means. Seeded through reviewItem so the box and the status agree
+// exactly as they would after five real sessions.
+function seedSolid(key) {
+  let progress = { words: {}, schedule: {} };
+  for (let i = 0; i < 5; i += 1) progress = reviewItem(progress, key, true, "2026-08-23");
+  localStorage.setItem(KEY, JSON.stringify(progress));
+  return progress;
+}
+
 beforeEach(() => {
   localStorage.clear();
 });
 
 describe("Dashboard", () => {
-  it("shows a fresh account as nothing done", () => {
+  it("shows a fresh account as no coverage and no solid words", () => {
     render(<Dashboard modules={MODULES} onSelect={() => {}} />);
 
-    expect(screen.getByText(/complete/, { selector: "p" })).toHaveTextContent("0% complete");
+    expect(screen.getByText(/of everyday Italian/)).toHaveTextContent("0% of everyday Italian");
+    expect(screen.getByText(/solid$/)).toHaveTextContent(`0 / ${FONDAMENTALE_TARGET} solid`);
     expect(screen.getByRole("button", { name: /Vocabulary/ })).toHaveTextContent(`0 / ${TOTAL_WORDS}`);
+  });
+
+  // The headline the streak and the "% complete" figure were replaced with.
+  // It has to be the frequency-weighted number, not a word count, so the test
+  // reads the expected value out of coverage.js rather than hardcoding a
+  // percentage that would drift the moment the lexicon grows.
+  it("shows the coverage figure and the solid-word count once a word is solid", () => {
+    const progress = seedSolid(LEXICON_WORD.key);
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    const expected = coverage(progress);
+    expect(expected.pct).toBeGreaterThan(0);
+    expect(screen.getByText(/of everyday Italian/)).toHaveTextContent(`${expected.pct}% of everyday Italian`);
+    expect(screen.getByText(/solid$/)).toHaveTextContent(`1 / ${FONDAMENTALE_TARGET} solid`);
+  });
+
+  // A word answered right once sits in box 2 — learning, not known — so it
+  // must not show up as coverage. This is the invariant that stops the
+  // headline overstating what someone can actually read.
+  it("leaves coverage at zero for a word answered right only once", () => {
+    localStorage.setItem(KEY, JSON.stringify(reviewItem({ words: {}, schedule: {} }, LEXICON_WORD.key, true, "2026-08-23")));
+    render(<Dashboard modules={MODULES} onSelect={() => {}} />);
+
+    expect(screen.getByText(/of everyday Italian/)).toHaveTextContent("0% of everyday Italian");
+    expect(screen.getByText(/solid$/)).toHaveTextContent(`0 / ${FONDAMENTALE_TARGET} solid`);
   });
 
   it("counts a known word on the Vocabulary card only", () => {

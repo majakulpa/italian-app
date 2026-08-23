@@ -33,17 +33,20 @@ install icon appears in the address bar.
 ```
 src/
   App.jsx                        App shell + the MODULES registry
-  Dashboard.jsx                  Home screen: overall %, level ladder, module cards, review band
+  Dashboard.jsx                  Home screen: coverage + solid words, level ladder, module cards, review band
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
     storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
     stats.js                     Reads that progress back across all four modules (dashboard counts)
     srs.js                       Leitner scheduler: boxes, due dates, the review queue
+    wordState.js                 The five word states (unseen/met/learning/known/solid), derived from the boxes
+    coverage.js                  Frequency-weighted share of running Italian the learner would know
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
+    fondamentale.js              De Mauro's base vocabulary in rank order, with English + Polish glosses
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
@@ -134,13 +137,29 @@ categories/dialogues/stories each, and four grammar topics.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
-- **Dashboard** — the home screen reads that progress back: an overall
-  completion figure in a header band, an A1–C1 ladder of roundels
+- **Coverage** — the headline figure, and the one number the app wants you to
+  care about: what share of running Italian you could now follow.
+  `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency
+  order with English *and* Polish glosses (300 of a 2,000 target so far);
+  `src/shared/coverage.js` weights each word by 1/rank, Zipf-style, normalised
+  so the whole 2,000 comes to 86% of running text. That weighting is the whole
+  point — counted flat, memorising the back half of the list would claim half
+  of Italian; weighted, it claims about a tenth, which is the truth. A word
+  counts once it is `known` or `solid`, meaning Leitner box 3 or above.
+  `coverageBands` splits the reservoir into ten bands of 200 for the screen
+  that will draw it.
+- **Word states** — a word is `unseen`, `met` (glossed in input, never
+  recalled), `learning` (boxes 1–2), `known` (boxes 3–4) or `solid` (the top
+  box). All five are derived from the Leitner box in `src/shared/wordState.js`,
+  never stored: `srs.js` writes the box and the status together, so a stored
+  state would just be the first copy to go stale.
+- **Dashboard** — the home screen reads that progress back: coverage and the
+  solid-word count in a header band, an A1–C1 ladder of roundels
   showing how far each level is, and a progress bar with a real count on each
   module card. Read-only, and it re-reads storage every time you come back from
   a module. `src/shared/stats.js` is the only place that counts: its registry
   reuses the same key builders the modules write with, so the dashboard can't
-  drift from what a module considers done. The overall and per-level
+  drift from what a module considers done. The per-level
   percentages average the four modules rather than pooling every unit —
   otherwise vocabulary's 120 words would swamp the other three.
 - **Spaced repetition** — a five-box Leitner scheduler over vocabulary and

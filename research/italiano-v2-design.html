@@ -1,0 +1,1159 @@
+<title>Italiano — La Città</title>
+<style>
+/* ============================================================
+   ONE SYSTEM, EVERY SCREEN.
+   Gelato colours pushed to neon; chunky ink borders; hard offset
+   shadows. Consistency comes from four rules applied everywhere:
+   3px ink border · 18px radius · 4px hard shadow · flat fills.
+   ============================================================ */
+:root{
+  --tomato:#FF4D3D; --tomato-text:#C4200F; --lemon:#FFD23F; --pistachio:#00D9A3;
+  --grape:#6B2FE8;  --azzurro:#2BB3FF; --bubble:#FF7BC8;
+  --ink:#141024; --ink-2:#413A5C; --muted:#6E668C;
+  --cream:#FFF6E9; --cream-2:#FFEBD3; --card:#FFFFFF;
+  --line:var(--ink); --page:#FFF6E9; --surf:#FFFFFF; --surf-2:#FFEBD3;
+  --shadow:4px 4px 0 var(--ink);
+  --shadow-sm:3px 3px 0 var(--ink);
+  --disp:Futura,"Avenir Next","Century Gothic",system-ui,sans-serif;
+  --ui:"Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --measure:37rem; --g:clamp(1rem,3.5vw,2.25rem);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#F3EFFF; --ink-2:#CFC6EA; --muted:#9C93BD;
+    --page:#131024; --surf:#1E1936; --surf-2:#2A2350; --card:#1E1936;
+    --line:#4A3F7A;
+    --shadow:4px 4px 0 #0A0816; --shadow-sm:3px 3px 0 #0A0816;
+    --tomato-text:#FF8878;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#F3EFFF; --ink-2:#CFC6EA; --muted:#9C93BD;
+  --page:#131024; --surf:#1E1936; --surf-2:#2A2350; --card:#1E1936;
+  --line:#4A3F7A;
+  --shadow:4px 4px 0 #0A0816; --shadow-sm:3px 3px 0 #0A0816;
+  --tomato-text:#FF8878;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--ui);
+  font-size:clamp(1rem,.4vw + .93rem,1.07rem);line-height:1.58;text-rendering:optimizeLegibility}
+::selection{background:var(--lemon);color:#141024}
+a{color:inherit;text-underline-offset:.16em;text-decoration-thickness:2px;text-decoration-color:var(--tomato)}
+:focus-visible{outline:3px solid var(--grape);outline-offset:3px;border-radius:6px}
+.wrap{max-width:80rem;margin:0 auto;padding:0 var(--g)}
+.col{max-width:var(--measure);margin-inline:auto}
+h1,h2,h3,h4{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;margin:0}
+h1{font-size:clamp(2.6rem,8vw,5rem);line-height:.95;letter-spacing:-.035em;text-wrap:balance}
+h2{font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.02;margin-bottom:.5rem;text-wrap:balance}
+h3{font-family:var(--ui);font-size:.72rem;font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin:2.8rem 0 .9rem}
+h4{font-size:1.15rem;margin:1.8rem 0 .5rem}
+p{margin:0 0 1rem;text-wrap:pretty}
+strong{font-weight:700}
+ul,ol{margin:0 0 1rem;padding-left:1.25em}
+li{margin-bottom:.5rem}
+li::marker{color:var(--tomato-text)}
+code{font-family:var(--mono);font-size:.85em;background:var(--surf-2);padding:.12em .38em;
+  border-radius:5px;border:1.5px solid var(--line)}
+.it{font-style:italic}
+.pl{font-style:italic;color:var(--grape)}
+:root:not([data-theme="light"]) .pl{color:var(--bubble)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .pl{color:var(--grape)}}
+
+/* chunky primitives — reused by the doc AND inside every phone screen */
+.blk{background:var(--surf);border:3px solid var(--line);border-radius:18px;
+  box-shadow:var(--shadow);padding:1.3rem 1.45rem;margin:1.6rem 0}
+.tag{display:inline-block;font-family:var(--ui);font-weight:800;font-size:.68rem;
+  letter-spacing:.12em;text-transform:uppercase;padding:.34rem .7rem;border-radius:99px;
+  border:2.5px solid var(--ink);color:#141024}
+.t-tomato{background:var(--tomato)} .t-lemon{background:var(--lemon)}
+.t-pist{background:var(--pistachio)} .t-grape{background:var(--grape);color:#fff}
+.t-azz{background:var(--azzurro)} .t-bub{background:var(--bubble)}
+
+header.mast{border-bottom:3px solid var(--line);background:var(--surf)}
+.mast-in{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:.85rem 0;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.mast-in b{font-family:var(--disp);font-size:1rem;color:var(--ink);letter-spacing:-.01em}
+
+.hero{padding:clamp(3rem,8vw,6rem) 0 2rem}
+.hero h1 em{font-style:normal;color:var(--tomato)}
+.stand{font-size:1.22em;line-height:1.45;color:var(--ink-2);margin:1.2rem 0 1.6rem}
+.kicker{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.4rem}
+section{padding:clamp(2.5rem,6vw,4.5rem) 0}
+.lede{font-size:1.07em;color:var(--ink-2)}
+
+/* verdict / result callouts */
+.verdict{background:var(--pistachio);border:3px solid var(--ink);border-radius:20px;
+  box-shadow:6px 6px 0 var(--ink);padding:1.5rem 1.6rem;margin:2rem 0;color:#0A2119}
+.verdict .tag{background:#0A2119;color:var(--pistachio);border-color:#0A2119}
+.verdict h4{margin:.7rem 0 .5rem;font-size:1.5rem;color:#0A2119}
+.verdict p{color:#123329;margin-bottom:0}
+.warn{background:var(--lemon);border:3px solid var(--ink);border-radius:18px;
+  box-shadow:var(--shadow);padding:1.2rem 1.4rem;margin:1.6rem 0;color:#241C00}
+.warn .tag{background:#241C00;color:var(--lemon);border-color:#241C00}
+.warn p{color:#241C00;margin-bottom:0}
+.warn p+p{margin-top:.7rem}
+
+.tsc{overflow-x:auto;border:3px solid var(--line);border-radius:16px;background:var(--surf);
+  box-shadow:var(--shadow);margin:1.8rem 0}
+table{border-collapse:collapse;width:100%;font-size:.87rem}
+caption{caption-side:top;text-align:left;padding:.9rem 1.1rem .75rem;font-family:var(--mono);
+  font-size:.67rem;color:var(--muted);border-bottom:2.5px solid var(--line)}
+th,td{padding:.65rem 1.1rem;text-align:left;border-bottom:1.5px solid var(--line);vertical-align:top}
+thead th{font-size:.63rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--surf-2);border-bottom:2.5px solid var(--line)}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.good{color:#0A7A55;font-weight:800} .bad{color:#C4200F;font-weight:800}
+:root:not([data-theme="light"]) .good{color:var(--pistachio)}
+:root:not([data-theme="light"]) .bad{color:#FF8878}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]) .good{color:#0A7A55}
+  :root:not([data-theme="dark"]) .bad{color:#C4200F}}
+
+figure{margin:2rem 0}
+figcaption{font-family:var(--mono);font-size:.68rem;color:var(--muted);line-height:1.55;margin-top:.8rem}
+.chartbox{background:var(--surf);border:3px solid var(--line);border-radius:18px;
+  box-shadow:var(--shadow);padding:1.2rem}
+.chartbox svg{display:block;width:100%;height:auto}
+
+/* ============ PHONE MOCKUPS — one system for all ============ */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));
+  gap:2.2rem 1.5rem;margin:2.2rem 0}
+.ph-wrap{display:flex;flex-direction:column;gap:.7rem}
+.ph{border:3px solid var(--ink);border-radius:30px;padding:7px;background:var(--ink);
+  box-shadow:6px 6px 0 var(--grape)}
+.ph.alt{box-shadow:6px 6px 0 var(--tomato)}
+.ph.alt2{box-shadow:6px 6px 0 var(--azzurro)}
+.ph.alt3{box-shadow:6px 6px 0 var(--pistachio)}
+.ph-scr{border-radius:23px;overflow:hidden;min-height:508px;display:flex;flex-direction:column;
+  background:#FFF6E9;color:#141024;font-family:var(--ui);font-size:12px;line-height:1.42}
+.ph-scr.dk{background:#1A1430;color:#F3EFFF}
+.ph-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;
+  font-family:var(--mono);font-size:8.5px;font-weight:600;opacity:.55;flex:none}
+.ph-body{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ph-nav{display:flex;border-top:2.5px solid #141024;background:#FFEBD3;flex:none}
+.ph-scr.dk .ph-nav{background:#241C44;border-color:#4A3F7A}
+.ph-nav i{flex:1;text-align:center;padding:8px 2px;font-style:normal;font-size:8.5px;
+  font-weight:700;opacity:.5;letter-spacing:.02em}
+.ph-nav i.on{opacity:1;background:var(--lemon);color:#141024}
+.ph-cap{font-size:.79rem;line-height:1.45;color:var(--ink-2)}
+.ph-cap b{display:block;font-family:var(--disp);font-weight:700;color:var(--ink);
+  font-size:.94rem;letter-spacing:-.01em;margin-bottom:.15rem}
+
+/* screen-level primitives — identical vocabulary on every screen */
+.k{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;opacity:.55;margin:0}
+.h{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:-.025em;
+  line-height:1.02;margin:0}
+.h2{font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:-.02em;margin:0}
+.tx{margin:0;font-size:11px;line-height:1.45}
+.sm{margin:0;font-size:9.5px;line-height:1.4;opacity:.7}
+.c{background:#fff;border:2.5px solid #141024;border-radius:14px;padding:9px 10px;
+  display:flex;flex-direction:column;gap:6px;box-shadow:3px 3px 0 #141024}
+.ph-scr.dk .c{background:#241C44;border-color:#5B4E96;box-shadow:3px 3px 0 #0A0816}
+.c.flat{box-shadow:none;background:transparent;border-style:dashed}
+.c.tom{background:var(--tomato);color:#2A0A06} .c.lem{background:var(--lemon);color:#241C00}
+.c.pis{background:var(--pistachio);color:#0A2119} .c.gra{background:var(--grape);color:#fff}
+.c.azz{background:var(--azzurro);color:#04213A} .c.bub{background:var(--bubble);color:#33061F}
+.btn{background:var(--grape);color:#fff;border:2.5px solid #141024;border-radius:12px;
+  padding:9px;text-align:center;font-weight:800;font-size:11.5px;box-shadow:3px 3px 0 #141024}
+.btn.tom{background:var(--tomato);color:#2A0A06} .btn.lem{background:var(--lemon);color:#241C00}
+.btn.pis{background:var(--pistachio);color:#0A2119}
+.btn2{background:transparent;border:2.5px solid #141024;border-radius:12px;padding:7px;
+  text-align:center;font-weight:700;font-size:10.5px}
+.ph-scr.dk .btn2{border-color:#5B4E96}
+.pill{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;
+  letter-spacing:.06em;padding:2.5px 7px;border-radius:99px;border:2px solid #141024;
+  text-transform:uppercase;background:#fff}
+.ph-scr.dk .pill{background:#141024;border-color:#5B4E96;color:#F3EFFF}
+.pill.tom{background:var(--tomato)} .pill.lem{background:var(--lemon)}
+.pill.pis{background:var(--pistachio)} .pill.gra{background:var(--grape);color:#fff}
+.pill.azz{background:var(--azzurro)} .pill.bub{background:var(--bubble)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:7px}
+.mtr{height:9px;border-radius:99px;border:2px solid #141024;background:#fff;overflow:hidden;display:flex}
+.ph-scr.dk .mtr{background:#141024;border-color:#5B4E96}
+.mtr i{display:block;height:100%}
+.big{font-family:var(--disp);font-weight:700;font-size:34px;letter-spacing:-.04em;line-height:.9;
+  font-variant-numeric:tabular-nums}
+.lst{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.lst li{display:flex;gap:6px;font-size:10.5px;line-height:1.35;align-items:flex-start;margin:0}
+.dot{flex:none;font-weight:800}
+.serif{font-family:Palatino,"Iowan Old Style",Georgia,serif}
+.cells{display:grid;grid-template-columns:repeat(24,1fr);gap:1.6px}
+.cells i{aspect-ratio:1;border-radius:1.5px;display:block}
+.spread{flex:1}
+
+.toc{border-top:3px solid var(--line);border-bottom:3px solid var(--line);padding:1.5rem 0;margin-top:2rem}
+.toc ol{list-style:none;padding:0;margin:0;display:grid;gap:.55rem 1.6rem;
+  grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))}
+.toc li{display:flex;gap:.6rem;align-items:baseline;margin:0}
+.toc a{text-decoration:none;font-weight:600;font-size:.94rem}
+.toc a:hover{text-decoration:underline}
+.toc .n{font-family:var(--mono);font-size:.66rem;color:var(--tomato-text);font-weight:700}
+footer{border-top:3px solid var(--line);background:var(--surf);padding:2.6rem 0;margin-top:3rem;
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);line-height:1.7}
+@media (prefers-reduced-motion:no-preference){
+  .fade{opacity:0;transform:translateY(.5rem);animation:r .6s cubic-bezier(.2,.7,.3,1) forwards}
+  .fade:nth-child(2){animation-delay:.07s}.fade:nth-child(3){animation-delay:.14s}
+  .fade:nth-child(4){animation-delay:.21s}
+  @keyframes r{to{opacity:1;transform:none}}
+}
+</style>
+
+<header class="mast"><div class="wrap mast-in">
+  <b>Italiano · La Città</b>
+  <span>v2 merged design &middot; 23 Aug 2026</span>
+</div></header>
+
+<div class="wrap"><div class="col">
+
+<div class="hero">
+  <div class="kicker fade">
+    <span class="tag t-tomato">Merged design</span>
+    <span class="tag t-lemon">18 screens</span>
+    <span class="tag t-pist">Generation: tested</span>
+  </div>
+  <h1 class="fade">La <em>Città</em></h1>
+  <p class="stand fade">A city you can walk into, where every district is something you'll actually
+  have to do in Italian — and one of them is a serial you can just about read. One design system,
+  one home screen, no streak anywhere.</p>
+  <p class="fade" style="font-family:var(--mono);font-size:.72rem;color:var(--muted);
+    border-top:3px solid var(--line);padding-top:1rem">
+    Built on <a href="https://claude.ai/code/artifact/ab63d8c1-421b-4bfe-add5-a68a00b480e7">the evidence review</a>
+    and <a href="https://claude.ai/code/artifact/a43f6ede-deec-4636-83ff-14f9528a5aae">three concepts</a>
+    &middot; for one learner: 🇵🇱 L1, 🇬🇧 fluent L2</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><span class="n">01</span><a href="#finding">Does the serial actually work?</a></li>
+    <li><span class="n">02</span><a href="#system">One design system</a></li>
+    <li><span class="n">03</span><a href="#map">La Città — the map</a></li>
+    <li><span class="n">04</span><a href="#scene">Scenes — the task engine</a></li>
+    <li><span class="n">05</span><a href="#officina">L'Officina — words &amp; mappings</a></li>
+    <li><span class="n">06</span><a href="#serie">Il Cinema — the serial</a></li>
+    <li><span class="n">07</span><a href="#casa">Casa — progress, no streaks</a></li>
+    <li><span class="n">08</span><a href="#build">What to build first</a></li>
+  </ol>
+</nav>
+
+<section id="finding">
+  <h2>Does the serial actually&nbsp;work?</h2>
+  <p class="lede">Before designing around it, I tested the assumption I'd flagged as unverified:
+  can a model write 340 words of decent Italian confined to a ~600-word lexicon <em>and</em> to
+  stage-3 grammar? I built the measuring apparatus and ran it, rather than guessing.</p>
+
+  <p>The setup: an Italian lexicon built from frequency data and lemmatised; eight test texts;
+  and a checker that scores each text two ways &mdash; known-word coverage, and grammar-stage
+  violations. Two independent detectors run over every verb, because neither is trustworthy alone.
+  spaCy's Italian model silently mislabels some futures (it tagged <span class="it">andrò</span>
+  as a past tense), while pure suffix rules over-fire on nouns. Every flag got printed and
+  hand-checked.</p>
+
+  <div class="verdict">
+    <span class="tag">The answer</span>
+    <h4>Yes — but only if you generate <em>against</em> the lexicon.</h4>
+    <p>Written freely, my Italian sat at <strong>82% coverage</strong> with a grammar violation
+    every <strong>73 words</strong>. Written against the word list, the same prose hit
+    <strong>97% coverage with zero violations</strong>. One future slipped in at 314 words, and a
+    repair pass removed it in a single edit.</p>
+  </div>
+
+  <div class="tsc"><table>
+    <caption>Eight texts. "Genuine" excludes 4 hand-verified detector false positives.</caption>
+    <thead><tr><th>Condition</th><th class="n">Words</th><th class="n">Coverage</th><th class="n">Stage violations</th></tr></thead>
+    <tbody>
+      <tr><td>Naive prompt — no lexicon given</td><td class="n">882</td><td class="n bad">82.1%</td><td class="n bad">12 &nbsp;(1 per 73 words)</td></tr>
+      <tr><td>Lexicon-constrained, ~280 words</td><td class="n">806</td><td class="n good">97.2%</td><td class="n good">0</td></tr>
+      <tr><td>Lexicon-constrained, 314 words</td><td class="n">314</td><td class="n good">97.5%</td><td class="n bad">1 &nbsp;(<span class="it">saprai</span>)</td></tr>
+      <tr><td>… after one repair edit</td><td class="n">314</td><td class="n good">97.5%</td><td class="n good">0</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The result that actually decides the design</h3>
+  <p>I then measured the same texts against lexicons from 400 up to 3,000 lemmas. This is the
+  finding that matters, and it wasn't what I expected:</p>
+
+  <figure>
+    <div class="chartbox">
+      <svg viewBox="0 0 640 250" role="img" aria-labelledby="cT cD">
+        <title id="cT">Coverage against lexicon size, natural versus constrained Italian</title>
+        <desc id="cD">Naturally written Italian only reaches 95 percent coverage at around 3000
+        lemmas. Text written against the lexicon reaches 95 percent at 600 lemmas and stays near
+        99 percent above that.</desc>
+        <g font-family="ui-monospace, Menlo, monospace" font-size="10" fill="currentColor" opacity=".55">
+          <text x="52" y="24" text-anchor="end">100%</text>
+          <text x="52" y="62" text-anchor="end">95%</text>
+          <text x="52" y="100" text-anchor="end">90%</text>
+          <text x="52" y="176" text-anchor="end">80%</text>
+          <text x="60" y="228" text-anchor="middle">400</text>
+          <text x="164" y="228" text-anchor="middle">600</text>
+          <text x="297" y="228" text-anchor="middle">1000</text>
+          <text x="401" y="228" text-anchor="middle">1500</text>
+          <text x="476" y="228" text-anchor="middle">2000</text>
+          <text x="580" y="228" text-anchor="middle">3000</text>
+          <text x="320" y="245" text-anchor="middle">lexicon size (lemmas, log scale)</text>
+        </g>
+        <line x1="58" y1="20" x2="58" y2="212" stroke="currentColor" stroke-width="2" opacity=".3"/>
+        <line x1="58" y1="212" x2="600" y2="212" stroke="currentColor" stroke-width="2" opacity=".3"/>
+        <line x1="58" y1="58" x2="600" y2="58" stroke="#FF4D3D" stroke-width="2.5" stroke-dasharray="7 5"/>
+        <text x="600" y="53" text-anchor="end" font-family="ui-monospace, monospace" font-size="9.5"
+          font-weight="700" fill="#FF4D3D">Nation's 95% threshold</text>
+        <polyline points="60,95 164,41 297,32 401,26 476,24 580,24" fill="none"
+          stroke="#00D9A3" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="60,191 164,156 297,121 401,99 476,83 580,64" fill="none"
+          stroke="#6B2FE8" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"
+          stroke-dasharray="9 6"/>
+        <g>
+          <circle cx="164" cy="41" r="6" fill="#00D9A3" stroke="#141024" stroke-width="2.5"/>
+          <circle cx="580" cy="64" r="6" fill="#6B2FE8" stroke="#141024" stroke-width="2.5"/>
+        </g>
+        <g font-family="Futura, Avenir Next, sans-serif" font-size="12" font-weight="700">
+          <text x="200" y="38" fill="#00A87C">written against the lexicon</text>
+          <text x="330" y="150" fill="#6B2FE8">written naturally</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Natural Italian narrative needs roughly <b>3,000 lemmas</b> to clear 95%.
+    Constrained writing clears it at <b>600</b> — and is essentially saturated by 1,000.</figcaption>
+  </figure>
+
+  <p>Read that gap carefully, because it inverts the usual assumption. You cannot hand a beginner
+  ordinary Italian and expect it to be comprehensible input &mdash; not at 600 words, not at 2,000,
+  barely at 3,000. But text <em>written against</em> their known words is readable almost
+  immediately. <strong>Generating against the lexicon isn't an optimisation. It is the entire
+  mechanism that makes early reading possible.</strong></p>
+
+  <p>Which settles the design question: <strong>the serial goes in.</strong> It is not a risky
+  bet — it's the only part of the app that can deliver input volume at a beginner's level at all.</p>
+
+  <div class="warn">
+    <span class="tag">Four honest caveats</span>
+    <p><strong>1. I wrote the texts.</strong> The measurement is objective — a program that doesn't
+    know what I intended — but the generation isn't blind. This shows the capability exists; it
+    isn't a benchmark against other models.</p>
+    <p><strong>2. The lexicon is a proxy.</strong> I built it from subtitle frequency data, which
+    is dialogue-skewed and missing everyday concrete nouns: no <span class="it">porta</span> below
+    1,500, and no <span class="it">tavolo</span>, <span class="it">letto</span>,
+    <span class="it">sedia</span> or <span class="it">vestito</span> even at 3,000. I had to write
+    around those gaps, which visibly stiffened the prose.</p>
+    <p><strong>3. That gap is the argument for using the real De Mauro list.</strong> His third
+    tier is <span class="it">alta disponibilità</span> — "highly available" words everyone knows
+    but which are rare in corpora. Tavolo. Letto. Sedia. He solved this exact problem in 1980.
+    Use his list, not a frequency dump.</p>
+    <p><strong>4. Quality drops measurably.</strong> Lexical variety fell from a type–token ratio
+    of 0.53 to 0.44 under constraint. The constrained text is correct and readable, but plainer.
+    A human should still read episode one before you ship it.</p>
+  </div>
+</section>
+
+<section id="system">
+  <h2>One design system</h2>
+  <p class="lede">You asked for consistency and for something funky. Those pull in the same
+  direction if the system is small enough to never break. This one is four rules and six colours,
+  applied to every single surface in the app.</p>
+
+  <div class="blk">
+    <span class="tag t-grape">The four rules</span>
+    <ol style="margin-top:1rem;margin-bottom:0">
+      <li><strong>3px ink border on everything.</strong> Cards, buttons, pills, the phone itself.
+      Nothing floats without an outline.</li>
+      <li><strong>Hard offset shadow, never blurred.</strong> A flat 3&ndash;4px block of ink,
+      down-right. It's what makes the whole thing feel like stickers rather than glass.</li>
+      <li><strong>18px radius, flat fills.</strong> No gradients anywhere. Colour is always a
+      single confident block.</li>
+      <li><strong>Colour carries meaning, not decoration.</strong> Each district owns a hue and
+      keeps it everywhere it appears &mdash; on the map, in its scenes, on its badge.</li>
+    </ol>
+  </div>
+
+  <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin:1.6rem 0">
+    <span class="tag t-tomato">Il Bar &middot; #FF4D3D</span>
+    <span class="tag t-lemon">Il Mercato &middot; #FFD23F</span>
+    <span class="tag t-azz">La Stazione &middot; #2BB3FF</span>
+    <span class="tag t-pist">La Farmacia &middot; #00D9A3</span>
+    <span class="tag t-grape">L'Officina &middot; #6B2FE8</span>
+    <span class="tag t-bub">Il Cinema &middot; #FF7BC8</span>
+  </div>
+
+  <p>Type is <strong>Futura</strong> for anything that shouts &mdash; headings, numbers, the big
+  coverage figure &mdash; because it's geometric, Italian-modern and reads as confident rather
+  than cute. Body copy is a neutral UI sans, and every number that needs comparing is monospaced
+  so digits line up.</p>
+
+  <div class="warn">
+    <span class="tag">One thing this style costs you</span>
+    <p>Thick borders and hard shadows eat space, which is fine on a phone but punishing for long
+    reading. So the serial's reading view <strong>drops the system on purpose</strong>: no borders,
+    no shadows, a serif face, generous leading. It's the one screen allowed to be calm, and the
+    contrast makes it feel like a different, quieter place — which is exactly what you want when
+    someone settles in to read.</p>
+  </div>
+</section>
+
+<section id="map">
+  <h2>La Città</h2>
+  <p class="lede">The home screen is a map. Districts unlock by <em>stage</em> and by demonstrated
+  ability, never by time served — so the map is the acquisition ladder wearing a much better coat.</p>
+</section>
+</div><!--/col--></div><!--/wrap-->
+
+<div class="wrap">
+<div class="gallery">
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>LA CITTÀ</span></div>
+    <div class="ph-body">
+      <div class="row"><h1 class="h">Ciao, Maja 👋</h1><span class="pill lem">livello 3</span></div>
+      <div class="c pis" style="gap:4px">
+        <div class="row"><span class="k" style="opacity:.75">Copertura</span><span class="pill">834 parole</span></div>
+        <div class="row"><span class="big">41.2%</span><span class="sm" style="opacity:.85">di<br>italiano<br>vero</span></div>
+        <div class="mtr"><i style="width:24%;background:#0A2119"></i><i style="width:11%;background:#0A7A55"></i><i style="width:6%;background:#FFD23F"></i></div>
+      </div>
+      <svg viewBox="0 0 200 172" style="width:100%;height:auto;border:2.5px solid #141024;border-radius:14px;background:#FFEBD3;box-shadow:3px 3px 0 #141024">
+        <path d="M30 148 L36 104 L92 118 L92 60" stroke="#141024" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M92 118 L148 92 L150 40" stroke="#141024" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/>
+        <path d="M92 118 L152 144" stroke="#141024" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <g stroke="#141024" stroke-width="3">
+          <circle cx="30" cy="148" r="11" fill="#FF4D3D"/>
+          <circle cx="36" cy="104" r="13" fill="#FFD23F"/>
+          <circle cx="92" cy="118" r="11" fill="#fff"/>
+          <circle cx="92" cy="60" r="11" fill="#6B2FE8"/>
+          <circle cx="148" cy="92" r="10" fill="#C9C2E0"/>
+          <circle cx="150" cy="40" r="10" fill="#C9C2E0"/>
+          <circle cx="152" cy="144" r="11" fill="#FF7BC8"/>
+        </g>
+        <g font-family="Avenir Next, sans-serif" font-size="7.5" font-weight="700" fill="#141024">
+          <text x="30" y="152" text-anchor="middle" font-size="10">✓</text>
+          <text x="30" y="168" text-anchor="middle">Il Bar</text>
+          <text x="36" y="108" text-anchor="middle" font-size="10">3/5</text>
+          <text x="36" y="126" text-anchor="middle">Il Mercato</text>
+          <text x="92" y="122" text-anchor="middle" font-size="10">18</text>
+          <text x="92" y="139" text-anchor="middle">La Piazza</text>
+          <text x="92" y="64" text-anchor="middle" font-size="10" fill="#fff">✎</text>
+          <text x="92" y="42" text-anchor="middle">L'Officina</text>
+          <text x="148" y="96" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="148" y="113" text-anchor="middle" fill="#5B5470">Stazione</text>
+          <text x="150" y="44" text-anchor="middle" font-size="9" fill="#5B5470">🔒</text>
+          <text x="150" y="22" text-anchor="middle" fill="#5B5470">Farmacia</text>
+          <text x="152" y="148" text-anchor="middle" font-size="10">▶</text>
+          <text x="152" y="165" text-anchor="middle">Il Cinema</text>
+        </g>
+      </svg>
+      <div class="c lem">
+        <div class="row"><span class="h2">Il Mercato</span><span class="pill">3 / 5</span></div>
+        <p class="sm" style="opacity:.85">Prossima scena · <b>Mezzo chilo di pomodori</b></p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn tom">Vai al Mercato →</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>01 · La Città</b>Coverage sits above the map, so the honest number is the
+  first thing you see. Locked districts show a padlock and say what opens them. Each district owns
+  its colour from here onward.</p></div>
+
+  <div class="ph-wrap" id="scene"><div class="ph alt"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>IL MERCATO</span></div>
+    <div class="ph-body">
+      <span class="pill lem">Il Mercato · scena 4</span>
+      <h1 class="h" style="font-size:23px">Mezzo chilo di<br>pomodori 🍅</h1>
+      <div class="c">
+        <span class="k">La situazione</span>
+        <p class="tx">Sabato, mercato di Bologna. Vuoi mezzo chilo di pomodori — quelli maturi,
+        per stasera. Il venditore parla veloce e non rallenta per nessuno.</p>
+      </div>
+      <div class="c pis">
+        <span class="k" style="opacity:.8">Se ce la fai</span>
+        <p class="tx"><b>Posso comprare cibo a peso e dire quanto lo voglio maturo.</b></p>
+      </div>
+      <span class="k">Ti serve</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#00A87C">✓</span><span>14 parole che sai già</span></li>
+        <li><span class="dot" style="color:#6B2FE8">＋</span><span>4 nuove · <i>maturo, mezzo, etto, assaggiare</i></span></li>
+        <li><span class="dot" style="color:#6B2FE8">＋</span><span>quantità + <i>di</i></span></li>
+      </ul>
+      <div class="spread"></div>
+      <div class="btn">Comincia →</div>
+      <p class="sm" style="text-align:center">4 fasi · circa 12 minuti</p>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>02 · Scene brief</b>Every scene names the ability it unlocks
+  <em>before</em> you start — you're not doing lesson 4, you're becoming someone who can buy
+  tomatoes. That framing is the ideal-self mechanism doing the work a streak used to fake.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 1 · ASCOLTA</span></div>
+    <div class="ph-body">
+      <div class="mtr"><i style="width:25%;background:#FFD23F"></i></div>
+      <span class="k">Fase 1 — guarda come si fa</span>
+      <div class="c" style="gap:7px">
+        <div class="row"><span class="pill tom">Il venditore</span><span class="pill">▶ 0:14</span></div>
+        <p class="tx it">— Mi dica, signora!</p>
+        <p class="tx it" style="opacity:.65">— Mezzo chilo di pomodori, per favore. Ma
+          <b style="border-bottom:3px solid #FF4D3D">maturi</b>, che li mangio stasera.</p>
+        <p class="tx it">— Ho questi. Guardi che belli. Un etto in più?</p>
+        <p class="tx it" style="opacity:.65">— No, va bene così. Quant'è?</p>
+      </div>
+      <div class="c lem">
+        <div class="row"><span class="h2 it">maturi</span><span class="pill">nuovo</span></div>
+        <p class="sm" style="opacity:.9">ripe · <span class="pl" style="color:#241C00">dojrzałe</span></p>
+        <p class="sm" style="opacity:.9">Plurale perché <i>pomodori</i> è plurale. In italiano
+        l'aggettivo si accorda — come in polacco.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn2">◀ Riascolta</div>
+      <div class="btn pis">Ho capito →</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>03 · Input first</b>You never produce cold. Phase 1 is a model of the task
+  done well, pitched at your coverage level, with only genuinely new words glossed — and the
+  Polish parallel called out where one exists.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 2 · PROVA</span></div>
+    <div class="ph-body">
+      <div class="mtr"><i style="width:50%;background:#FFD23F"></i></div>
+      <span class="k">Fase 2 — prendi i pezzi</span>
+      <div class="c azz">
+        <span class="k" style="opacity:.8">Lo schema</span>
+        <p class="tx it" style="font-size:12.5px">mezzo chilo <b>di</b> pomodori<br>
+        un etto <b>di</b> prosciutto<br>due chili <b>di</b> pane</p>
+        <p class="sm" style="opacity:.9">Quantità + <b>di</b> + cosa. Niente articolo.</p>
+      </div>
+      <div class="c bub">
+        <span class="k" style="opacity:.8">🇵🇱 Lo sai già</span>
+        <p class="tx">Il polacco fa la stessa cosa col genitivo:
+        <span class="pl" style="color:#33061F">pół kilo pomidor<b>ów</b></span>. Stessa idea,
+        macchina diversa — l'italiano usa <i>di</i> invece della desinenza.</p>
+      </div>
+      <div class="c flat">
+        <span class="k">Dillo tu</span>
+        <p class="tx">“a hundred grams of cheese”</p>
+        <p class="tx it" style="font-size:12.5px">🎙 un etto di formaggio</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn">Sono pronta →</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>04 · Rehearsal</b>The grammar slice, embedded in a task rather than taught
+  as a chapter. The pink card is the Polish layer: it appears only where Polish gives you a real
+  hook, and it says which part transfers and which doesn't.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 3 · AL MERCATO</span></div>
+    <div class="ph-body">
+      <div class="mtr"><i style="width:75%;background:#FFD23F"></i></div>
+      <div style="display:flex;flex-direction:column;gap:7px;flex:1">
+        <div class="c" style="align-self:flex-start;max-width:90%;padding:8px 10px">
+          <p class="tx it">Buongiorno! Mi dica.</p></div>
+        <div class="c pis" style="align-self:flex-end;max-width:90%;padding:8px 10px">
+          <p class="tx it">Mezzo chilo di pomodori, per favore.</p>
+          <span class="sm" style="opacity:.85">🎙 chiaro ✓</span></div>
+        <div class="c" style="align-self:flex-start;max-width:92%;padding:8px 10px">
+          <p class="tx it">Questi o quelli? Questi costano di più ma sono più maturi.</p></div>
+        <div class="c flat" style="align-self:flex-end;max-width:94%">
+          <p class="sm">Ti ha chiesto di scegliere. Di' quale e perché.</p>
+          <div class="row"><span class="pill gra">🎙 tieni premuto</span><span class="pill">⌨︎</span></div>
+        </div>
+      </div>
+      <div class="btn tom" style="border-radius:99px">🎙</div>
+      <p class="sm" style="text-align:center">Non c'è un copione. Risponde a quello che dici.</p>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>05 · The task</b>Voice-first and unscripted. Mobile + voice + generative AI
+  were the three significant moderators in the chatbot meta-analysis (g&nbsp;0.79, 0.81, 0.83) —
+  this screen is where those effects live.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FATTO!</span></div>
+    <div class="ph-body">
+      <div style="text-align:center;padding:4px 0">
+        <p class="k" style="color:#00A87C;opacity:1">Missione riuscita</p>
+        <h1 class="h" style="font-size:22px;margin-top:5px">Hai i pomodori 🍅</h1>
+      </div>
+      <div class="c pis">
+        <span class="k" style="opacity:.8">Nuovo “Posso”</span>
+        <p class="tx"><b>Posso comprare cibo a peso e dire quanto lo voglio maturo.</b></p>
+      </div>
+      <span class="k">Detto bene</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#00A87C">✓</span><span><i>mezzo chilo di pomodori</i></span></li>
+        <li><span class="dot" style="color:#00A87C">✓</span><span><i>sono più maturi</i> — accordo giusto</span></li>
+      </ul>
+      <span class="k">Da rivedere</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#C4200F">◆</span><span>Hai detto <i>lo mangio</i>.
+        Oggetto plurale → <i>li mangio</i>.</span></li>
+      </ul>
+      <div class="c lem" style="gap:4px">
+        <div class="row"><span class="h2">🔓 La Stazione</span><span class="pill">aperta</span></div>
+        <p class="sm" style="opacity:.85">Ti serviva lo stadio 2. Ci sei arrivata.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn">+4 parole → Piazza</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>06 · Debrief &amp; unlock</b>Success is the outcome, not a score. One
+  correction, and it's stage-appropriate — clitics get graded because you're past that point on
+  the ladder. Unlocking a district is the reward.</p></div>
+
+</div></div>
+
+<div class="wrap"><div class="col">
+<section id="officina">
+  <h2>L'Officina delle Parole</h2>
+  <p class="lede">The word workshop &mdash; Concept A folded in as a district you can always walk
+  into. This is where mappings get taught, the 2,000 get tracked, and articles get drilled forever.
+  It's the only place on the map that never locks.</p>
+</section>
+</div></div>
+
+<div class="wrap">
+<div class="gallery">
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>L'OFFICINA</span></div>
+    <div class="ph-body">
+      <h1 class="h">L'Officina 🔧</h1>
+      <p class="sm">Qui si smontano le parole.</p>
+      <div class="c gra">
+        <div class="row"><span class="k" style="opacity:.85">La Riserva</span><span class="pill">834 / 2000</span></div>
+        <div class="mtr" style="border-color:#fff"><i style="width:24%;background:#00D9A3"></i><i style="width:11%;background:#FFD23F"></i><i style="width:6%;background:#FF7BC8"></i></div>
+        <p class="sm" style="opacity:.9">Le 2 000 parole di De Mauro. Valgono l'86% di tutto
+        l'italiano parlato e scritto.</p>
+      </div>
+      <div class="c lem">
+        <div class="row"><span class="h2">Le Mappe</span><span class="pill">4 / 8</span></div>
+        <p class="sm" style="opacity:.85">Una regola = centinaia di parole. Prossima:
+        <b>-yczny → -ico</b></p>
+      </div>
+      <div class="c tom">
+        <div class="row"><span class="h2">Gli Articoli</span><span class="pill">giorno 148</span></div>
+        <p class="sm" style="opacity:.9">Il filo che non finisce mai. 71% ↑</p>
+      </div>
+      <div class="c bub">
+        <div class="row"><span class="h2">Falsi Amici</span><span class="pill">12 presi</span></div>
+        <p class="sm" style="opacity:.9"><i>colazione</i> non è <span class="pl" style="color:#33061F">kolacja</span></p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn pis">18 parole da ripassare</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>07 · L'Officina</b>Four workbenches, each a colour. The Riserva is the
+  2,000-word reservoir; Le Mappe are the suffix correspondences; Gli Articoli is the permanent
+  Polish strand; Falsi Amici collects the traps you've hit.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>MAPPA 05</span></div>
+    <div class="ph-body">
+      <span class="pill gra">Una regola, non una lista</span>
+      <h1 class="h" style="font-size:17px">-cja &nbsp;·&nbsp; -tion<br>→ <span style="color:#6B2FE8">-zione</span></h1>
+      <div class="c pis">
+        <p class="tx"><b>≈1 100 parole italiane.</b> Le sai già quasi tutte, in due altre lingue.</p>
+      </div>
+      <div class="c bub">
+        <span class="k" style="opacity:.8">🇵🇱 La strada corta</span>
+        <p class="tx it">lekcja → lezione<br>akcja → azione<br>tradycja → tradizione<br>policja → polizia</p>
+      </div>
+      <div class="c azz">
+        <span class="k" style="opacity:.8">🇬🇧 L'altra strada</span>
+        <p class="tx it">nation → nazione<br>station → stazione<br>information → informazione</p>
+      </div>
+      <div class="c tom">
+        <span class="k" style="opacity:.85">⚠️ Una trappola qui dentro</span>
+        <p class="tx"><i>colazione</i> = <b>breakfast</b>, non
+        <span class="pl" style="color:#2A0A06">kolacja</span>. La mappa funziona, il significato è scivolato.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn">Prova la regola →</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>08 · Mapping card</b>Polish route first, because it's usually shorter —
+  <span class="it">lekcja→lezione</span> beats <span class="it">lesson→lezione</span>. The trap is
+  taught in the same breath, since it's the direct cost of the strategy.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>MAPPA 05 · PROVA</span></div>
+    <div class="ph-body">
+      <div class="mtr"><i style="width:60%;background:#6B2FE8"></i></div>
+      <span class="k">Applica la regola — non indovinare</span>
+      <div class="c azz" style="padding:14px 12px">
+        <span class="k" style="opacity:.8">🇵🇱</span>
+        <p class="h2" style="font-size:20px">rewolucja</p>
+      </div>
+      <div class="c flat">
+        <p class="sm">Scrivi l'italiano</p>
+        <p class="h2 it" style="font-size:16px">rivoluzione|</p>
+      </div>
+      <div class="c pis">
+        <span class="k" style="opacity:.8">✓ Esatto</span>
+        <p class="tx">Hai cambiato <b>-cja → -zione</b> e hai anche sistemato
+        <b>-luc- → -luz-</b>. Quella seconda parte non te l'ho insegnata: l'hai sentita.</p>
+      </div>
+      <div class="c">
+        <span class="k">Prossima</span>
+        <p class="tx it">stacja · funkcja · pozycja</p>
+        <p class="sm">Poi tre in cui la mappa ti frega.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn pis">Avanti →</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>09 · Mapping practice</b>Production, not recognition — you type the Italian.
+  The feedback names what you got right, including the sub-pattern nobody taught you, which is how
+  you tell someone their intuition is working.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>LA RISERVA</span></div>
+    <div class="ph-body">
+      <div class="row"><h1 class="h">La Riserva</h1><span class="pill pis">834</span></div>
+      <p class="sm">Le 2 000 di De Mauro, in ordine di frequenza. In alto a sinistra c'è
+      <i>essere</i>.</p>
+      <div class="cells" data-n="264" data-solid=".30" data-known=".14" data-learn=".07" data-met=".06"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="sm"><b style="color:#00A87C">■</b> solida</span>
+        <span class="sm"><b style="color:#FFB800">■</b> nota</span>
+        <span class="sm"><b style="color:#6B2FE8">■</b> in corso</span>
+        <span class="sm"><b style="color:#FF7BC8">■</b> vista</span>
+      </div>
+      <div class="c lem">
+        <span class="k" style="opacity:.8">Fascia 3 · posti 401–600</span>
+        <p class="tx it">portare, chiedere, sembrare, tenere, restare…</p>
+        <p class="sm" style="opacity:.85">Queste 200 da sole valgono <b>4,1 punti</b> di copertura.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn">Studia la fascia 3 →</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>10 · La Riserva</b>2,000 words made physical. Frequency order means the
+  top-left corner is worth far more coverage per cell — and the gradient you can watch forming is
+  the shape of your own progress.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>#412</span></div>
+    <div class="ph-body">
+      <div class="row"><span class="pill">posto 412</span><span class="pill lem">in corso · box 2</span></div>
+      <h1 class="h it" style="font-size:30px">chiedere</h1>
+      <p class="sm">/ˈkjɛː.de.re/ · verbo irregolare</p>
+      <div class="c">
+        <div class="row"><span class="k">🇬🇧</span><span class="h2" style="font-size:12px">to ask (for)</span></div>
+        <div class="row"><span class="k">🇵🇱</span><span class="h2" style="font-size:12px">pytać · prosić o</span></div>
+      </div>
+      <div class="c bub">
+        <span class="k" style="opacity:.8">🇵🇱 Attenzione — il polacco divide</span>
+        <p class="tx"><i>chiedere</i> copre <b>sia</b>
+        <span class="pl" style="color:#33061F">pytać</span> (fare una domanda)
+        <b>sia</b> <span class="pl" style="color:#33061F">prosić o</span> (chiedere una cosa).
+        L'italiano non li distingue.</p>
+      </div>
+      <span class="k">Dove l'hai incontrata</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#FF7BC8">▸</span><span><i>Devo chiedere a Marta</i> — Ep. 7</span></li>
+        <li><span class="dot" style="color:#FFD23F">▸</span><span><i>Ti posso chiedere una cosa?</i> — Il Bar</span></li>
+      </ul>
+      <div class="spread"></div>
+      <div class="row"><span class="sm">Torna fra</span><span class="pill pis">3 giorni</span></div>
+      <div class="btn2">🔊 Ascolta</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>11 · Word detail</b>Both glosses, scheduler state, and the places
+  <em>you</em> met it — contextual traces are what make a word retrievable. The pink card fires
+  only where Polish and Italian carve meaning differently.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>ARTICOLI · GIORNO 148</span></div>
+    <div class="ph-body">
+      <div class="row"><span class="pill tom">Filo permanente</span><span class="pill">71% ↑</span></div>
+      <h1 class="h">Gli articoli</h1>
+      <p class="sm">Il polacco non ne ha. Per questo non smette mai di comparire.</p>
+      <div class="c" style="padding:14px 12px">
+        <p class="h2" style="font-size:15px">Bevo ___ caffè ogni mattina.</p>
+        <div style="display:flex;gap:5px">
+          <span class="btn2" style="flex:1">il</span><span class="btn2" style="flex:1">un</span>
+          <span class="btn2" style="flex:1">—</span>
+        </div>
+      </div>
+      <div class="c bub">
+        <span class="k" style="opacity:.8">🇵🇱 Perché proprio questo è difficile</span>
+        <p class="tx">Il polacco dice <span class="pl" style="color:#33061F">Piję kawę</span> —
+        niente articolo, nessuna scelta. L'inglese qui lo toglie anche.
+        <b>Nessuna delle tue due lingue ti aiuta.</b></p>
+      </div>
+      <div class="mtr"><i style="width:71%;background:#FF4D3D"></i></div>
+      <p class="sm">Determinativo ✓ · Indeterminativo ✓ · Preposizioni articolate — adesso</p>
+      <div class="spread"></div>
+      <div class="btn tom">Continua</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Officina</i><i>Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>12 · Gli Articoli</b>The one thing the app nags about forever, sequenced
+  definite → indefinite → fused prepositions. It names the difficulty honestly rather than
+  pretending it's easy — which is more useful when you get it wrong for the hundredth time.</p></div>
+
+</div></div>
+
+<div class="wrap"><div class="col">
+<section id="serie">
+  <h2>Il Cinema — La Serie</h2>
+  <p class="lede">The district the experiment earned its place. A Bologna drama written fresh at
+  your exact level, where the next episode is generated to reuse the words that are due for
+  review &mdash; so spaced repetition stops being a queue and becomes the plot.</p>
+  <p>The Italian in screen 14 is <strong>not invented for the mockup</strong>. It's the opening of
+  <code>B_constr_1.txt</code> from the experiment, which measured 99.6% coverage against the
+  600-word lexicon with zero grammar-stage violations.</p>
+</section>
+</div></div>
+
+<div class="wrap">
+<div class="gallery">
+
+  <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr dk">
+    <div class="ph-bar"><span>9:41</span><span>STAGIONE 1</span></div>
+    <div class="ph-body">
+      <span class="pill bub">Via Zamboni</span>
+      <h1 class="h" style="font-size:26px">Episodio 7<br><span style="color:#FF7BC8">La chiave</span></h1>
+      <div class="c bub">
+        <p class="tx">Qualcuno è entrato in casa. Marta non ha dato la chiave a nessuno.</p>
+        <div class="row"><span class="pill">nuovo</span><span class="sm" style="opacity:.9">7 min · 340 parole</span></div>
+      </div>
+      <div class="c">
+        <div class="row"><span class="k">Leggibilità per te</span><span class="h2" style="color:#00D9A3">96%</span></div>
+        <div class="mtr"><i style="width:96%;background:#00D9A3"></i></div>
+        <p class="sm">13 parole nuove. Sotto il 95% aspetto — non ti faccio leggere a fatica.</p>
+      </div>
+      <span class="k">Precedenti</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#00D9A3">✓</span><span><b>6 · Il vicino</b> — 98% capito</span></li>
+        <li><span class="dot" style="color:#00D9A3">✓</span><span><b>5 · La lettera</b> — 92% capito</span></li>
+      </ul>
+      <div class="spread"></div>
+      <div class="btn" style="background:#FF7BC8;color:#33061F">Leggi l'episodio 7 →</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>13 · Episode hub</b>The readability figure is the hook: the app tells you
+  before you start that this sits at 96% of words you know. Nothing is ever released below 95% —
+  that threshold is a promise, not a target.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr" style="background:#FDFBF6">
+    <div class="ph-bar"><span>9:41</span><span>EP 7 · 1/4</span></div>
+    <div class="ph-body" style="padding:12px 16px 14px">
+      <div style="height:4px;border-radius:99px;background:#EDE6D8;overflow:hidden">
+        <i style="display:block;height:100%;width:22%;background:#FF7BC8"></i></div>
+      <p class="serif" style="font-size:14.5px;line-height:1.72;margin:8px 0 0;color:#241F16">
+        È sera tardi. Marta torna a casa e la strada è senza gente. Entra e capisce subito che
+        qualcosa non va.<br><br>
+        Il suo libro non sta dove lo ha lasciato ieri. C'è
+        <u style="text-decoration-color:#FF7BC8;text-decoration-thickness:2.5px">luce</u> nel bagno,
+        ma prima di uscire non c'era.<br><br>
+        Marta non chiama nessuno. Sta ferma un attimo e ascolta. Non sente niente.<br><br>
+        Poi vede la <u style="text-decoration-color:#FF7BC8;text-decoration-thickness:2.5px">chiave</u>.
+        È per terra, vicino all'uscita. Non è la sua.
+      </p>
+      <div class="spread"></div>
+      <div class="row" style="opacity:.5">
+        <span class="sm">🔊 leggi ad alta voce</span><span class="sm">Aa</span>
+      </div>
+    </div>
+    <div class="ph-nav" style="background:#F5EFE3;border-color:#DCD3C2">
+      <i>Città</i><i>Officina</i><i>Piazza</i><i class="on" style="background:#FF7BC8">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>14 · Reading view</b>The one screen that drops the design system — no
+  borders, no shadows, serif, warm paper. Real measured text: 99.6% coverage, zero stage
+  violations. Only the deliberate new words are marked.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr" style="background:#FDFBF6">
+    <div class="ph-bar"><span>9:41</span><span>EP 7 · 1/4</span></div>
+    <div class="ph-body" style="padding:12px 14px 14px">
+      <p class="serif" style="font-size:14px;line-height:1.7;margin:0;color:#8C8474">
+        Poi vede la <b style="color:#241F16">chiave</b>. È per terra, vicino all'uscita.</p>
+      <div class="c bub" style="margin-top:4px">
+        <div class="row"><span class="h2 it" style="font-size:19px">la chiave</span><span class="pill">🔊</span></div>
+        <div class="row"><span class="k" style="opacity:.8">🇬🇧</span><span class="h2" style="font-size:12px">key</span></div>
+        <div class="row"><span class="k" style="opacity:.8">🇵🇱</span><span class="h2" style="font-size:12px">klucz</span></div>
+        <p class="sm" style="opacity:.95"><b>Femminile</b> anche se finisce in -e. Gruppo opaco:
+        nessuna regola ti salva, quindi entra con l'articolo attaccato — <i>la chiave</i>.</p>
+      </div>
+      <div class="row">
+        <span class="btn2" style="flex:1;border-color:#241F16">Già la so</span>
+        <span class="btn pis" style="flex:1;border-color:#241F16">＋ Imparala</span>
+      </div>
+      <div class="c flat" style="border-color:#DCD3C2">
+        <p class="sm">Posto 388 delle 2 000. Vale 0,04 punti di copertura.</p>
+      </div>
+      <div class="spread"></div>
+      <p class="sm" style="text-align:center;opacity:.5">Tocca fuori per continuare</p>
+    </div>
+    <div class="ph-nav" style="background:#F5EFE3;border-color:#DCD3C2">
+      <i>Città</i><i>Officina</i><i>Piazza</i><i class="on" style="background:#FF7BC8">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>15 · Gloss</b>Both glosses, audio, and the gender note where the noun is
+  opaque — stored <em>with its article</em>, as the research requires. “Già la so” matters as much
+  as “Imparala”: it lets you correct the model's picture of you.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr dk">
+    <div class="ph-bar"><span>9:41</span><span>SCENA · SEI MARTA</span></div>
+    <div class="ph-body">
+      <span class="pill bub">Ora tocca a te</span>
+      <p class="tx">Bussano. È la signora Bellini, la vicina. Tu sei Marta.</p>
+      <div style="display:flex;flex-direction:column;gap:7px;flex:1">
+        <div class="c" style="align-self:flex-start;max-width:92%;padding:8px 10px">
+          <span class="k">Sig.ra Bellini</span>
+          <p class="tx it">Buonasera, scusi l'ora. Ho visto la luce… Tutto bene?</p></div>
+        <div class="c flat" style="align-self:flex-end;max-width:94%;border-color:#5B4E96">
+          <p class="sm">Dille che qualcuno è entrato — ma senza spaventarla.</p>
+          <div class="row"><span class="pill bub">🎙 parla</span><span class="pill">⌨︎ scrivi</span></div>
+        </div>
+      </div>
+      <div class="c" style="border-style:dashed">
+        <p class="sm">Se ti serve · <i>qualcuno è entrato</i> · <i>non sono sicura</i> ·
+        <i>forse mi sbaglio</i></p>
+      </div>
+      <div class="btn" style="background:#FF7BC8;color:#33061F;border-radius:99px">🎙</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>16 · You play the scene</b>The output strand, and the reason this isn't
+  just a reader. Speaking <em>as a character</em> lowers the stakes further than speaking as
+  yourself — anxiety drops, willingness to communicate rises.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt2"><div class="ph-scr dk">
+    <div class="ph-bar"><span>9:41</span><span>RACCOLTO</span></div>
+    <div class="ph-body">
+      <span class="k">Episodio 7 · finito</span>
+      <h1 class="h" style="font-size:23px">Hai raccolto<br><span style="color:#00D9A3">13 parole</span></h1>
+      <div class="c">
+        <span class="k">Dalla scena della chiave</span>
+        <p class="tx it">la chiave · riconoscere · l'odore · accanto a · di fronte · bussare</p>
+      </div>
+      <div class="c pis">
+        <div class="row"><span class="big" style="font-size:26px">41.2%</span>
+          <span class="pill">+0,4 ↑</span></div>
+        <div class="mtr" style="border-color:#0A2119"><i style="width:41%;background:#0A2119"></i></div>
+        <p class="sm" style="opacity:.85">copertura dopo questo episodio</p>
+      </div>
+      <div class="c bub">
+        <p class="tx">Queste 13 tornano fra un giorno, poi fra tre, poi fra una settimana.
+        Le rivedrai <b>dentro la storia</b>, non su una lista.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn2">Episodio 8 · fra 1 giorno</div>
+      <p class="sm" style="text-align:center">Il prossimo userà 9 di queste 13.</p>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>17 · Word harvest</b>The best idea in the whole app: the spacing schedule
+  becomes a plot device. The next episode is written to reuse the words that are due, so review
+  stops feeling like homework because it <em>is</em> the story.</p></div>
+
+  <div class="ph-wrap" id="casa"><div class="ph alt3"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>LA PIAZZA</span></div>
+    <div class="ph-body">
+      <div class="row"><h1 class="h">La Piazza</h1><span class="pill pis">18 pronte</span></div>
+      <p class="sm">Dove tutto quello che hai incontrato torna a trovarti.</p>
+      <div class="c lem">
+        <span class="k" style="opacity:.8">⚠️ Questa settimana</span>
+        <p class="tx"><b>14 parole escono da “solida”</b> se non le rivedi entro giovedì.</p>
+        <p class="sm" style="opacity:.85">Non è una serie da difendere. È solo come funziona la memoria.</p>
+      </div>
+      <div class="c" style="padding:14px 12px">
+        <span class="k">Produci — non riconoscere</span>
+        <p class="h2" style="font-size:15px">🇵🇱 Poprosiłabym o rachunek.</p>
+        <p class="sm">Dillo in italiano, poi controlla.</p>
+      </div>
+      <div class="c lem">
+        <span class="k" style="opacity:.8">Quasi — riprova</span>
+        <p class="tx">Hai scritto <i>Vorrei il conto</i>. <b>Il conto è giusto.</b> Ma quale
+        articolo? Stai chiedendo <i>il</i> conto, quello tuo.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="btn pis">Ricontrolla</div>
+      <div class="btn2">Fammelo vedere</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i class="on">Piazza</i><i>Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>18 · La Piazza</b>The review hub, and the most important interaction in the
+  app: a wrong answer gets <em>located</em>, never solved. “Fammelo vedere” stays available but is
+  a deliberate second choice.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt3"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>CASA</span></div>
+    <div class="ph-body">
+      <h1 class="h">Sei mesi dentro</h1>
+      <div class="c pis">
+        <span class="k" style="opacity:.8">Copertura</span>
+        <svg viewBox="0 0 200 54" style="width:100%;height:auto">
+          <polyline points="4,50 32,45 60,39 88,31 116,25 144,18 172,12 196,8" fill="none"
+            stroke="#0A2119" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="196" cy="8" r="4.5" fill="#0A2119"/></svg>
+        <div class="row"><span class="sm" style="opacity:.85">feb 11%</span><span class="h2">oggi 41,2%</span></div>
+      </div>
+      <div class="row">
+        <div class="c lem" style="flex:1;align-items:center;gap:2px">
+          <span class="big" style="font-size:24px">487</span><span class="sm" style="opacity:.85">solide</span></div>
+        <div class="c azz" style="flex:1;align-items:center;gap:2px">
+          <span class="big" style="font-size:24px">23</span><span class="sm" style="opacity:.85">Posso…</span></div>
+      </div>
+      <span class="k">Le ultime cose che sai fare</span>
+      <ul class="lst">
+        <li><span class="dot" style="color:#00A87C">✓</span><span>comprare cibo a peso</span></li>
+        <li><span class="dot" style="color:#00A87C">✓</span><span>raccontare il weekend passato</span></li>
+        <li><span class="dot" style="color:#00A87C">✓</span><span>dire che qualcosa è rotto</span></li>
+      </ul>
+      <div class="c flat">
+        <p class="sm">L'FSI mette l'italiano professionale a 600–750 ore. Tu sei a <b>84</b>.</p>
+      </div>
+      <div class="spread"></div>
+      <p class="sm" style="text-align:center;opacity:.6">Nessuna serie. Nessun giorno consecutivo.</p>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>19 · Casa</b>Achievement without a streak: a rising coverage curve, solid
+  words, and can-do statements you demonstrated in a scene. The FSI line keeps the whole thing
+  honest about scale.</p></div>
+
+  <div class="ph-wrap"><div class="ph alt3"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>LO STADIO</span></div>
+    <div class="ph-body">
+      <h1 class="h">Dove sei</h1>
+      <p class="sm">Dedotto da quello che produci giusto — non da quante lezioni hai aperto.</p>
+      <ul class="lst" style="gap:7px">
+        <li><span class="dot" style="color:#00A87C">✓</span><span><b>1 · presente</b><br><span class="sm">da marzo</span></span></li>
+        <li><span class="dot" style="color:#00A87C">✓</span><span><b>2 · passato prossimo</b><br><span class="sm">ausiliare giusto 91%</span></span></li>
+        <li><span class="dot" style="color:#6B2FE8">◆</span><span><b style="color:#6B2FE8">3 · imperfetto</b><br><span class="sm">adesso · aspetto 64%</span></span></li>
+        <li><span class="dot" style="opacity:.4">○</span><span style="opacity:.5"><b>4 · futuro</b><br><span class="sm">lo leggi, non lo correggo</span></span></li>
+        <li><span class="dot" style="opacity:.4">○</span><span style="opacity:.5"><b>5 · condizionale</b><br><span class="sm">lo leggi, non lo correggo</span></span></li>
+        <li><span class="dot" style="opacity:.4">○</span><span style="opacity:.5"><b>6 · congiuntivo</b><br><span class="sm">lo leggi, non lo correggo</span></span></li>
+      </ul>
+      <div class="c bub">
+        <span class="k" style="opacity:.8">Perché vedi <i>vorrei</i> lo stesso</span>
+        <p class="tx">Le forme dello stadio 5 arrivano come frasi fatte dal primo giorno. Ti
+        chiederò di costruirle quando ci arrivi.</p>
+      </div>
+      <div class="spread"></div>
+      <div class="c lem"><p class="sm"><b>Stagione 2</b> della serie è scritta col condizionale.
+      Si apre quando arrivi allo stadio 5.</p></div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Officina</i><i>Piazza</i><i class="on">Casa</i></div>
+  </div></div>
+  <p class="ph-cap"><b>20 · Lo Stadio</b>The teachability hypothesis made visible. Locked stages
+  are described as present-but-ungraded, and Season 2 being written in a later stage turns the
+  gate into anticipation rather than a wall.</p></div>
+
+</div></div>
+
+<div class="wrap"><div class="col">
+<section id="build">
+  <h2>What to build first</h2>
+  <p class="lede">The experiment changed the order. Generation is no longer the risky thing you
+  defer to the end &mdash; it's proven, and it's what makes the reading district possible at all.
+  But it depends entirely on the lexicon, so that still comes first.</p>
+
+  <div class="blk">
+    <span class="tag t-tomato">Phase 1 · the lexicon</span>
+    <p style="margin-top:.9rem">Get De Mauro's real <span class="it">vocabolario di base</span> in,
+    not a frequency dump &mdash; the experiment showed exactly why. Extend
+    <code>storage.js</code> from two word states to five (unseen / met / learning / known / solid).
+    This alone gives you the coverage number and kills the streak.</p>
+    <p style="margin-bottom:0"><strong>Ship after this:</strong> screen 01 and screen 10. The map
+    can have one district. You'd already have a better home screen than the app has now.</p>
+  </div>
+
+  <div class="blk">
+    <span class="tag t-lemon">Phase 2 · the stage model</span>
+    <p style="margin-top:.9rem">Infer stage from production accuracy, and gate <em>grading</em>
+    rather than content. Retro-fit it to the existing grammar drills so nothing marks you wrong
+    above your stage. Screens 12 and 20 fall out of this.</p>
+  </div>
+
+  <div class="blk">
+    <span class="tag t-grape">Phase 3 · L'Officina</span>
+    <p style="margin-top:.9rem">Mapping cards, word detail, the Riserva grid, the articles strand.
+    Mostly a re-skin of the vocab module you already have, plus the Polish-route content — which
+    is writing, not engineering. Cheapest district per unit of value.</p>
+  </div>
+
+  <div class="blk">
+    <span class="tag t-bub">Phase 4 · Il Cinema</span>
+    <p style="margin-top:.9rem">Now safe to build. Wire the checker from
+    <code>research/gen-experiment/</code> into the pipeline as a gate: generate, measure coverage
+    and stage violations, repair or regenerate, then release. The experiment showed a single
+    repair edit was enough at 314 words &mdash; but keep the gate, because that's the only reason
+    the 95% promise holds.</p>
+  </div>
+
+  <div class="blk">
+    <span class="tag t-azz">Phase 5 · scenes with voice</span>
+    <p style="margin-top:.9rem">The biggest build and the biggest measured effect. Start with
+    three scenes in Il Mercato to prove the four-phase shape before making more districts.</p>
+  </div>
+
+  <h3>What survives from the current app</h3>
+  <p>More than you'd think. The Leitner scheduler in <code>srs.js</code>, the theme system, speech
+  playback, and the A1&ndash;C1 ladder all carry over. The four existing modules get re-cast rather
+  than deleted: <strong>vocab → La Riserva</strong>, <strong>grammar → stage-gated cards</strong>,
+  <strong>conversations → scene phase 3</strong>, <strong>stories → Il Cinema</strong>.</p>
+  <p>The casualties are <code>StreakChip.jsx</code> and the current <code>Dashboard.jsx</code>
+  headline: “% complete” measures content consumed, which is the activity metric the research
+  says to stop optimising.</p>
+
+  <div class="warn">
+    <span class="tag">The one thing I'd still check by hand</span>
+    <p>Read episode one yourself before trusting the generator at volume. The experiment showed
+    constrained Italian is <em>correct</em>, but lexical variety dropped measurably (TTR 0.53 →
+    0.44). Correct and dull is a real failure mode for something whose whole job is to make you
+    want the next episode.</p>
+  </div>
+</section>
+</div></div>
+
+<footer><div class="wrap col">
+  <p>Italiano v2 — La Città · 23 August 2026 · 20 screens, one design system.</p>
+  <p>Research: <a href="https://claude.ai/code/artifact/ab63d8c1-421b-4bfe-add5-a68a00b480e7">What Actually Teaches a Language</a>
+  · <a href="https://claude.ai/code/artifact/a43f6ede-deec-4636-83ff-14f9528a5aae">Three Designs for Italiano</a>
+  · generation experiment and its measuring tools in <code>research/gen-experiment/</code>.</p>
+  <p>Italian, Polish and English copy is real. The serial extract in screen 14 is measured output,
+  not mockup filler. Numbers shown describe a learner about six months in.</p>
+</div></footer>
+
+<script>
+// Fill the Riserva grid. High-frequency cells sit top-left and are likelier to
+// be learned, which is what gives the grid its gradient — the visual point of
+// the screen is that the first cells are worth far more coverage than the last.
+(function () {
+  var COL = { solid: "#00A87C", known: "#FFB800", learn: "#6B2FE8", met: "#FF7BC8" };
+  document.querySelectorAll(".cells").forEach(function (grid) {
+    var n = +grid.dataset.n || 200;
+    var p = { solid: +grid.dataset.solid || 0, known: +grid.dataset.known || 0,
+              learn: +grid.dataset.learn || 0, met: +grid.dataset.met || 0 };
+    var seed = 11;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < n; i++) {
+      var bias = 1.9 * (1 - i / n), r = rnd(), c = "";
+      if (r < p.solid * bias) c = COL.solid;
+      else if (r < (p.solid + p.known) * bias) c = COL.known;
+      else if (r < (p.solid + p.known + p.learn) * bias) c = COL.learn;
+      else if (r < (p.solid + p.known + p.learn + p.met) * bias) c = COL.met;
+      var cell = document.createElement("i");
+      cell.style.background = c || "rgba(20,16,36,.13)";
+      frag.appendChild(cell);
+    }
+    grid.appendChild(frag);
+  });
+})();
+</script>

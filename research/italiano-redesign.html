@@ -1,0 +1,1562 @@
+<title>Three Designs for Italiano</title>
+<style>
+/* ============================================================
+   DOC CHROME — deliberately achromatic and cool-biased, so the
+   only colour on the page comes from the three concepts.
+   ============================================================ */
+:root{
+  --bg:#F1F2F4; --surface:#FFFFFF; --surface-2:#E7E9EC; --surface-3:#DDE0E4;
+  --ink:#101215; --ink-2:#3C4148; --muted:#5A6169;
+  --rule:#D6D9DE; --rule-2:#B0B6BE;
+  --a-accent:#137B55; --a-wash:#E2F0EA;
+  --b-accent:#A54F1B; --b-wash:#F6E9DF;
+  --c-accent:#A82449; --c-wash:#F7E2E8;
+  --ui: system-ui,-apple-system,"Segoe UI","Avenir Next",Helvetica,sans-serif;
+  --text: Charter,"Bitstream Charter","Iowan Old Style","Source Serif Pro",Georgia,serif;
+  --mono: ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --measure:36rem;
+  --g:clamp(1rem,3.5vw,2.25rem);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1113; --surface:#181B1F; --surface-2:#20242A; --surface-3:#282D34;
+    --ink:#E9EBEE; --ink-2:#C3C8CE; --muted:#8E959D;
+    --rule:#2A2E34; --rule-2:#454B53;
+    --a-accent:#3FCB92; --a-wash:#10241D;
+    --b-accent:#EE9257; --b-wash:#2A1B10;
+    --c-accent:#F2718F; --c-wash:#2A1119;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1113; --surface:#181B1F; --surface-2:#20242A; --surface-3:#282D34;
+  --ink:#E9EBEE; --ink-2:#C3C8CE; --muted:#8E959D;
+  --rule:#2A2E34; --rule-2:#454B53;
+  --a-accent:#3FCB92; --a-wash:#10241D;
+  --b-accent:#EE9257; --b-wash:#2A1B10;
+  --c-accent:#F2718F; --c-wash:#2A1119;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--text);font-size:clamp(1rem,.4vw + .93rem,1.08rem);
+  line-height:1.6;text-rendering:optimizeLegibility;
+}
+::selection{background:var(--ink);color:var(--bg)}
+a{color:inherit;text-decoration-color:var(--rule-2);text-underline-offset:.16em}
+a:hover{text-decoration-color:currentColor}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:3px}
+.wrap{max-width:78rem;margin:0 auto;padding:0 var(--g)}
+.col{max-width:var(--measure);margin-inline:auto}
+h1,h2,h3,h4,.ui{font-family:var(--ui)}
+h1{font-size:clamp(2.3rem,6vw,3.9rem);line-height:1.02;letter-spacing:-.035em;font-weight:700;margin:0 0 1.1rem;text-wrap:balance}
+h2{font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.12;letter-spacing:-.028em;font-weight:700;margin:0 0 .5rem;text-wrap:balance}
+h3{font-size:.74rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:2.6rem 0 .8rem}
+h4{font-family:var(--ui);font-size:1.02rem;font-weight:650;letter-spacing:-.012em;margin:1.6rem 0 .45rem}
+p{margin:0 0 1rem;text-wrap:pretty}
+strong{font-weight:650}
+ul,ol{margin:0 0 1rem;padding-left:1.2em}
+li{margin-bottom:.45rem}
+code,.m{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.1em .34em;border-radius:3px}
+.it{font-style:italic}
+.pl{font-style:italic;color:var(--muted)}
+
+header.mast{border-bottom:1px solid var(--rule);background:var(--surface)}
+.mast-in{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.9rem 0;flex-wrap:wrap;
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.02em}
+.mast-in b{color:var(--ink);font-weight:600}
+
+.hero{padding:clamp(3rem,8vw,6rem) 0 3rem}
+.eyebrow{font-family:var(--ui);font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 1rem}
+.stand{font-size:1.2em;line-height:1.5;color:var(--ink-2);margin:0 0 1.4rem}
+
+section{padding:clamp(2.5rem,6vw,4.5rem) 0}
+.lede{font-size:1.06em;color:var(--ink-2)}
+
+/* rules + dividers */
+.hr{height:1px;background:var(--rule);border:0;margin:0}
+.divider{display:flex;align-items:center;gap:1rem;margin:0;color:var(--rule-2)}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--rule)}
+.divider span{font-family:var(--mono);font-size:.66rem;letter-spacing:.28em}
+
+/* constraint list */
+.cons{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:1.6rem 0}
+.con{background:var(--surface);padding:1.05rem 1.2rem;display:grid;grid-template-columns:1.7rem 1fr;gap:.9rem}
+.con-n{font-family:var(--mono);font-size:.7rem;color:var(--muted);padding-top:.28em}
+.con b{font-family:var(--ui);font-size:.96rem;display:block;margin-bottom:.2rem;letter-spacing:-.01em}
+.con p{margin:0;font-size:.95em;color:var(--ink-2)}
+.con .src{font-family:var(--mono);font-size:.66rem;color:var(--muted)}
+
+/* generic cards */
+.note{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:1.15rem 1.3rem;margin:1.4rem 0}
+.note-t{font-family:var(--ui);font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.5rem}
+.note p:last-child,.note ul:last-child,.note ol:last-child{margin-bottom:0}
+
+/* tables */
+.tsc{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface);margin:1.6rem 0}
+table{border-collapse:collapse;width:100%;font-family:var(--ui);font-size:.86rem}
+caption{caption-side:top;text-align:left;padding:.85rem 1rem .7rem;font-family:var(--mono);font-size:.67rem;color:var(--muted);border-bottom:1px solid var(--rule)}
+th,td{padding:.62rem 1rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* word-state pipeline diagram */
+.pipe{display:flex;flex-wrap:wrap;gap:.4rem;align-items:stretch;margin:1.4rem 0}
+.pipe-s{flex:1 1 8rem;background:var(--surface);border:1px solid var(--rule);border-radius:5px;padding:.7rem .8rem}
+.pipe-s b{font-family:var(--mono);font-size:.68rem;display:block;letter-spacing:.04em;margin-bottom:.25rem}
+.pipe-s span{font-size:.8rem;color:var(--muted);line-height:1.4;display:block;font-family:var(--ui)}
+.sw{width:.7rem;height:.7rem;border-radius:2px;display:inline-block;vertical-align:-1px;margin-right:.35rem}
+
+/* ============================================================
+   PHONE MOCKUPS
+   ============================================================ */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:1.9rem 1.4rem;margin:2rem 0}
+.ph-wrap{display:flex;flex-direction:column;gap:.65rem}
+.ph{
+  border-radius:26px;padding:7px;background:var(--rule-2);
+  box-shadow:0 1px 2px rgba(0,0,0,.14),0 8px 22px -12px rgba(0,0,0,.3);
+}
+.ph-scr{
+  border-radius:20px;overflow:hidden;min-height:496px;display:flex;flex-direction:column;
+  font-family:var(--s-ui);background:var(--s-bg);color:var(--s-ink);
+  font-size:12px;line-height:1.4;
+}
+.ph-bar{display:flex;justify-content:space-between;align-items:center;padding:7px 13px 3px;
+  font-family:var(--s-mono);font-size:8.5px;color:var(--s-mut);letter-spacing:.03em;flex:none}
+.ph-body{padding:9px 13px 13px;display:flex;flex-direction:column;gap:9px;flex:1}
+.ph-nav{display:flex;border-top:1px solid var(--s-line);background:var(--s-bg2);flex:none}
+.ph-nav i{flex:1;text-align:center;padding:8px 2px;font-style:normal;font-size:8.5px;color:var(--s-mut);
+  font-family:var(--s-ui);letter-spacing:.02em}
+.ph-nav i.on{color:var(--s-acc);font-weight:700;box-shadow:inset 0 2px 0 var(--s-acc)}
+.ph-cap{font-family:var(--ui);font-size:.79rem;line-height:1.45;color:var(--ink-2)}
+.ph-cap b{display:block;font-weight:650;color:var(--ink);font-size:.85rem;letter-spacing:-.01em;margin-bottom:.1rem}
+
+/* screen primitives */
+.s-h{font-size:15px;font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.15;color:var(--s-ink)}
+.s-k{font-family:var(--s-mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--s-mut);margin:0}
+.s-p{margin:0;font-size:11px;color:var(--s-ink2);line-height:1.45}
+.s-c{background:var(--s-card);border:1px solid var(--s-line);border-radius:9px;padding:9px 10px;display:flex;flex-direction:column;gap:6px}
+.s-c.flat{background:transparent;border-style:dashed}
+.s-btn{background:var(--s-acc);color:var(--s-on);border-radius:7px;padding:8px;text-align:center;
+  font-weight:700;font-size:11px;letter-spacing:.01em}
+.s-btn2{background:transparent;color:var(--s-ink2);border:1px solid var(--s-line);border-radius:7px;padding:7px;
+  text-align:center;font-size:10.5px;font-weight:600}
+.s-chip{display:inline-block;font-family:var(--s-mono);font-size:8px;letter-spacing:.06em;padding:2.5px 6px;
+  border-radius:4px;background:var(--s-bg2);color:var(--s-mut);text-transform:uppercase;font-weight:600}
+.s-chip.acc{background:var(--s-accw);color:var(--s-acc)}
+.s-row{display:flex;justify-content:space-between;align-items:center;gap:7px}
+.s-meter{height:6px;border-radius:99px;background:var(--s-bg2);overflow:hidden;display:flex}
+.s-meter i{display:block;height:100%}
+.s-it{font-family:var(--s-serif);font-style:italic}
+.s-sm{font-size:9.5px;color:var(--s-mut);line-height:1.4}
+.s-big{font-family:var(--s-mono);font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--s-acc)}
+.s-hr{height:1px;background:var(--s-line);border:0;margin:1px 0}
+.s-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.s-cells{display:grid;grid-template-columns:repeat(26,1fr);gap:1.5px}
+.s-cells i{aspect-ratio:1;border-radius:1px;display:block}
+.s-list li{display:flex;gap:6px;font-size:10.5px;line-height:1.35;align-items:flex-start}
+.s-tick{color:var(--s-acc);font-weight:700;flex:none}
+.s-lock{color:var(--s-mut);flex:none}
+
+/* concept theming — each concept commits to its own product palette */
+.cA{--s-bg:#0E1613;--s-bg2:#182420;--s-card:#141F1B;--s-ink:#E4EFE9;--s-ink2:#A9C0B6;
+   --s-mut:#6E8A7F;--s-line:#26362F;--s-acc:#4ADE9B;--s-accw:#123024;--s-on:#06120C;
+   --s-ui:system-ui,-apple-system,"Segoe UI",sans-serif;--s-mono:ui-monospace,"SF Mono",Menlo,monospace;
+   --s-serif:Palatino,"Iowan Old Style",Georgia,serif}
+.cB{--s-bg:#FDF7F0;--s-bg2:#F2E6D8;--s-card:#FFFFFF;--s-ink:#2C1F14;--s-ink2:#5B4634;
+   --s-mut:#8A705A;--s-line:#E2D0BC;--s-acc:#B4571F;--s-accw:#F7E7D9;--s-on:#FFFFFF;
+   --s-ui:"Avenir Next",system-ui,-apple-system,sans-serif;--s-mono:ui-monospace,"SF Mono",Menlo,monospace;
+   --s-serif:Palatino,"Iowan Old Style",Georgia,serif}
+.cC{--s-bg:#111014;--s-bg2:#1D1A22;--s-card:#191720;--s-ink:#F0ECF2;--s-ink2:#B9B0C2;
+   --s-mut:#7E7488;--s-line:#2C2733;--s-acc:#FF6E90;--s-accw:#331520;--s-on:#1A0A11;
+   --s-ui:system-ui,-apple-system,"Segoe UI",sans-serif;--s-mono:ui-monospace,"SF Mono",Menlo,monospace;
+   --s-serif:Didot,"Bodoni 72",Palatino,Georgia,serif}
+
+/* concept section headers */
+.chead{border-top:2px solid var(--acc);padding-top:1.3rem;margin-top:1rem}
+.chead .tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:600}
+.chead h2{margin-top:.35rem}
+.chead .name{font-family:var(--text);font-style:italic;color:var(--muted);font-weight:400}
+.secA{--acc:var(--a-accent);--accw:var(--a-wash)}
+.secB{--acc:var(--b-accent);--accw:var(--b-wash)}
+.secC{--acc:var(--c-accent);--accw:var(--c-wash)}
+.pill{display:inline-block;background:var(--accw);color:var(--acc);font-family:var(--ui);font-size:.66rem;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.24rem .55rem;border-radius:99px}
+.why{background:var(--accw);border-left:2px solid var(--acc);border-radius:0 6px 6px 0;padding:1rem 1.2rem;margin:1.4rem 0}
+.why .note-t{color:var(--acc)}
+.why p:last-child{margin-bottom:0}
+
+/* toc */
+.toc{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);padding:1.4rem 0;margin-top:2rem}
+.toc ol{list-style:none;padding:0;margin:0;display:grid;gap:.5rem 1.6rem;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr))}
+.toc li{display:flex;gap:.6rem;align-items:baseline;margin:0}
+.toc a{text-decoration:none;font-family:var(--ui);font-size:.9rem}
+.toc a:hover{text-decoration:underline}
+.toc .n{font-family:var(--mono);font-size:.66rem;color:var(--muted)}
+
+footer{border-top:1px solid var(--rule);background:var(--surface);padding:2.6rem 0;margin-top:3rem;
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);line-height:1.7}
+@media (prefers-reduced-motion:no-preference){
+  .fade{opacity:0;transform:translateY(.45rem);animation:r .6s cubic-bezier(.2,.7,.3,1) forwards}
+  .fade:nth-child(2){animation-delay:.07s}.fade:nth-child(3){animation-delay:.14s}.fade:nth-child(4){animation-delay:.21s}
+  @keyframes r{to{opacity:1;transform:none}}
+}
+</style>
+
+<header class="mast"><div class="wrap mast-in">
+  <span><b>Italiano</b> &middot; redesign proposals</span>
+  <span>v2 concepts &middot; 23 Aug 2026</span>
+</div></header>
+
+<div class="wrap">
+<div class="col">
+
+<div class="hero">
+  <p class="eyebrow fade">Design proposals</p>
+  <h1 class="fade">Three designs for Italiano</h1>
+  <p class="stand fade">Three complete, genuinely different ways to rebuild the app as a
+  task-based full course &mdash; each one drawn from the evidence review, each shown screen by
+  screen. They share an engine and disagree about everything else.</p>
+  <p class="fade" style="font-family:var(--mono);font-size:.7rem;color:var(--muted);border-top:1px solid var(--rule);padding-top:1rem">
+  Built on <a href="https://claude.ai/code/artifact/ab63d8c1-421b-4bfe-add5-a68a00b480e7">What Actually Teaches a Language</a>
+  &middot; tuned for one learner: Polish L1, fluent English L2</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><span class="n">01</span><a href="#brief">The brief, and what it rules out</a></li>
+    <li><span class="n">02</span><a href="#engine">The engine all three share</a></li>
+    <li><span class="n">03</span><a href="#a">Concept A &mdash; Copertura</a></li>
+    <li><span class="n">04</span><a href="#b">Concept B &mdash; In Città</a></li>
+    <li><span class="n">05</span><a href="#c">Concept C &mdash; La Serie</a></li>
+    <li><span class="n">06</span><a href="#compare">Side by side</a></li>
+    <li><span class="n">07</span><a href="#pick">What I'd build</a></li>
+  </ol>
+</nav>
+
+<section id="brief">
+  <h2>The brief, and what it rules out</h2>
+  <p class="lede">You asked for a task-based full course that shows achievement instead of a
+  streak, knows which words you know and uses that knowledge, teaches the 2,000
+  <span class="it">fondamentale</span> words first, respects acquisition order, and is built for a
+  Polish speaker who also speaks English. Each of those has a direct design consequence &mdash;
+  and together they rule out most of what the current app does.</p>
+
+  <div class="cons">
+    <div class="con"><span class="con-n">01</span><div>
+      <b>The streak has to go, and coverage takes its place</b>
+      <p>Hours logged correlated near-zero with actual proficiency, and a fifth of learners farmed
+      the lowest-difficulty lessons available. A streak rewards showing up; it does not reward
+      learning. Every concept here leads with a <em>mastery</em> number instead.
+      <span class="src">Jiang et al. 2021</span></p></div></div>
+    <div class="con"><span class="con-n">02</span><div>
+      <b>Production first, answer last</b>
+      <p>Repeated testing beat repeated study 80% vs 36% at one week. So no screen may show the
+      answer before you have tried to produce it, and a wrong answer gets a hint and a second
+      attempt before the reveal &mdash; never an instant red X with the solution.
+      <span class="src">Karpicke &amp; Roediger 2008; Li 2010</span></p></div></div>
+    <div class="con"><span class="con-n">03</span><div>
+      <b>The word model is load-bearing, not a statistic</b>
+      <p>Input only works above ~95% known-word coverage. Since the app must generate stories and
+      dialogues, the lexicon isn't a progress bar &mdash; it is the input to the content
+      generator. Everything you read is built from what you already know plus a measured dose of
+      what you don't. <span class="src">Nation 2006, 2007</span></p></div></div>
+    <div class="con"><span class="con-n">04</span><div>
+      <b>Four strands, or it isn't a course</b>
+      <p>If this is the whole course, it owes you meaning-focused input, meaning-focused output,
+      language-focused learning <em>and</em> fluency development. The current app does the third
+      one well and the others barely. All three concepts build the missing three.
+      <span class="src">Nation 2007</span></p></div></div>
+    <div class="con"><span class="con-n">05</span><div>
+      <b>Stage gating is a promise, not a restriction</b>
+      <p>Italian structures emerge in a fixed order. The <span class="it">congiuntivo</span> stays
+      in what you read and hear from day one &mdash; but you are never marked wrong on it until
+      you're developmentally ready. The app grades you only up to your stage.
+      <span class="src">Pienemann 1989; Chini 2016</span></p></div></div>
+    <div class="con"><span class="con-n">06</span><div>
+      <b>Explain in Polish categories, teach through both languages</b>
+      <p>Slavic learners reasoned about Romance grammar via their L1 in 93% of cases &mdash; after
+      twelve years of English. So aspect gets explained through <span class="pl">dokonany /
+      niedokonany</span>, not through English tenses. But cognate mappings run through both
+      Polish and English, because the two languages unlock different words.
+      <span class="src">Toth et al. 2024</span></p></div></div>
+    <div class="con"><span class="con-n">07</span><div>
+      <b>Articles get a permanent strand</b>
+      <p>Polish has no articles, and the research says article errors survive into advanced
+      proficiency. This is the one place the app should nag forever. Not a lesson in week two
+      &mdash; a thread that runs the whole length of the course.
+      <span class="src">Polish-L1 article studies; Chini 2016</span></p></div></div>
+    <div class="con"><span class="con-n">08</span><div>
+      <b>Voice, on mobile, is where the effect sizes are</b>
+      <p>In the chatbot meta-analysis, mobile availability (g&nbsp;0.79 vs 0.19), voice input
+      (0.81 vs 0.43) and generative AI (0.83 vs 0.47) were the significant moderators. Speaking
+      is also the skill every app study shows lagging. All three concepts require you to talk.
+      <span class="src">Lyu, Lai &amp; Guo 2025</span></p></div></div>
+  </div>
+
+  <div class="note">
+    <span class="note-t">What stays from the current app</span>
+    <p>The five-level A1&ndash;C1 ladder, the Leitner scheduler in <code>srs.js</code>, the
+    known/learning word states in <code>storage.js</code>, speech playback, and the theme system
+    are all sound and all reusable. What changes is what sits on top: the home screen's headline
+    metric, the unit of work (a task, not a module), and the fact that content becomes
+    <em>generated against your lexicon</em> rather than authored as fixed lists.</p>
+  </div>
+</section>
+
+<div class="divider"><span>&#167;</span></div>
+
+<section id="engine">
+  <h2>The engine all three share</h2>
+  <p class="lede">The three concepts differ in metaphor, structure and feel &mdash; but they run
+  on the same five subsystems. Pick a concept for how it feels; you get this machinery either
+  way. This is also the part worth building first, because it is what makes any of the three
+  possible.</p>
+
+  <h3>1 &middot; The lexicon &mdash; a word's life</h3>
+  <p>Today <code>storage.js</code> stores a word as <em>known</em> or <em>learning</em>. That's
+  too coarse to generate text from. The redesign gives every one of the 2,000
+  <span class="it">fondamentale</span> words a state, and the state decides what the generator is
+  allowed to do with it.</p>
+
+  <div class="pipe">
+    <div class="pipe-s"><b><span class="sw" style="background:var(--rule-2)"></span>UNSEEN</b>
+      <span>Not yet met. Invisible to the generator.</span></div>
+    <div class="pipe-s"><b><span class="sw" style="background:#C79A2E"></span>MET</b>
+      <span>Seen in input, glossed, never recalled. Counts toward the 2&ndash;5% unknown budget.</span></div>
+    <div class="pipe-s"><b><span class="sw" style="background:#3E77D6"></span>LEARNING</b>
+      <span>In the scheduler, boxes 1&ndash;2. May appear, always with a gloss available.</span></div>
+    <div class="pipe-s"><b><span class="sw" style="background:#2E9E6B"></span>KNOWN</b>
+      <span>Boxes 3&ndash;4. Free to use unglossed. Counts toward coverage.</span></div>
+    <div class="pipe-s"><b><span class="sw" style="background:#137B55"></span>SOLID</b>
+      <span>Box 5, survived a 21-day gap. Safe to build a whole sentence out of.</span></div>
+  </div>
+
+  <div class="note">
+    <span class="note-t">The generation rule</span>
+    <p>Any text the app produces for you &mdash; a story paragraph, a dialogue line, a task
+    prompt &mdash; must be at least <strong>95% <span class="m">KNOWN</span> or
+    <span class="m">SOLID</span></strong>, with the remaining 5% drawn deliberately from words
+    you're due to meet next. That is the Nation threshold applied literally: it is the difference
+    between input and noise, and it is only computable because the app tracks the lexicon.</p>
+    <p>It also gives you something no textbook can do: <em>the text gets harder exactly as fast as
+    you do,</em> and never faster.</p>
+  </div>
+
+  <h3>2 &middot; The stage gate</h3>
+  <p>From the Pavia Project sequences. Your stage is inferred from what you actually produce
+  correctly, not from which lessons you've opened. Everything above your stage still appears in
+  what you read and hear &mdash; exposure is what eventually makes it learnable &mdash; but it is
+  never marked wrong.</p>
+
+  <div class="tsc"><table>
+    <caption>The verb ladder, and what each stage unlocks for grading</caption>
+    <thead><tr><th>Stage</th><th>Structure</th><th>Graded when reached</th><th>Still in your input</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><span class="it">presente</span></td><td>Present-tense agreement</td><td>everything</td></tr>
+      <tr><td class="n">2</td><td><span class="it">passato prossimo</span></td><td>Auxiliary choice, participle</td><td>everything</td></tr>
+      <tr><td class="n">3</td><td><span class="it">imperfetto</span></td><td>Aspect contrast vs perfective</td><td>everything</td></tr>
+      <tr><td class="n">4</td><td><span class="it">futuro</span></td><td>Future forms</td><td>everything</td></tr>
+      <tr><td class="n">5</td><td><span class="it">condizionale</span></td><td>Politeness, hypotheticals</td><td>everything</td></tr>
+      <tr><td class="n">6</td><td><span class="it">congiuntivo</span></td><td>Mood after opinion/doubt verbs</td><td>everything</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Two more ladders run alongside it: gender agreement
+  (<span class="it">lui/lei &rarr; definite article &rarr; indefinite article &rarr; attributive
+  adjective &rarr; predicative adjective &rarr; past participle</span>) and subordination
+  (<span class="it">causal &rarr; temporal &rarr; purpose &rarr; conditional &rarr;
+  concessive</span>). The article position on the gender ladder is where the Polish strand hooks
+  in.</p>
+
+  <h3>3 &middot; The mapping engine</h3>
+  <p>You asked for mappings rather than words, and you have two source languages to map from
+  &mdash; which is a genuine advantage, because <strong>English and Polish unlock different
+  Italian vocabulary</strong>. A course written for English speakers throws away half of what you
+  already know.</p>
+
+  <div class="tsc"><table>
+    <caption>One mapping card teaches hundreds of words. The Polish column is the one no other app gives you.</caption>
+    <thead><tr><th>Mapping</th><th>From English</th><th>From Polish</th><th>Yields</th></tr></thead>
+    <tbody>
+      <tr><td class="n">&rarr; -zione</td><td>-tion &middot; <span class="it">nation, station</span></td><td class="pl">-cja &middot; lekcja, funkcja, tradycja</td><td class="n">~1,100</td></tr>
+      <tr><td class="n">&rarr; -tà</td><td>-ty &middot; <span class="it">city, university</span></td><td class="pl">-tet &middot; uniwersytet, autorytet</td><td class="n">~380</td></tr>
+      <tr><td class="n">&rarr; -mente</td><td>-ly &middot; <span class="it">rapidly, exactly</span></td><td class="pl">&mdash; (no parallel)</td><td class="n">~600</td></tr>
+      <tr><td class="n">&rarr; -bile</td><td>-ble &middot; <span class="it">possible, terrible</span></td><td class="pl">-bilny &middot; stabilny, mobilny</td><td class="n">~320</td></tr>
+      <tr><td class="n">&rarr; -oso</td><td>-ous &middot; <span class="it">famous, nervous</span></td><td class="pl">&mdash; (no parallel)</td><td class="n">~250</td></tr>
+      <tr><td class="n">&rarr; -ismo</td><td>-ism &middot; <span class="it">tourism</span></td><td class="pl">-izm &middot; turyzm, organizm</td><td class="n">~200</td></tr>
+      <tr><td class="n">&rarr; -mento</td><td>-ment &middot; <span class="it">moment, document</span></td><td class="pl">-ment &middot; moment, dokument</td><td class="n">~290</td></tr>
+      <tr><td class="n">&rarr; -ico</td><td>-ic &middot; <span class="it">economic</span></td><td class="pl">-yczny &middot; ekonomiczny</td><td class="n">~450</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <span class="note-t">Where Polish beats English, and where it betrays you</span>
+    <p><strong>Polish wins:</strong> Italian <span class="it">fabbrica</span> is a factory, and so
+    is Polish <span class="pl">fabryka</span> &mdash; while English <em>fabric</em> is a false
+    friend that actively misleads. Same story for <span class="it">lezione</span> /
+    <span class="pl">lekcja</span>, <span class="it">azione</span> / <span class="pl">akcja</span>.</p>
+    <p><strong>Polish betrays:</strong> <span class="it">colazione</span> is breakfast, not
+    <span class="pl">kolacja</span> (supper). <span class="it">droga</span> is a drug, not
+    <span class="pl">droga</span> (road). <span class="it">firma</span> is a signature, not a
+    company. <span class="it">divano</span> is a sofa, not <span class="pl">dywan</span> (carpet).
+    These get their own drill type, because they are exactly the errors this learner will make and
+    no English-first course will ever surface them.</p>
+  </div>
+
+  <h3>4 &middot; The Polish layer</h3>
+  <p>Three things run in Polish throughout, because in each case Polish is the better scaffold
+  and English is a detour.</p>
+  <ul>
+    <li><strong>Aspect.</strong> <span class="it">Passato prossimo</span> vs
+    <span class="it">imperfetto</span> is taught as <span class="pl">dokonany</span> vs
+    <span class="pl">niedokonany</span>: <span class="pl">przeczytałem</span> &rarr;
+    <span class="it">ho letto</span>, <span class="pl">czytałem</span> &rarr;
+    <span class="it">leggevo</span>. Then the app explicitly flags the verbs where the intuition
+    fails &mdash; <span class="pl">być</span> has no perfective partner, so both
+    <span class="it">era</span> and <span class="it">è stato</span> collapse into
+    <span class="pl">był</span> and the contrast becomes invisible.</li>
+    <li><strong>Articles.</strong> A permanent strand, sequenced definite &rarr; indefinite &rarr;
+    fused prepositions, appearing in every session forever.</li>
+    <li><strong>Pronunciation.</strong> Skipped almost entirely &mdash; Polish already gives you
+    pure vowels, a trilled <span class="it">r</span>, and transparent spelling. The budget goes to
+    the two things Polish does <em>not</em> prepare you for: geminates
+    (<span class="it">nono / nonno</span>) and mobile stress, since Polish stress is fixed on the
+    penultimate syllable and Italian's is not.</li>
+  </ul>
+
+  <h3>5 &middot; The achievement model</h3>
+  <p>Four honest numbers replace the streak. Each concept surfaces them differently, but all four
+  exist underneath every design.</p>
+
+  <div class="tsc"><table>
+    <caption>What the app is allowed to celebrate</caption>
+    <thead><tr><th>Metric</th><th>What it means</th><th>Why it's safe to optimise</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Coverage %</strong></td><td>Share of running words in real Italian text you'd know</td><td>Can only rise by consolidating words; unfarmable</td></tr>
+      <tr><td><strong>Posso… count</strong></td><td>CEFR can-do statements you've demonstrated in a task</td><td>Requires producing language, not tapping</td></tr>
+      <tr><td><strong>Stage</strong></td><td>Position on the acquisition ladder</td><td>Inferred from correct production, not lessons opened</td></tr>
+      <tr><td><strong>Solid words</strong></td><td>Words that survived a 21-day gap</td><td>Time-gated by definition &mdash; cannot be rushed</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <span class="note-t">Nothing here counts sessions, minutes or consecutive days</span>
+    <p>Not because streaks don't work &mdash; they demonstrably drive engagement &mdash; but
+    because they drive it toward the cheapest qualifying action. If you ever want a nudge, the
+    honest version is <em>"14 words fall out of Solid this week unless you review"</em>. That's a
+    real consequence, not a manufactured one.</p>
+  </div>
+</section>
+
+<div class="divider"><span>&#9670;</span></div>
+</div><!--/col-->
+</div><!--/wrap-->
+
+<section id="a" class="secA">
+<div class="col">
+  <div class="chead">
+    <span class="tag">Concept A</span>
+    <h2>Copertura <span class="name">— the coverage instrument</span></h2>
+  </div>
+  <p class="lede">The app is a gauge. You are filling a reservoir of 2,000 words, and a number at
+  the top tells you what share of real spoken and written Italian you could currently decode.
+  Everything else in the app exists to move that number.</p>
+
+  <p>This concept takes the single most motivating true fact in the research &mdash; that De
+  Mauro's 2,000 <span class="it">fondamentale</span> words account for about 86% of everything
+  Italians say and write &mdash; and makes it the product's spine. The reservoir is literally
+  drawn: 2,000 cells you can see filling up. Nothing is hidden behind a metaphor.</p>
+
+  <div class="why">
+    <span class="note-t">Why this one might be right for you</span>
+    <p>It is the most honest of the three, and the least likely to feel like a toy. If what keeps
+    you going is watching a number you <em>know</em> isn't gamed, this is the design that gives
+    you that. It's also the cheapest to build well, because it leans hardest on machinery the app
+    already has.</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="gallery cA">
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>COPERTURA</span></div>
+    <div class="ph-body">
+      <p class="s-k">Copertura stimata</p>
+      <div>
+        <span class="s-big">41.2%</span>
+        <p class="s-sm" style="margin:3px 0 0">of running words in ordinary Italian</p>
+      </div>
+      <div class="s-meter">
+        <i style="width:24%;background:#137B55"></i><i style="width:11%;background:#2E9E6B"></i>
+        <i style="width:6%;background:#3E77D6"></i><i style="width:5%;background:#C79A2E"></i>
+      </div>
+      <p class="s-sm">487 solid · 228 known · 119 learning · 1 166 to meet</p>
+      <div class="s-c" style="border-color:var(--s-acc)">
+        <div class="s-row"><span class="s-chip acc">Next milestone</span><span class="s-sm">50%</span></div>
+        <p class="s-p"><b>Read a newspaper headline without stopping.</b> 168 words away.</p>
+      </div>
+      <hr class="s-hr">
+      <p class="s-k">Today · 3 pieces of work</p>
+      <div class="s-c">
+        <div class="s-row"><b style="font-size:11.5px">Consolidate 18 due</b><span class="s-chip">7 min</span></div>
+        <p class="s-sm">14 of them fall out of Solid on Thursday.</p>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><b style="font-size:11.5px">Task · Prenota un tavolo</b><span class="s-chip">12 min</span></div>
+        <p class="s-sm">Books a table by phone. Unlocks a <i>Posso…</i></p>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><b style="font-size:11.5px">Read · generated for you</b><span class="s-chip">5 min</span></div>
+        <p class="s-sm">Built at 96% of words you know.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Start &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Oggi</i><i>Riserva</i><i>Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A1 · Oggi</b>The home screen leads with coverage, not a streak. The three
+  pieces of work are chosen for you and sized in minutes. The nudge underneath the first one is a
+  real consequence, not a manufactured one.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>RISERVA</span></div>
+    <div class="ph-body">
+      <div class="s-row"><h1 class="s-h">La Riserva</h1><span class="s-chip acc">834 / 2000</span></div>
+      <p class="s-sm">Every word in De Mauro's <i>vocabolario fondamentale</i>, in frequency order.
+      Top-left is <i>essere</i>.</p>
+      <div class="s-cells" data-n="286" data-solid=".30" data-known=".14" data-learn=".07" data-met=".06"></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span class="s-sm"><span class="sw" style="background:#137B55"></span>solid</span>
+        <span class="s-sm"><span class="sw" style="background:#2E9E6B"></span>known</span>
+        <span class="s-sm"><span class="sw" style="background:#3E77D6"></span>learning</span>
+        <span class="s-sm"><span class="sw" style="background:#C79A2E"></span>met</span>
+      </div>
+      <hr class="s-hr">
+      <p class="s-k">Band 3 · ranks 401–600</p>
+      <div class="s-c">
+        <p class="s-p"><span class="s-it">portare, chiedere, sembrare, tenere, restare…</span></p>
+        <p class="s-sm">These 200 words alone are worth 4.1 points of coverage.</p>
+        <div class="s-btn2">Study this band</div>
+      </div>
+      <div style="flex:1"></div>
+      <p class="s-sm">Tap any cell for the word behind it.</p>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i class="on">Riserva</i><i>Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A2 · La Riserva</b>The 2,000 words made physical. Frequency order means the
+  top-left corner is worth far more coverage per cell than the bottom-right &mdash; and the
+  gradient you can see forming is the shape of your own learning.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>#412</span></div>
+    <div class="ph-body">
+      <div class="s-row"><span class="s-chip">rank 412</span><span class="s-chip acc">learning · box 2</span></div>
+      <h1 class="s-h s-it" style="font-size:26px">chiedere</h1>
+      <p class="s-sm">/ˈkjɛː.de.re/ · verb, irregular</p>
+      <div class="s-c">
+        <div class="s-row"><span class="s-sm">EN</span><span style="font-size:11.5px">to ask (for)</span></div>
+        <hr class="s-hr">
+        <div class="s-row"><span class="s-sm">PL</span><span style="font-size:11.5px">pytać · prosić o</span></div>
+      </div>
+      <div class="s-c">
+        <p class="s-sm">Careful — Polish split</p>
+        <p class="s-p"><i>chiedere</i> covers both <span style="color:var(--s-mut)">pytać</span>
+        (ask a question) and <span style="color:var(--s-mut)">prosić o</span> (request a thing).
+        Italian does not distinguish them.</p>
+      </div>
+      <hr class="s-hr">
+      <p class="s-k">Where you've met it</p>
+      <ul class="s-list">
+        <li><span class="s-tick">·</span><span><i>Devo chiedere a Marta.</i> — story 7</span></li>
+        <li><span class="s-tick">·</span><span><i>Ti posso chiedere una cosa?</i> — task “Al bar”</span></li>
+      </ul>
+      <div style="flex:1"></div>
+      <div class="s-row"><span class="s-sm">Next due</span><span class="s-sm">in 3 days</span></div>
+      <div class="s-btn2">▶ Ascolta</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i class="on">Riserva</i><i>Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A3 · Word detail</b>Every word carries both glosses, its scheduler state,
+  and — critically — the places <em>you personally</em> met it. Contextual traces are what make a
+  word retrievable. The Polish note appears only where the two languages carve meaning differently.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>MAPPA 04</span></div>
+    <div class="ph-body">
+      <span class="s-chip acc">Mapping · not vocabulary</span>
+      <h1 class="s-h" style="font-size:19px">-cja &nbsp;·&nbsp; -tion &nbsp;&rarr;&nbsp; <span class="s-it">-zione</span></h1>
+      <p class="s-p">One rule. About <b>1,100</b> Italian words. You already know almost all of
+      them in two other languages.</p>
+      <div class="s-c">
+        <p class="s-sm">From Polish — the shorter route</p>
+        <p class="s-p"><span class="s-it">lekcja &rarr; lezione</span><br>
+        <span class="s-it">akcja &rarr; azione</span><br>
+        <span class="s-it">tradycja &rarr; tradizione</span><br>
+        <span class="s-it">policja &rarr; polizia</span></p>
+      </div>
+      <div class="s-c">
+        <p class="s-sm">From English</p>
+        <p class="s-p"><span class="s-it">nation &rarr; nazione</span><br>
+        <span class="s-it">station &rarr; stazione</span><br>
+        <span class="s-it">information &rarr; informazione</span></p>
+      </div>
+      <div class="s-c" style="border-color:#C79A2E">
+        <p class="s-sm" style="color:#C79A2E">One trap in this set</p>
+        <p class="s-p"><span class="s-it">colazione</span> is <b>breakfast</b>, not
+        <span style="color:var(--s-mut)">kolacja</span>. The mapping is real; the meaning shifted.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Test the rule &rarr;</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i class="on">Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A4 · Mapping card</b>Teaching the correspondence instead of the words. The
+  Polish route is listed first because it is often the shorter one — and the false friend is
+  taught in the same breath, since that's the direct cost of the strategy.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>6 / 18</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:33%;background:var(--s-acc)"></i></div>
+      <p class="s-k">Produce it — don't recognise it</p>
+      <div class="s-c" style="padding:14px 12px">
+        <p class="s-sm">PL</p>
+        <p style="font-size:17px;margin:0" class="s-it">Poprosiłabym o rachunek.</p>
+        <hr class="s-hr">
+        <p class="s-sm">Say it in Italian, then check.</p>
+      </div>
+      <div class="s-c" style="border-color:#C79A2E;background:#241D10">
+        <p class="s-sm" style="color:#C79A2E">Not quite — try once more</p>
+        <p class="s-p">You wrote <span class="s-it">Vorrei il conto</span>.<br>
+        The <i>conto</i> is right. But which article?
+        <span class="s-it">il</span> / <span class="s-it">un</span> — you're asking for
+        <em>the</em> bill, the one that's yours.</p>
+      </div>
+      <div class="s-c flat"><p class="s-sm">Your answer</p>
+        <p style="font-size:14px;margin:0" class="s-it">Vorrei il conto|</p></div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Check again</div>
+      <div class="s-btn2">Show me</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i class="on">Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A5 · Retrieval drill</b>The most important screen in the app. Prompt in
+  Polish, produce in Italian, and a wrong answer gets <em>located</em> — never solved. “Show me”
+  stays available but is a deliberate second choice.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>96% NOTA</span></div>
+    <div class="ph-body">
+      <div class="s-row"><span class="s-chip acc">Generated for you</span><span class="s-sm">45 words</span></div>
+      <p style="font-size:13.5px;line-height:1.62;margin:0" class="s-it">
+        Marta esce di casa alle sette. Fa freddo, ma il cielo è chiaro. Prende il caffè al bar
+        vicino alla stazione e parla con Giulio, che
+        <u style="text-decoration-color:#C79A2E;text-decoration-thickness:2px">lavora</u> lì da tre
+        anni. «Oggi devo andare a Bologna» dice. Giulio
+        <u style="text-decoration-color:#C79A2E;text-decoration-thickness:2px">sorride</u>: «Di nuovo?»
+      </p>
+      <div class="s-c" style="border-color:#C79A2E">
+        <div class="s-row"><span class="s-it" style="font-size:13px">sorride</span><span class="s-chip">new</span></div>
+        <p class="s-p">smiles · <span class="pl" style="color:var(--s-mut)">uśmiecha się</span></p>
+        <div class="s-btn2">+ Add to Riserva</div>
+      </div>
+      <hr class="s-hr">
+      <p class="s-sm">Two words here are new on purpose. The other 43 are yours — that's why this
+      reads at speed.</p>
+      <div style="flex:1"></div>
+      <div class="s-btn">Comprehension &rarr;</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i class="on">Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A6 · Generated reading</b>Assembled from your lexicon at 96% coverage. The
+  underlined words are the deliberate 4%. This is the screen that only works because the app
+  tracks words — no authored text could hit your level this precisely.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>STADIO</span></div>
+    <div class="ph-body">
+      <h1 class="s-h">Where you are</h1>
+      <p class="s-sm">Inferred from what you produce correctly — not from lessons opened.</p>
+      <ul class="s-list" style="gap:7px">
+        <li><span class="s-tick">✓</span><span><b>1 · presente</b><br><span class="s-sm">graded since March</span></span></li>
+        <li><span class="s-tick">✓</span><span><b>2 · passato prossimo</b><br><span class="s-sm">graded — auxiliary choice 91%</span></span></li>
+        <li><span class="s-tick">◆</span><span><b style="color:var(--s-acc)">3 · imperfetto</b><br><span class="s-sm">grading now · aspect contrast 64%</span></span></li>
+        <li><span class="s-lock">○</span><span style="color:var(--s-mut)"><b>4 · futuro</b><br><span class="s-sm">appears in your reading, never marked</span></span></li>
+        <li><span class="s-lock">○</span><span style="color:var(--s-mut)"><b>5 · condizionale</b><br><span class="s-sm">appears in your reading, never marked</span></span></li>
+        <li><span class="s-lock">○</span><span style="color:var(--s-mut)"><b>6 · congiuntivo</b><br><span class="s-sm">appears in your reading, never marked</span></span></li>
+      </ul>
+      <div class="s-c" style="border-color:var(--s-acc)">
+        <p class="s-sm">Why you saw <i>vorrei</i> anyway</p>
+        <p class="s-p">Stage 5 forms show up as fixed phrases from day one. You'll be graded on
+        building them when you get there.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn2">Articles strand · always on</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i>Compiti</i><i class="on">Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A7 · Stage panel</b>The teachability hypothesis made visible. Locked stages
+  are explicitly described as present-but-ungraded, so the learner understands why they keep
+  seeing forms they haven't “done”.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>RAPPORTO</span></div>
+    <div class="ph-body">
+      <h1 class="s-h">Six months in</h1>
+      <div class="s-c">
+        <p class="s-sm">Coverage</p>
+        <svg viewBox="0 0 200 56" style="width:100%;height:auto"><polyline points="4,52 32,47 60,41 88,33 116,27 144,20 172,13 196,9"
+          fill="none" stroke="#4ADE9B" stroke-width="2.2" stroke-linejoin="round"/>
+          <line x1="0" y1="9" x2="200" y2="9" stroke="#26362F" stroke-dasharray="2 3"/></svg>
+        <div class="s-row"><span class="s-sm">Aug 11.0%</span><span class="s-sm">now 41.2%</span></div>
+      </div>
+      <div class="s-row">
+        <div class="s-c" style="flex:1;align-items:center"><span class="s-big" style="font-size:20px">487</span><span class="s-sm">solid words</span></div>
+        <div class="s-c" style="flex:1;align-items:center"><span class="s-big" style="font-size:20px">23</span><span class="s-sm">Posso…</span></div>
+      </div>
+      <hr class="s-hr">
+      <p class="s-k">Newest abilities</p>
+      <ul class="s-list">
+        <li><span class="s-tick">✓</span><span><i>Posso</i> book a table by phone and change the time</span></li>
+        <li><span class="s-tick">✓</span><span><i>Posso</i> describe what I did last weekend</span></li>
+        <li><span class="s-tick">✓</span><span><i>Posso</i> explain that something is broken</span></li>
+      </ul>
+      <div style="flex:1"></div>
+      <p class="s-sm">FSI puts professional Italian at 600–750 hours. You're at 84.</p>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i>Compiti</i><i class="on">Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A8 · Report</b>Achievement without a streak: a rising coverage curve, solid
+  words, and can-do statements you demonstrated in a task. The FSI line at the bottom keeps the
+  whole thing honest about scale.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>ARTICOLI</span></div>
+    <div class="ph-body">
+      <div class="s-row"><span class="s-chip acc">Permanent strand</span><span class="s-sm">day 148</span></div>
+      <h1 class="s-h" style="font-size:17px">Gli articoli</h1>
+      <p class="s-sm">Polish has none. This never stops appearing — by design.</p>
+      <div class="s-c" style="padding:13px 12px">
+        <p class="s-p" style="font-size:14px">Bevo ___ caffè ogni mattina.</p>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="s-btn2" style="flex:1">il</span><span class="s-btn2" style="flex:1">un</span>
+          <span class="s-btn2" style="flex:1">—</span>
+        </div>
+      </div>
+      <div class="s-c">
+        <p class="s-sm">Why this one is hard for you</p>
+        <p class="s-p">Polish says <span style="color:var(--s-mut)">Piję kawę</span> — no article,
+        no choice. Italian needs one here because it's a habit, a generic. English would also drop
+        it. <b>Neither of your languages helps.</b></p>
+      </div>
+      <hr class="s-hr">
+      <div class="s-row"><span class="s-sm">Accuracy, 30 days</span><span class="s-sm" style="color:var(--s-acc)">71% ↑</span></div>
+      <div class="s-meter"><i style="width:71%;background:var(--s-acc)"></i></div>
+      <p class="s-sm">Definite ✓ · Indefinite ✓ · Fused prepositions — next</p>
+      <div style="flex:1"></div>
+      <div class="s-btn">Continue</div>
+    </div>
+    <div class="ph-nav"><i>Oggi</i><i>Riserva</i><i class="on">Compiti</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>A9 · Articles strand</b>The one thing the app nags about forever. It names
+  the difficulty honestly — that on articles neither Polish nor English gives any help — which is
+  more useful than pretending it's easy.</p></div>
+
+</div><!--/gallery-->
+</div><!--/wrap-->
+
+<div class="wrap"><div class="col">
+  <h4>What Concept A gets right, and what it costs</h4>
+  <p><strong>Right:</strong> it is the most direct expression of the research. Coverage is
+  unfarmable, the reserve grid makes 2,000 words feel finite and conquerable, and the generated
+  reading is a genuine capability no off-the-shelf app has. It also reuses your Leitner scheduler
+  almost unchanged.</p>
+  <p><strong>Cost:</strong> it's austere. There is no world, no characters, no humour &mdash; the
+  pleasure is the pleasure of a well-calibrated instrument, which is real but narrow. If your
+  motivation dips, this design has nothing to catch you with except the number. It is also the
+  weakest of the three on the “fun and engaging” requirement, and you should weigh that honestly.</p>
+</div></div>
+</section>
+
+<div class="wrap"><div class="col"><div class="divider"><span>&#9670;</span></div></div></div>
+
+<section id="b" class="secB">
+<div class="col">
+  <div class="chead">
+    <span class="tag">Concept B</span>
+    <h2>In Città <span class="name">— the task world</span></h2>
+  </div>
+  <p class="lede">The app is a small Italian city. Each district is a domain of real things you
+  might need to do &mdash; order breakfast, get a prescription, argue with a landlord &mdash; and
+  each mission is a task with an outcome you either achieve or don't. Achievement is a shelf of
+  <span class="it">Posso…</span> statements: things you have demonstrably done.</p>
+
+  <p>This is task-based language teaching taken literally. TBLT showed an effect of d&nbsp;=&nbsp;0.93
+  across 52 long-term classroom programmes, and its mechanism is exactly what a solo app usually
+  lacks: language used to accomplish something, with a result that can fail. It also feeds the
+  ideal-L2-self mechanism harder than any other design here, because every mission is a concrete
+  picture of you handling a situation.</p>
+
+  <div class="why">
+    <span class="note-t">Why this one might be right for you</span>
+    <p>It is the most fun of the three, and the best answer to “app as the whole course”, because
+    tasks naturally force all four strands: you read the scene, rehearse the language, produce
+    speech under pressure, then review. If you're learning Italian because you want to
+    <em>use</em> it in Italy, this design is organised around that and the other two aren't.</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="gallery cB">
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>SAN LORENZO</span></div>
+    <div class="ph-body">
+      <div class="s-row"><h1 class="s-h">La città</h1><span class="s-chip acc">23 Posso</span></div>
+      <svg viewBox="0 0 200 150" style="width:100%;height:auto;border-radius:8px;background:#F2E6D8">
+        <path d="M0 104 Q52 92 96 106 T200 96" stroke="#BBD3DA" stroke-width="9" fill="none"/>
+        <path d="M28 128 L44 62 L112 44 L166 74" stroke="#E2D0BC" stroke-width="4" fill="none"/>
+        <path d="M44 62 L36 22" stroke="#E2D0BC" stroke-width="4" fill="none"/>
+        <g font-family="Avenir Next, sans-serif" font-size="8" fill="#5B4634">
+          <circle cx="28" cy="128" r="8.5" fill="#B4571F"/><text x="41" y="131" fill="#2C1F14" font-weight="600">Il Bar</text>
+          <circle cx="44" cy="62" r="8.5" fill="#B4571F"/><text x="57" y="65" fill="#2C1F14" font-weight="600">Il Mercato</text>
+          <circle cx="36" cy="22" r="8.5" fill="#C79A2E"/><text x="49" y="25">La Stazione</text>
+          <circle cx="112" cy="44" r="8.5" fill="#C79A2E"/><text x="125" y="47">L'Ufficio</text>
+          <circle cx="166" cy="74" r="8.5" fill="#CFC0AE"/><text x="130" y="90" fill="#8A705A">Il Medico</text>
+        </g>
+      </svg>
+      <p class="s-k">Aperto ora</p>
+      <div class="s-c">
+        <div class="s-row"><b style="font-size:11.5px">Il Mercato</b><span class="s-chip acc">3 / 5</span></div>
+        <p class="s-sm">Buying by weight, asking what's fresh, complaining politely.</p>
+        <div class="s-meter"><i style="width:60%;background:var(--s-acc)"></i></div>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><b style="font-size:11.5px">La Stazione</b><span class="s-chip">0 / 4</span></div>
+        <p class="s-sm">Opens when you're solid on <i>passato prossimo</i>. You're close.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Vai al Mercato &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B1 · La Mappa</b>Districts unlock on <em>stage</em>, not on lessons
+  completed — so the map is a readout of the acquisition ladder wearing a friendlier coat. Greyed
+  districts state their condition plainly.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>MISSIONE 12</span></div>
+    <div class="ph-body">
+      <span class="s-chip acc">Il Mercato</span>
+      <h1 class="s-h" style="font-size:19px">Mezzo chilo di<br><span class="s-it">pomodori</span></h1>
+      <div class="s-c">
+        <p class="s-sm">La situazione</p>
+        <p class="s-p">It's Saturday at the market in Bologna. You want half a kilo of tomatoes —
+        the ripe ones, for tonight, not next week. The vendor is fast and doesn't slow down.</p>
+      </div>
+      <div class="s-c" style="border-color:var(--s-acc)">
+        <p class="s-sm" style="color:var(--s-acc)">Se riesci — if you pull it off</p>
+        <p class="s-p"><b><i>Posso</i> buy food by weight and say how ripe I want it.</b></p>
+      </div>
+      <p class="s-k">You'll need</p>
+      <ul class="s-list">
+        <li><span class="s-tick">✓</span><span>14 words you already know</span></li>
+        <li><span class="s-tick">◆</span><span>4 new: <i>maturo, mezzo, etto, assaggiare</i></span></li>
+        <li><span class="s-tick">◆</span><span>Quantity + <i>di</i> — a small pattern</span></li>
+      </ul>
+      <div style="flex:1"></div>
+      <div class="s-btn">Comincia &rarr;</div>
+      <p class="s-sm" style="text-align:center">4 phases · about 12 minutes</p>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B2 · Mission brief</b>Every mission states its outcome as a
+  <em>Posso…</em> before you start. Naming the ability up front is the ideal-self mechanism doing
+  its work — you're not doing lesson 12, you're becoming someone who can buy tomatoes.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 1 · ASCOLTA</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:25%;background:var(--s-acc)"></i></div>
+      <p class="s-k">Phase 1 — watch someone else do it</p>
+      <div class="s-c" style="gap:8px">
+        <div class="s-row"><span class="s-chip">Il venditore</span><span class="s-sm">▶ 0:14</span></div>
+        <p class="s-p s-it">— Mi dica, signora!</p>
+        <p class="s-p s-it" style="color:var(--s-mut)">— Mezzo chilo di pomodori, per favore. Ma
+        <u style="text-decoration-color:#B4571F">maturi</u>, che li mangio stasera.</p>
+        <p class="s-p s-it">— Ho questi. Guardi che belli. Un etto in più?</p>
+        <p class="s-p s-it" style="color:var(--s-mut)">— No, va bene così. Quant'è?</p>
+      </div>
+      <div class="s-c flat">
+        <p class="s-sm"><b>maturi</b> — ripe · <span class="pl" style="color:var(--s-mut)">dojrzałe</span><br>
+        You'll need the plural because <i>pomodori</i> is plural. Italian makes adjectives agree.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn2">◀ Riascolta</div>
+      <div class="s-btn">Ho capito &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B3 · Input phase</b>You never produce cold. Phase 1 is comprehensible input
+  — a model of the task done well, at your coverage level, with only the genuinely new words
+  glossed.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 2 · PROVA</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:50%;background:var(--s-acc)"></i></div>
+      <p class="s-k">Phase 2 — get the pieces ready</p>
+      <div class="s-c">
+        <p class="s-sm">The pattern</p>
+        <p class="s-p" style="font-size:13px"><span class="s-it">mezzo chilo <b>di</b> pomodori</span><br>
+        <span class="s-it">un etto <b>di</b> prosciutto</span><br>
+        <span class="s-it">due chili <b>di</b> pane</span></p>
+        <p class="s-sm">Quantity + <b>di</b> + thing. No article. Polish uses the genitive here
+        (<span class="pl">pół kilo pomidorów</span>) — same idea, different machinery.</p>
+      </div>
+      <div class="s-c" style="border-color:#C79A2E">
+        <p class="s-sm" style="color:#8A705A">Careful</p>
+        <p class="s-p">Italian <span class="s-it">etto</span> = 100 g and gets used constantly.
+        There's no Polish or English habit to lean on — you'll just have to think in
+        <i>etti</i>.</p>
+      </div>
+      <div class="s-c flat">
+        <p class="s-sm">Say it: “a hundred grams of cheese”</p>
+        <p style="font-size:13px;margin:0" class="s-it">🎙 un etto di formaggio</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Sono pronta &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B4 · Rehearsal</b>The form-focused slice, embedded in a communicative task
+  rather than taught as a chapter. Norris &amp; Ortega found Focus-on-Form and Focus-on-FormS
+  equally effective — so it can live here, where it's obviously useful.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FASE 3 · AL MERCATO</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:75%;background:var(--s-acc)"></i></div>
+      <div style="display:flex;flex-direction:column;gap:7px;flex:1">
+        <div class="s-c" style="align-self:flex-start;max-width:88%;background:var(--s-bg2);border:0">
+          <p class="s-p s-it" style="font-size:12px">Buongiorno! Mi dica.</p></div>
+        <div class="s-c" style="align-self:flex-end;max-width:88%;background:var(--s-accw);border:0">
+          <p class="s-p s-it" style="font-size:12px">Mezzo chilo di pomodori, per favore.</p>
+          <span class="s-sm" style="color:var(--s-acc)">🎙 chiaro</span></div>
+        <div class="s-c" style="align-self:flex-start;max-width:88%;background:var(--s-bg2);border:0">
+          <p class="s-p s-it" style="font-size:12px">Questi o quelli? Questi costano di più ma
+          sono più maturi.</p></div>
+        <div class="s-c flat" style="align-self:flex-end;max-width:92%">
+          <p class="s-sm">Your turn — he's asked you to choose. Say which and why.</p>
+          <div class="s-row"><span class="s-chip">🎙 tieni premuto</span><span class="s-chip">⌨︎ scrivi</span></div>
+        </div>
+      </div>
+      <div class="s-btn" style="background:var(--s-acc)">🎙</div>
+      <p class="s-sm" style="text-align:center">No script. He responds to what you actually say.</p>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B5 · The task</b>Voice-first, unscripted, generative. This is where the
+  biggest measured effects live — mobile + voice + Gen-AI were the three significant moderators —
+  and where speaking anxiety drops because the vendor cannot judge you.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>FATTO</span></div>
+    <div class="ph-body">
+      <div style="text-align:center;padding:6px 0">
+        <p class="s-k" style="color:var(--s-acc)">Missione riuscita</p>
+        <p style="font-size:15px;margin:5px 0 0;font-weight:700">You got the tomatoes.</p>
+      </div>
+      <div class="s-c" style="border-color:var(--s-acc);background:var(--s-accw)">
+        <p class="s-sm" style="color:var(--s-acc)">Nuovo Posso</p>
+        <p class="s-p"><b>I can buy food by weight and say how ripe I want it.</b></p>
+      </div>
+      <p class="s-k">Cosa hai detto bene</p>
+      <ul class="s-list">
+        <li><span class="s-tick">✓</span><span><i>mezzo chilo di pomodori</i> — pattern held</span></li>
+        <li><span class="s-tick">✓</span><span><i>questi, sono più maturi</i> — agreement correct</span></li>
+      </ul>
+      <p class="s-k">Da rivedere</p>
+      <ul class="s-list">
+        <li><span style="color:#B4571F;font-weight:700">◆</span><span><i>Li mangio stasera</i> —
+        you said <i>lo mangio</i>. Plural object, plural clitic.</span></li>
+      </ul>
+      <div class="s-c flat"><p class="s-sm"><b>+4 parole</b> added · <i>maturo, mezzo, etto,
+      assaggiare</i> — first review tomorrow</p></div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Avanti</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B6 · Debrief</b>Success is framed as the outcome (“you got the tomatoes”),
+  not a score. The one correction is specific and stage-appropriate — clitics are graded here
+  because this learner is past that point.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>POSSO</span></div>
+    <div class="ph-body">
+      <div class="s-row"><h1 class="s-h">Posso…</h1><span class="s-chip acc">23</span></div>
+      <p class="s-sm">Things you've actually done, not lessons you've opened.</p>
+      <div class="s-c"><p class="s-sm">Il Bar · 5</p>
+        <ul class="s-list"><li><span class="s-tick">✓</span><span>order and pay for breakfast standing up</span></li>
+        <li><span class="s-tick">✓</span><span>ask for something to be changed</span></li></ul></div>
+      <div class="s-c"><p class="s-sm">Il Mercato · 3</p>
+        <ul class="s-list"><li><span class="s-tick">✓</span><span>buy food by weight, say how ripe</span></li>
+        <li><span class="s-tick">✓</span><span>ask what's good today</span></li></ul></div>
+      <div class="s-c" style="border-style:dashed"><p class="s-sm">Prossimo</p>
+        <ul class="s-list"><li><span class="s-lock">○</span><span style="color:var(--s-mut)">explain a
+        problem with my flat and ask for it to be fixed</span></li></ul></div>
+      <div style="flex:1"></div>
+      <div class="s-c flat"><p class="s-sm">These map to CEFR A2 descriptors. 23 of 30 for A2
+      complete.</p><div class="s-meter"><i style="width:77%;background:var(--s-acc)"></i></div></div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i class="on">Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B7 · The Posso shelf</b>The achievement screen. Every item is a
+  demonstrated ability phrased as the learner would phrase it, quietly mapped to CEFR descriptors
+  underneath.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>TACCUINO</span></div>
+    <div class="ph-body">
+      <div class="s-row"><h1 class="s-h">Il taccuino</h1><span class="s-chip acc">834</span></div>
+      <div class="s-c">
+        <div class="s-row"><span class="s-sm">Copertura</span><span style="font-weight:700;font-size:13px;color:var(--s-acc)">41.2%</span></div>
+        <div class="s-meter"><i style="width:24%;background:#137B55"></i><i style="width:11%;background:#7BB89A"></i>
+          <i style="width:6%;background:#C79A2E"></i></div>
+        <p class="s-sm">of the 2 000 <i>fondamentale</i> — the words that buy 86%</p>
+      </div>
+      <p class="s-k">Raccolte al Mercato</p>
+      <div class="s-c">
+        <div class="s-row"><span class="s-it" style="font-size:13px">maturo</span><span class="s-chip">nuovo</span></div>
+        <p class="s-sm">ripe · <span class="pl">dojrzały</span></p>
+        <hr class="s-hr">
+        <div class="s-row"><span class="s-it" style="font-size:13px">etto</span><span class="s-chip">nuovo</span></div>
+        <p class="s-sm">100 grams · <span class="pl">dekagram ×10</span></p>
+      </div>
+      <div class="s-c" style="border-color:#B4571F">
+        <p class="s-sm" style="color:#B4571F">Falso amico raccolto</p>
+        <p class="s-p"><span class="s-it">la firma</span> = signature.<br>
+        <span class="pl">firma</span> = company → <span class="s-it">la ditta / l'azienda</span></p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn2">Ripassa 18 parole</div>
+    </div>
+    <div class="ph-nav"><i>Città</i><i>Posso</i><i class="on">Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B8 · Il Taccuino</b>The same lexicon engine as Concept A, dressed as a
+  traveller's notebook and organised by <em>where you picked each word up</em> — which is a
+  better retrieval cue than an alphabetical list.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>GRAMMATICA</span></div>
+    <div class="ph-body">
+      <span class="s-chip acc">Serve per: La Stazione</span>
+      <h1 class="s-h" style="font-size:17px">Dokonany czy niedokonany?</h1>
+      <p class="s-sm">You already have this distinction. Italian just marks it differently.</p>
+      <div class="s-c">
+        <div class="s-row"><span class="s-sm">niedokonany →</span><span class="s-it" style="font-weight:700">imperfetto</span></div>
+        <p class="s-p"><span class="pl">czytałem</span> &nbsp;→&nbsp; <span class="s-it">leggevo</span></p>
+        <hr class="s-hr">
+        <div class="s-row"><span class="s-sm">dokonany →</span><span class="s-it" style="font-weight:700">passato prossimo</span></div>
+        <p class="s-p"><span class="pl">przeczytałem</span> &nbsp;→&nbsp; <span class="s-it">ho letto</span></p>
+      </div>
+      <div class="s-c" style="border-color:#B4571F">
+        <p class="s-sm" style="color:#B4571F">Dove ti tradisce — where it betrays you</p>
+        <p class="s-p"><span class="pl">być</span> has no perfective partner, so Polish can't see
+        this contrast at all:</p>
+        <p class="s-p s-it">Era una bella giornata. <span style="color:var(--s-mut)">(it was, ongoing)</span><br>
+        È stata una bella giornata. <span style="color:var(--s-mut)">(it was, and it's over)</span></p>
+        <p class="s-sm">Both are just <span class="pl">Był piękny dzień</span>. Learn these two as
+        separate items.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Prova &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Città</i><i>Posso</i><i>Taccuino</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>B9 · Grammar in Polish</b>Aspect explained through the category you already
+  own — and then, crucially, the exact point where that intuition fails. This screen is the single
+  clearest example of designing for a Polish speaker rather than a generic one.</p></div>
+
+</div><!--/gallery-->
+</div><!--/wrap-->
+
+<div class="wrap"><div class="col">
+  <h4>What Concept B gets right, and what it costs</h4>
+  <p><strong>Right:</strong> it's the only one of the three where all four strands fall out of the
+  structure automatically, and it's the most enjoyable. Missions give the app a natural unit of
+  work, a natural stopping point, and a natural reason to speak. Districts gating on stage is an
+  elegant way to make the acquisition ladder feel like progress rather than restriction.</p>
+  <p><strong>Cost:</strong> content-hungry. Every mission needs a scene, a model dialogue, a
+  rehearsal set and a working conversational agent — a lot per twelve minutes of study. The
+  coverage engine also becomes less visible here, so the 2,000-word goal risks fading into the
+  background unless the Taccuino screen works hard.</p>
+</div></div>
+</section>
+
+<div class="wrap"><div class="col"><div class="divider"><span>&#9670;</span></div></div></div>
+
+<section id="c" class="secC">
+<div class="col">
+  <div class="chead">
+    <span class="tag">Concept C</span>
+    <h2>La Serie <span class="name">— the serial you can just about read</span></h2>
+  </div>
+  <p class="lede">The app is an ongoing drama set in Bologna, written fresh for you at exactly the
+  level you can handle. You keep going because you want to know what happens next &mdash; and the
+  only way to get the next episode is to do the language work that makes it readable.</p>
+
+  <p>This concept bets on the strand every app neglects and the research rates highly: massive
+  comprehensible input. Extensive reading returned d&nbsp;=&nbsp;0.46 on controlled comparisons and
+  d&nbsp;=&nbsp;0.71 pre&ndash;post, across reading, vocabulary, fluency, writing, oral proficiency
+  <em>and</em> motivation. The catch has always been that graded readers are written for an
+  imaginary average learner. Yours would be written for your actual lexicon, sentence by sentence.</p>
+
+  <div class="why">
+    <span class="note-t">Why this one might be right for you</span>
+    <p>Because narrative is the one motivator that doesn't decay into a chore. The research also
+    supplies an unusual permission here: interleaving <em>hurts</em> connected narrative, so this
+    is the one part of a course allowed to be blocked and immersive. And a serial gives words
+    something no flashcard can — a place they happened.</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="gallery cC">
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>STAGIONE 1</span></div>
+    <div class="ph-body">
+      <p class="s-k">Via Zamboni</p>
+      <h1 class="s-h" style="font-family:var(--s-serif);font-size:24px;font-weight:400">Episodio 7<br>
+        <span class="s-it" style="color:var(--s-acc)">La chiave</span></h1>
+      <div class="s-c" style="border-color:var(--s-acc)">
+        <p class="s-p">Qualcuno è entrato nell'appartamento. Marta non ha dato la chiave a nessuno.</p>
+        <div class="s-row"><span class="s-chip acc">nuovo</span><span class="s-sm">~7 min · 340 parole</span></div>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><span class="s-sm">Leggibilità per te</span><span style="color:var(--s-acc);font-weight:700;font-size:13px">96%</span></div>
+        <div class="s-meter"><i style="width:96%;background:var(--s-acc)"></i></div>
+        <p class="s-sm">13 parole nuove. Sotto il 95% ti aspetto — non serve leggere a fatica.</p>
+      </div>
+      <hr class="s-hr">
+      <p class="s-k">Precedenti</p>
+      <ul class="s-list">
+        <li><span class="s-tick">✓</span><span><b>6 · Il vicino</b> <span class="s-sm">— 98% capito</span></span></li>
+        <li><span class="s-tick">✓</span><span><b>5 · La lettera di Davide</b> <span class="s-sm">— 92% capito</span></span></li>
+        <li><span class="s-tick">✓</span><span><b>4 · Colazione alle sei</b> <span class="s-sm">— 100% capito</span></span></li>
+      </ul>
+      <div style="flex:1"></div>
+      <div class="s-btn">Leggi l'episodio 7 &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C1 · Episode hub</b>The readability figure is the hook: the app tells you,
+  before you start, that this episode sits at 96% of words you know. Nothing is ever released to
+  you below 95% — the threshold is a promise, not a target.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>EP 7 · 1/4</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:22%;background:var(--s-acc)"></i></div>
+      <p style="font-family:var(--s-serif);font-size:14px;line-height:1.68;margin:0">
+        Marta apre la porta e trova la stanza esattamente come l'aveva lasciata. C'è ancora
+        l'odore del caffè. Sul tavolo, accanto ai giornali, qualcuno ha messo una
+        <u style="text-decoration-color:var(--s-acc);text-decoration-thickness:2px">chiave</u>
+        che lei non riconosce.<br><br>
+        Non è la sua. Non è di Davide.<br><br>
+        Guarda verso la finestra: la luce è accesa nell'appartamento
+        <u style="text-decoration-color:var(--s-acc);text-decoration-thickness:2px">di fronte</u>.
+      </p>
+      <div style="flex:1"></div>
+      <div class="s-row">
+        <span class="s-chip">🔊 leggi ad alta voce</span><span class="s-chip">Aa</span>
+      </div>
+      <div class="s-btn2">Continua ▾</div>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C2 · Reading view</b>Generous line-height, a real serif, nothing in the way.
+  Only the 4% of genuinely unknown words are marked — everything else is left clean so you read at
+  speed rather than decoding.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>EP 7 · 1/4</span></div>
+    <div class="ph-body">
+      <p style="font-family:var(--s-serif);font-size:14px;line-height:1.68;margin:0;color:var(--s-mut)">
+        …accanto ai giornali, qualcuno ha messo una
+        <b style="color:var(--s-acc)">chiave</b> che lei non riconosce.</p>
+      <div class="s-c" style="border-color:var(--s-acc);gap:7px">
+        <div class="s-row"><span class="s-it" style="font-size:17px">la chiave</span><span class="s-chip">🔊</span></div>
+        <div class="s-row"><span class="s-sm">EN</span><span style="font-size:11.5px">key</span></div>
+        <div class="s-row"><span class="s-sm">PL</span><span style="font-size:11.5px">klucz</span></div>
+        <hr class="s-hr">
+        <p class="s-sm"><b>Feminine</b> despite ending in -e. This is the opaque group — no rule
+        will save you, so it goes in with its article: <i>la chiave</i>.</p>
+        <div class="s-row">
+          <span class="s-btn2" style="flex:1">Già la so</span>
+          <span class="s-btn" style="flex:1">+ Impara</span>
+        </div>
+      </div>
+      <div class="s-c flat">
+        <p class="s-sm">Rank 388 of the <i>fondamentale</i> 2 000. Worth 0.04 points of coverage.</p>
+      </div>
+      <div style="flex:1"></div>
+      <p class="s-sm" style="text-align:center">Tocca fuori per continuare</p>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C3 · Gloss</b>Both glosses, audio, and the gender note where the noun is
+  opaque — stored <em>with its article</em>, as the research requires. “Già la so” is as important
+  as “Impara”: it lets you correct the model's picture of you.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>EP 7 · 3/4</span></div>
+    <div class="ph-body">
+      <div class="s-meter"><i style="width:70%;background:var(--s-acc)"></i></div>
+      <p class="s-k">Prima di continuare</p>
+      <div class="s-c">
+        <p class="s-p" style="font-size:12.5px">Perché Marta guarda verso la finestra?</p>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span class="s-btn2" style="text-align:left">Ha sentito un rumore fuori</span>
+          <span class="s-btn2" style="text-align:left;border-color:var(--s-acc);color:var(--s-acc)">Ha
+            capito che qualcuno la sta guardando</span>
+          <span class="s-btn2" style="text-align:left">Sta aspettando Davide</span>
+        </div>
+      </div>
+      <div class="s-c" style="border-style:dashed">
+        <p class="s-sm">E secondo te — of whom is the light?</p>
+        <p class="s-p" style="font-size:11.5px;color:var(--s-mut)">Scrivi una frase. Nessuno la
+        corregge per la grammatica sopra il tuo stadio.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Continua la storia &rarr;</div>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C4 · Comprehension &amp; prediction</b>One inference question, then a free
+  prediction. The note under the box is the stage gate stated out loud — you can write freely
+  because you will not be punished for structures you haven't reached.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>SCENA · SEI MARTA</span></div>
+    <div class="ph-body">
+      <span class="s-chip acc">Ora tocca a te</span>
+      <p class="s-p" style="font-size:11.5px">Bussano. È la signora Bellini, la vicina. Tu sei
+      Marta.</p>
+      <div style="display:flex;flex-direction:column;gap:7px;flex:1">
+        <div class="s-c" style="align-self:flex-start;max-width:90%;background:var(--s-bg2);border:0">
+          <p class="s-sm">Sig.ra Bellini</p>
+          <p class="s-p s-it" style="font-size:12px">Buonasera, scusi l'ora. Ho visto la luce…
+          Tutto bene?</p></div>
+        <div class="s-c flat" style="align-self:flex-end;max-width:92%">
+          <p class="s-sm">Tell her someone has been in the flat — but you don't want to alarm her.</p>
+          <div class="s-row"><span class="s-chip">🎙 parla</span><span class="s-chip">⌨︎ scrivi</span></div>
+        </div>
+      </div>
+      <div class="s-c" style="border-style:dashed">
+        <p class="s-sm">Se ti serve · <i>qualcuno è entrato</i> · <i>non sono sicura</i> ·
+        <i>forse mi sbaglio</i></p>
+      </div>
+      <div class="s-btn" style="background:var(--s-acc)">🎙</div>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C5 · You play the scene</b>The output strand, and the reason this isn't
+  just a reader. You speak <em>as a character</em>, which lowers the stakes further than talking
+  as yourself — anxiety drops, willingness to communicate rises.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>RACCOLTO</span></div>
+    <div class="ph-body">
+      <p class="s-k">Episodio 7 · finito</p>
+      <h1 class="s-h" style="font-family:var(--s-serif);font-weight:400;font-size:20px">Hai raccolto
+        <span style="color:var(--s-acc)">13 parole</span></h1>
+      <div class="s-c">
+        <p class="s-sm">Dalla scena della chiave</p>
+        <p class="s-p s-it" style="font-size:12.5px">la chiave · riconoscere · l'odore · accanto a ·
+        di fronte · acceso · bussare · il rumore</p>
+      </div>
+      <div class="s-c" style="border-color:var(--s-acc)">
+        <p class="s-sm" style="color:var(--s-acc)">Copertura</p>
+        <div class="s-row"><span style="font-size:19px;font-weight:700">41.2%</span>
+          <span class="s-sm" style="color:var(--s-acc)">+0.4 questo episodio</span></div>
+        <div class="s-meter"><i style="width:41%;background:var(--s-acc)"></i></div>
+      </div>
+      <div class="s-c flat">
+        <p class="s-sm">Queste 13 tornano fra un giorno, poi fra tre, poi fra una settimana.
+        Le rivedrai <b>dentro la storia</b>, non su una lista.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn2">Episodio 8 · sblocca fra 1 giorno</div>
+      <p class="s-sm" style="text-align:center">Il prossimo userà 9 di queste 13.</p>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C6 · Word harvest</b>The spacing schedule becomes a plot device: the next
+  episode is written to reuse the words that are due. Review stops feeling like homework because
+  it <em>is</em> the story.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>IL MONDO</span></div>
+    <div class="ph-body">
+      <h1 class="s-h">Chi è chi</h1>
+      <div class="s-c">
+        <div class="s-row"><span style="font-size:13px;font-weight:700">Marta Ferrari</span><span class="s-chip acc">tu</span></div>
+        <p class="s-sm">34, traduttrice. Ha ereditato l'appartamento della nonna in via Zamboni.</p>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><span style="font-size:13px;font-weight:700">Giulio</span><span class="s-chip">ep. 1–7</span></div>
+        <p class="s-sm">Il barista sotto casa. Sa più di quello che dice.</p>
+        <p class="s-sm" style="color:var(--s-mut)">Parla veloce — 8 parole imparate da lui.</p>
+      </div>
+      <div class="s-c">
+        <div class="s-row"><span style="font-size:13px;font-weight:700">Sig.ra Bellini</span><span class="s-chip">ep. 3, 7</span></div>
+        <p class="s-sm">La vicina. Dà del <i>lei</i> a tutti — è con lei che impari il registro
+        formale.</p>
+      </div>
+      <div class="s-c" style="border-style:dashed">
+        <div class="s-row"><span style="font-size:13px;font-weight:700;color:var(--s-mut)">Davide</span><span class="s-chip">?</span></div>
+        <p class="s-sm">Il fratello. Non si è ancora visto.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn2">La mappa di Bologna</div>
+    </div>
+    <div class="ph-nav"><i>Serie</i><i>Parole</i><i class="on">Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C7 · Cast</b>Characters double as pedagogical slots: Bellini exists so
+  <i>lei</i>-form register has a reason to appear, Giulio exists so fast colloquial speech does.
+  Each card notes how many words you learned from that person.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>PROGRESSO</span></div>
+    <div class="ph-body">
+      <h1 class="s-h">Stagione 1</h1>
+      <div class="s-c">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
+          <span class="s-chip acc" style="text-align:center">1</span><span class="s-chip acc" style="text-align:center">2</span>
+          <span class="s-chip acc" style="text-align:center">3</span><span class="s-chip acc" style="text-align:center">4</span>
+          <span class="s-chip acc" style="text-align:center">5</span><span class="s-chip acc" style="text-align:center">6</span>
+          <span class="s-chip acc" style="text-align:center">7</span><span class="s-chip" style="text-align:center">8</span>
+          <span class="s-chip" style="text-align:center">9</span><span class="s-chip" style="text-align:center">10</span>
+          <span class="s-chip" style="text-align:center">11</span><span class="s-chip" style="text-align:center">12</span>
+        </div>
+        <p class="s-sm">7 di 12 · comprensione media 96%</p>
+      </div>
+      <div class="s-row">
+        <div class="s-c" style="flex:1;align-items:center"><span style="font-size:19px;font-weight:700;color:var(--s-acc)">41.2%</span><span class="s-sm">copertura</span></div>
+        <div class="s-c" style="flex:1;align-items:center"><span style="font-size:19px;font-weight:700;color:var(--s-acc)">487</span><span class="s-sm">solide</span></div>
+      </div>
+      <div class="s-c">
+        <p class="s-sm">Stadio · <b style="color:var(--s-acc)">3 · imperfetto</b></p>
+        <p class="s-sm" style="color:var(--s-mut)">La stagione 2 è scritta con il condizionale.
+        Si apre quando ci arrivi.</p>
+      </div>
+      <div class="s-c flat"><p class="s-sm"><b>23 Posso…</b> — cose che hai fatto parlando nelle
+      scene</p></div>
+      <div style="flex:1"></div>
+      <p class="s-sm" style="text-align:center;color:var(--s-mut)">Nessuna serie. Nessun giorno
+      consecutivo. Solo quanto capisci.</p>
+    </div>
+    <div class="ph-nav"><i>Serie</i><i>Parole</i><i>Mondo</i><i class="on">Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C8 · Progress</b>Achievement as a season you're partway through. Season 2
+  literally being written in a later stage of the acquisition ladder turns the gate into
+  anticipation rather than a wall.</p></div>
+
+  <div class="ph-wrap"><div class="ph"><div class="ph-scr">
+    <div class="ph-bar"><span>9:41</span><span>PAUSA</span></div>
+    <div class="ph-body">
+      <span class="s-chip acc">Interludio · 2 min</span>
+      <h1 class="s-h" style="font-size:17px">Perché <span class="s-it">l'aveva lasciata</span>?</h1>
+      <p class="s-sm">Hai appena letto questa forma. Non devi produrla — solo riconoscerla.</p>
+      <div class="s-c">
+        <p class="s-p s-it" style="font-size:12.5px">…trova la stanza come <b>l'aveva lasciata</b>.</p>
+        <hr class="s-hr">
+        <p class="s-sm">Un passato dentro un altro passato: lei l'ha lasciata <i>prima</i> di
+        tornare adesso.</p>
+        <p class="s-p" style="font-size:11.5px"><span class="pl">Po polsku:</span>
+        <span class="pl">zostawiła ją</span> — e basta. Il polacco non marca questo scarto, quindi
+        qui l'italiano chiede una cosa in più.</p>
+      </div>
+      <div class="s-c" style="border-color:var(--s-mut)">
+        <p class="s-sm"><b>Stadio 3.</b> Il <i>trapassato</i> arriva dopo. Lo vedrai spesso nella
+        serie e non ti sarà mai chiesto di costruirlo finché non ci arrivi.</p>
+      </div>
+      <div style="flex:1"></div>
+      <div class="s-btn">Torna alla storia</div>
+    </div>
+    <div class="ph-nav"><i class="on">Serie</i><i>Parole</i><i>Mondo</i><i>Io</i></div>
+  </div></div>
+  <p class="ph-cap"><b>C9 · Grammar interlude</b>Explicit instruction triggered by something you
+  just met, capped at two minutes, and explicitly marked as recognition-only. The Polish note
+  explains why the form feels like extra work — because for a Polish speaker it is.</p></div>
+
+</div><!--/gallery-->
+</div><!--/wrap-->
+
+<div class="wrap"><div class="col">
+  <h4>What Concept C gets right, and what it costs</h4>
+  <p><strong>Right:</strong> it is the only design where review is intrinsically motivated. Words
+  come back because the plot needs them, not because a queue says so — which quietly solves the
+  hardest retention problem in consumer language apps. It also delivers the input strand at a
+  volume neither other concept approaches, and narrative is the one context where the research
+  actively endorses <em>not</em> interleaving.</p>
+  <p><strong>Cost:</strong> it's the most technically demanding. Generating 340 words of coherent,
+  plot-advancing Italian constrained to a specific lexicon <em>and</em> a specific grammatical
+  stage, episode after episode, is a real engineering problem. It's also the thinnest on
+  task-based outcomes — you speak as a character, but you never accomplish anything you'd
+  actually need to do in Bologna.</p>
+</div></div>
+</section>
+
+<div class="wrap"><div class="col">
+<div class="divider"><span>&#167;</span></div>
+
+<section id="compare">
+  <h2>Side by side</h2>
+  <p class="lede">All three satisfy the brief. They differ in what they're <em>good</em> at, and
+  the differences line up almost exactly with Nation's four strands — which is the most useful
+  thing about comparing them.</p>
+
+  <div class="tsc"><table>
+    <caption>How each concept covers the four strands, plus your specific requirements</caption>
+    <thead><tr><th>&nbsp;</th><th>A · Copertura</th><th>B · In Città</th><th>C · La Serie</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Meaning-focused input</strong></td><td>moderate — short generated texts</td><td>moderate — mission scenes</td><td><strong>strong</strong> — the whole spine</td></tr>
+      <tr><td><strong>Meaning-focused output</strong></td><td>weak — drills only</td><td><strong>strong</strong> — unscripted tasks</td><td>moderate — in-character scenes</td></tr>
+      <tr><td><strong>Language-focused learning</strong></td><td><strong>strong</strong> — mappings, drills, reserve</td><td>moderate — rehearsal phase</td><td>light — 2-min interludes</td></tr>
+      <tr><td><strong>Fluency development</strong></td><td>weak</td><td><strong>strong</strong> — real-time pressure</td><td>moderate — reading speed</td></tr>
+      <tr><td>Task-based</td><td>no</td><td><strong>yes, natively</strong></td><td>partly</td></tr>
+      <tr><td>Achievement surface</td><td>coverage %</td><td><i>Posso…</i> shelf</td><td>episodes + comprehension</td></tr>
+      <tr><td>Makes the 2 000 visible</td><td><strong>yes — it's the product</strong></td><td>secondary</td><td>secondary</td></tr>
+      <tr><td>Uses lexicon to generate</td><td>short texts</td><td>dialogue difficulty</td><td><strong>every sentence</strong></td></tr>
+      <tr><td>Polish-specific teaching</td><td>mapping cards, articles</td><td><strong>aspect, register, traps</strong></td><td>contrastive interludes</td></tr>
+      <tr><td>Fun</td><td>low — austere by design</td><td><strong>high</strong></td><td><strong>high</strong></td></tr>
+      <tr><td class="n">Build cost</td><td class="n">low</td><td class="n">high</td><td class="n">highest</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<div class="divider"><span>&#9670;</span></div>
+
+<section id="pick">
+  <h2>What I'd build</h2>
+  <p class="lede">Not one of the three. The comparison table gives away the answer: each concept is
+  strongest at a different strand, and a course needs all four. So the recommendation is
+  <strong>B as the shell, C as its input engine, A as its progress surface</strong> — which is
+  less of a compromise than it sounds, because it assigns each design to the job it already wins.</p>
+
+  <div class="cons">
+    <div class="con"><span class="con-n">B</span><div>
+      <b>In Città is the app you open</b>
+      <p>Task-based was an explicit requirement, and only B is genuinely organised around tasks.
+      The city map is the home screen, missions are the unit of work, and the <i>Posso…</i> shelf
+      is the primary achievement surface. It also carries output and fluency — the two strands the
+      current app has none of.</p></div></div>
+    <div class="con"><span class="con-n">C</span><div>
+      <b>La Serie becomes a district in that city</b>
+      <p>The serial is how you get input volume, and it solves review motivation better than any
+      queue: the next episode is written to reuse the words that are due. Treat it as an ongoing
+      thread you dip into between missions, not a separate app. Marta's flat is a place on the
+      map.</p></div></div>
+    <div class="con"><span class="con-n">A</span><div>
+      <b>Copertura is the “Io” tab</b>
+      <p>The reserve grid, the coverage curve and the stage panel are the honest achievement
+      screens, and the mapping cards and articles strand are the language-focused work. This is
+      Concept A demoted from whole app to one tab — which is exactly where an instrument
+      belongs.</p></div></div>
+  </div>
+
+  <h4>The build order</h4>
+  <p>Everything above depends on the engine, so the engine is not phase one — it <em>is</em>
+  phase one, and it's mostly a data problem rather than a UI one.</p>
+  <ol>
+    <li><strong>The lexicon.</strong> Load De Mauro's <span class="it">fondamentale</span> list in
+    frequency order with EN and PL glosses. Extend <code>storage.js</code> from two word states to
+    five. This alone unlocks the coverage metric and kills the streak.</li>
+    <li><strong>Coverage + the reserve grid.</strong> A single screen, cheap to build, and it
+    immediately replaces the current dashboard's “% complete” with something meaningful.</li>
+    <li><strong>The stage model.</strong> Infer stage from production accuracy; gate <em>grading</em>
+    rather than content. Retro-fit it to the existing grammar drills so nothing marks you wrong
+    above your stage.</li>
+    <li><strong>Generation against the lexicon.</strong> The 95% rule, applied first to short
+    texts. Get this working before building either the serial or the missions, because both depend
+    on it.</li>
+    <li><strong>Missions with voice.</strong> The biggest build, and the one with the biggest
+    measured effect. Start with three missions in one district to prove the four-phase shape.</li>
+    <li><strong>The serial.</strong> Last, because it's the hardest generation problem and the
+    most content-sensitive. One season of twelve short episodes is enough to test whether it
+    holds you.</li>
+  </ol>
+
+  <div class="note">
+    <span class="note-t">What this means for the existing code</span>
+    <p>The Leitner scheduler in <code>srs.js</code>, the theme system, speech playback and the
+    A1–C1 ladder all survive intact. <code>Dashboard.jsx</code> and <code>StreakChip.jsx</code> are
+    the casualties — the streak goes, and “% complete” is replaced by coverage. The four existing
+    modules don't disappear so much as get re-cast: vocab becomes the reserve, grammar becomes
+    stage-gated interludes, conversations become mission phase 3, and stories become the serial.</p>
+  </div>
+
+  <div class="note">
+    <span class="note-t">One thing to decide before any of it</span>
+    <p>Generation quality is the load-bearing assumption in two of the three concepts, and it's
+    the one I can't verify from research. Before committing to the serial, it's worth spending an
+    afternoon testing whether a model can actually write 340 words of decent Italian constrained
+    to a 600-word lexicon <em>and</em> to stage 3 grammar. If it can, Concept C is the strongest
+    idea here. If it can't, B and A alone still make a complete course.</p>
+  </div>
+</section>
+
+</div></div>
+
+<footer><div class="wrap col">
+  <p>Three design proposals for Italiano · 23 August 2026 · drawn from
+  <a href="https://claude.ai/code/artifact/ab63d8c1-421b-4bfe-add5-a68a00b480e7">What Actually
+  Teaches a Language</a>, whose numbered sources back every research claim made here.</p>
+  <p>Screens are design mockups, not builds. Italian, Polish and English copy throughout is real
+  and checked; the numbers shown (coverage 41.2%, 487 solid words, 23 Posso) are illustrative of a
+  learner roughly six months in.</p>
+</div></footer>
+
+<script>
+// Fill the Riserva grids: deterministic, frequency-ordered — high-frequency
+// cells (top-left) are likelier to be learned, which is what gives the grid
+// its gradient and makes the "worth more coverage per cell" point visually.
+(function () {
+  var COL = { solid: "#137B55", known: "#2E9E6B", learn: "#3E77D6", met: "#C79A2E" };
+  document.querySelectorAll(".s-cells").forEach(function (grid) {
+    var n = +grid.dataset.n || 200;
+    var p = {
+      solid: +grid.dataset.solid || 0,
+      known: +grid.dataset.known || 0,
+      learn: +grid.dataset.learn || 0,
+      met: +grid.dataset.met || 0,
+    };
+    var seed = 7;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < n; i++) {
+      // Bias toward learned at the start of the list, unlearned at the end.
+      var rank = i / n;
+      var bias = 1.9 * (1 - rank);
+      var r = rnd();
+      var cell = document.createElement("i");
+      var c = "";
+      if (r < p.solid * bias) c = COL.solid;
+      else if (r < (p.solid + p.known) * bias) c = COL.known;
+      else if (r < (p.solid + p.known + p.learn) * bias) c = COL.learn;
+      else if (r < (p.solid + p.known + p.learn + p.met) * bias) c = COL.met;
+      cell.style.background = c || "rgba(255,255,255,.07)";
+      frag.appendChild(cell);
+    }
+    grid.appendChild(frag);
+  });
+})();
+</script>

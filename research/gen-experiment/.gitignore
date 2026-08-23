@@ -1,0 +1,6 @@
+.venv/
+it_freq_raw.txt
+lexicon_*.json
+results.json
+summary.json
+__pycache__/

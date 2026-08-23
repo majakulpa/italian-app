@@ -1,0 +1,1937 @@
+<title>What Actually Teaches a Language</title>
+<style>
+/* ============================================================
+   TOKENS — light is the bare :root; both dark paths redefine.
+   Palette: Olivetti vermilion + ink-blue on cool oat paper.
+   ============================================================ */
+:root{
+  --paper:        #EFF0EB;
+  --paper-raised: #F9F9F5;
+  --paper-sunk:   #E5E7E0;
+  --ink:          #171A18;
+  --ink-soft:     #3D423D;
+  --muted:        #575D55;
+  --rule:         #CFD2C9;
+  --rule-strong:  #A9AEA3;
+
+  --vermilion:    #B7301A;
+  --vermilion-dim:#8E2513;
+  --vermilion-wash:#F4E2DD;
+  --indigo:       #1D4A6B;
+  --indigo-wash:  #DFE7EC;
+  --ochre:        #94661A;
+  --ochre-wash:   #F0E7D2;
+  --moss:         #3E6642;
+  --moss-wash:    #E0E9DE;
+
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Palladio L",Georgia,serif;
+  --sans:  "Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --mono:  ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --measure: 34rem;
+  --gutter: clamp(1.15rem, 4vw, 2.75rem);
+  --s1: .35rem; --s2: .7rem; --s3: 1.15rem; --s4: 1.8rem;
+  --s5: 2.75rem; --s6: 4rem; --s7: 6rem;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:        #121513;
+    --paper-raised: #1B1F1C;
+    --paper-sunk:   #0C0E0D;
+    --ink:          #E7E8E2;
+    --ink-soft:     #C2C6BF;
+    --muted:        #8B9189;
+    --rule:         #2E332F;
+    --rule-strong:  #4A504A;
+
+    --vermilion:    #EE7357;
+    --vermilion-dim:#F09479;
+    --vermilion-wash:#2E1913;
+    --indigo:       #7FB4D8;
+    --indigo-wash:  #14242E;
+    --ochre:        #D6A855;
+    --ochre-wash:   #2A2113;
+    --moss:         #86BC8C;
+    --moss-wash:    #16241A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:        #121513;
+  --paper-raised: #1B1F1C;
+  --paper-sunk:   #0C0E0D;
+  --ink:          #E7E8E2;
+  --ink-soft:     #C2C6BF;
+  --muted:        #8B9189;
+  --rule:         #2E332F;
+  --rule-strong:  #4A504A;
+
+  --vermilion:    #EE7357;
+  --vermilion-dim:#F09479;
+  --vermilion-wash:#2E1913;
+  --indigo:       #7FB4D8;
+  --indigo-wash:  #14242E;
+  --ochre:        #D6A855;
+  --ochre-wash:   #2A2113;
+  --moss:         #86BC8C;
+  --moss-wash:    #16241A;
+}
+
+/* ============================================================ */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:clamp(1.02rem,.55vw + .92rem,1.14rem);
+  line-height:1.62;
+  font-kerning:normal;
+  text-rendering:optimizeLegibility;
+}
+::selection{background:var(--vermilion);color:var(--paper)}
+a{color:inherit;text-decoration-color:var(--rule-strong);text-underline-offset:.16em}
+a:hover{text-decoration-color:var(--vermilion)}
+:focus-visible{outline:2px solid var(--vermilion);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:74rem;margin:0 auto;padding:0 var(--gutter)}
+.col{max-width:var(--measure);margin-inline:auto}
+
+/* ---------- page frame: reading column + margin rail ---------- */
+.sheet{display:block}
+@media (min-width:1100px){
+  .sheet{
+    display:grid;
+    grid-template-columns:11.5rem minmax(0,var(--measure)) 11.5rem;
+    justify-content:center;
+    column-gap:3rem;
+  }
+  .sheet > *{grid-column:2}
+  .sheet > .rail-l{grid-column:1;justify-self:end}
+  .sheet > .full{grid-column:1 / -1;max-width:none}
+}
+.sheet > *{max-width:var(--measure);margin-inline:auto}
+
+/* ---------- masthead ---------- */
+.masthead{
+  border-bottom:1px solid var(--rule);
+  background:var(--paper-raised);
+}
+.masthead-in{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:var(--s3);padding:var(--s3) 0;flex-wrap:wrap;
+}
+.wordmark{
+  font-family:var(--sans);font-size:.68rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.wordmark b{color:var(--vermilion);font-weight:600}
+.masthead-meta{
+  font-family:var(--mono);font-size:.66rem;color:var(--muted);
+  letter-spacing:.02em;
+}
+
+/* ---------- hero ---------- */
+.hero{padding:var(--s7) 0 var(--s6)}
+.eyebrow{
+  font-family:var(--sans);font-size:.7rem;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:var(--vermilion);
+  margin:0 0 var(--s3);
+}
+h1{
+  font-family:var(--serif);
+  font-size:clamp(2.5rem,7vw,4.3rem);
+  line-height:1.02;
+  letter-spacing:-.02em;
+  font-weight:400;
+  margin:0 0 var(--s4);
+  text-wrap:balance;
+}
+h1 em{font-style:italic;color:var(--vermilion)}
+.standfirst{
+  font-size:1.24em;line-height:1.5;color:var(--ink-soft);
+  margin:0 0 var(--s4);text-wrap:pretty;
+}
+.byline{
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);
+  border-top:1px solid var(--rule);padding-top:var(--s3);
+  display:flex;gap:var(--s3);flex-wrap:wrap;
+}
+
+/* ---------- sections ---------- */
+section{padding:var(--s6) 0}
+.sec-head{margin:0 0 var(--s5)}
+.sec-num{
+  font-family:var(--mono);font-size:.68rem;color:var(--vermilion);
+  letter-spacing:.1em;display:block;margin-bottom:var(--s2);
+}
+h2{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(1.75rem,3.4vw,2.5rem);
+  line-height:1.1;letter-spacing:-.015em;margin:0 0 var(--s2);
+  text-wrap:balance;
+}
+h2 + .dek{color:var(--muted);font-size:1.02em;margin:0;text-wrap:pretty}
+h3{
+  font-family:var(--sans);font-weight:600;font-size:.82rem;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink);margin:var(--s5) 0 var(--s2);
+}
+h4{
+  font-family:var(--serif);font-weight:600;font-size:1.06em;
+  margin:var(--s4) 0 var(--s2);letter-spacing:-.005em;
+}
+p{margin:0 0 var(--s3);text-wrap:pretty}
+p.lead::first-letter{
+  float:left;font-size:3.1em;line-height:.82;padding:.06em .1em 0 0;
+  color:var(--vermilion);font-weight:400;
+}
+strong{font-weight:600}
+em{font-style:italic}
+.it{font-style:italic}
+
+ul,ol{margin:0 0 var(--s3);padding-left:1.25em}
+li{margin-bottom:var(--s2)}
+li::marker{color:var(--vermilion)}
+
+hr.rule{
+  border:0;border-top:1px solid var(--rule);
+  margin:var(--s6) auto;max-width:var(--measure);
+}
+.divider{
+  display:flex;align-items:center;gap:var(--s3);
+  margin:var(--s6) auto;max-width:var(--measure);color:var(--rule-strong);
+}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--rule)}
+.divider span{font-family:var(--mono);font-size:.7rem;letter-spacing:.3em;color:var(--vermilion)}
+
+/* ---------- citation superscripts ---------- */
+.cite{
+  font-family:var(--mono);font-size:.62em;vertical-align:.42em;
+  color:var(--vermilion);text-decoration:none;font-weight:500;
+  padding:0 .06em;letter-spacing:.02em;
+}
+.cite:hover{text-decoration:underline;text-decoration-color:var(--vermilion)}
+
+/* ---------- dictionary-entry finding block ---------- */
+.entry{
+  border-left:2px solid var(--vermilion);
+  padding:var(--s2) 0 var(--s2) var(--s3);
+  margin:var(--s4) 0;
+}
+.entry-head{
+  font-family:var(--serif);font-weight:600;font-size:1.06em;
+  display:block;margin-bottom:var(--s1);
+}
+.entry-pos{
+  font-family:var(--sans);font-style:normal;font-size:.62rem;
+  font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-left:.5em;vertical-align:.12em;
+}
+.entry p{margin:0 0 var(--s2)}
+.entry p:last-child{margin-bottom:0}
+.entry-src{
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  display:block;line-height:1.5;
+}
+
+/* ---------- stat chips ---------- */
+.stat-row{
+  display:grid;gap:1px;background:var(--rule);
+  grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));
+  border:1px solid var(--rule);margin:var(--s4) 0;
+}
+.stat{background:var(--paper-raised);padding:var(--s3)}
+.stat-n{
+  font-family:var(--mono);font-size:1.5rem;font-weight:500;
+  color:var(--vermilion);display:block;line-height:1.1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.stat-l{
+  font-family:var(--sans);font-size:.66rem;color:var(--muted);
+  letter-spacing:.06em;line-height:1.4;display:block;margin-top:var(--s1);
+}
+
+/* ---------- callout boxes ---------- */
+.box{
+  background:var(--paper-raised);border:1px solid var(--rule);
+  padding:var(--s4);margin:var(--s4) 0;
+}
+.box-caveat{background:var(--ochre-wash);border-color:var(--ochre)}
+.box-key{background:var(--indigo-wash);border-color:var(--indigo)}
+.box-good{background:var(--moss-wash);border-color:var(--moss)}
+.box-title{
+  font-family:var(--sans);font-size:.66rem;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;
+  margin:0 0 var(--s2);display:block;
+}
+.box-caveat .box-title{color:var(--ochre)}
+.box-key .box-title{color:var(--indigo)}
+.box-good .box-title{color:var(--moss)}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+
+/* ---------- tables ---------- */
+.tscroll{overflow-x:auto;margin:var(--s4) 0;border:1px solid var(--rule);background:var(--paper-raised)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-family:var(--sans)}
+caption{
+  caption-side:top;text-align:left;padding:var(--s3) var(--s3) var(--s2);
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  border-bottom:1px solid var(--rule);line-height:1.5;
+}
+th,td{padding:.6rem var(--s3);text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{
+  font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);background:var(--paper-sunk);
+  position:sticky;top:0;
+}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.yes{color:var(--moss);font-family:var(--mono);font-weight:700}
+.no{color:var(--vermilion);font-family:var(--mono);font-weight:700}
+.maybe{color:var(--ochre);font-family:var(--mono);font-weight:700}
+.itword{font-family:var(--serif);font-style:italic;font-size:1.05em}
+
+/* ---------- implicational scale ---------- */
+.scale{
+  display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;
+  font-family:var(--serif);font-style:italic;font-size:1.02em;
+  margin:var(--s3) 0;line-height:1.5;
+}
+.scale i{font-style:italic}
+.scale span.arw{
+  font-family:var(--mono);font-style:normal;color:var(--vermilion);
+  font-size:.85em;padding:0 .1em;
+}
+
+/* ---------- forgetting curve figure ---------- */
+figure{margin:var(--s5) 0}
+figcaption{
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  line-height:1.55;margin-top:var(--s2);
+}
+.curve-frame{
+  border:1px solid var(--rule);background:var(--paper-raised);
+  padding:var(--s3);
+}
+.curve-frame svg{display:block;width:100%;height:auto}
+
+/* ---------- versus grid ---------- */
+.versus{
+  display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));margin:var(--s4) 0;
+}
+.vs-col{background:var(--paper-raised);padding:var(--s4)}
+.vs-col h4{margin-top:0}
+.vs-tag{
+  font-family:var(--sans);font-size:.62rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;display:block;
+  margin-bottom:var(--s2);
+}
+.vs-a .vs-tag{color:var(--indigo)}
+.vs-b .vs-tag{color:var(--vermilion)}
+.vs-col ul{padding-left:1.1em;font-size:.94em}
+
+/* ---------- guideline cards ---------- */
+.guides{counter-reset:g;display:flex;flex-direction:column;gap:0;margin:var(--s4) 0;
+  border-top:1px solid var(--rule)}
+.guide{
+  counter-increment:g;
+  display:grid;grid-template-columns:2.4rem 1fr;gap:var(--s3);
+  padding:var(--s4) 0;border-bottom:1px solid var(--rule);
+}
+.guide::before{
+  content:counter(g,decimal-leading-zero);
+  font-family:var(--mono);font-size:.78rem;color:var(--vermilion);
+  padding-top:.15em;font-variant-numeric:tabular-nums;
+}
+.guide h4{margin:0 0 var(--s2)}
+.guide p{margin:0 0 var(--s2);font-size:.97em}
+.guide p:last-child{margin-bottom:0}
+
+/* ---------- margin rail notes ---------- */
+.rail-l{display:none}
+@media (min-width:1100px){
+  .rail-l{
+    display:block;text-align:right;
+    font-family:var(--mono);font-size:.66rem;line-height:1.6;
+    color:var(--muted);max-width:11.5rem;padding-top:.4em;
+  }
+  .rail-l b{color:var(--vermilion);font-weight:500;display:block;font-size:.78rem}
+}
+
+/* ---------- bibliography ---------- */
+.bib{font-size:.86rem;line-height:1.5}
+.bib-item{
+  display:grid;grid-template-columns:2.4rem 1fr;gap:var(--s3);
+  padding:var(--s3) 0;border-bottom:1px solid var(--rule);
+}
+.bib-item:target{background:var(--vermilion-wash);
+  box-shadow:-.6rem 0 0 var(--vermilion-wash),.6rem 0 0 var(--vermilion-wash)}
+.bib-n{font-family:var(--mono);font-size:.72rem;color:var(--vermilion);font-variant-numeric:tabular-nums}
+.bib-body cite{font-style:italic}
+.bib-file{
+  font-family:var(--mono);font-size:.66rem;color:var(--muted);
+  display:block;margin-top:.25rem;word-break:break-all;
+}
+.bib-file::before{content:"cache/ ";color:var(--rule-strong)}
+
+/* ---------- toc ---------- */
+.toc{
+  border-top:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);
+  padding:var(--s4) 0;margin:var(--s5) 0 0;
+}
+.toc ol{list-style:none;padding:0;margin:0;
+  display:grid;gap:var(--s2) var(--s4);
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));}
+.toc li{margin:0;display:flex;gap:var(--s2);align-items:baseline}
+.toc a{text-decoration:none;font-size:.94em}
+.toc a:hover{color:var(--vermilion)}
+.toc .n{font-family:var(--mono);font-size:.68rem;color:var(--vermilion);font-variant-numeric:tabular-nums}
+
+footer{
+  border-top:1px solid var(--rule);background:var(--paper-raised);
+  padding:var(--s5) 0;margin-top:var(--s6);
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);line-height:1.7;
+}
+
+@media (prefers-reduced-motion:no-preference){
+  .fade{opacity:0;transform:translateY(.5rem);animation:rise .7s cubic-bezier(.2,.7,.3,1) forwards}
+  .fade:nth-child(2){animation-delay:.08s}
+  .fade:nth-child(3){animation-delay:.16s}
+  .fade:nth-child(4){animation-delay:.24s}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <span class="wordmark">Research memo &middot; <b>lingua &amp; memoria</b></span>
+    <span class="masthead-meta">22 Aug 2026 &middot; 50 sources cached locally</span>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="sheet">
+
+  <!-- ================= HERO ================= -->
+  <div class="hero full">
+    <div class="col">
+      <p class="eyebrow fade">Evidence review</p>
+      <h1 class="fade">What actually <em>teaches</em> a language</h1>
+      <p class="standfirst fade">Sixty years of second-language research, the cognitive-psychology
+      findings that underpin every flashcard app ever built, and the awkward evidence about what
+      those apps really deliver &mdash; assembled into guidelines you can build against. With a long
+      detour into Italian, and into what changes when the learner already speaks English, or Polish.</p>
+      <p class="byline fade">
+        <span>Prepared for the italian-app project</span>
+        <span>&middot;</span>
+        <span>Every claim numbered &amp; sourced</span>
+        <span>&middot;</span>
+        <span>~35 min read</span>
+      </p>
+    </div>
+  </div>
+
+  <nav class="toc full" aria-label="Contents">
+    <div class="col">
+      <ol>
+        <li><span class="n">01</span><a href="#memory">How memory actually works</a></li>
+        <li><span class="n">02</span><a href="#box">What has to be in the box</a></li>
+        <li><span class="n">03</span><a href="#apps">What apps actually achieve</a></li>
+        <li><span class="n">04</span><a href="#motivation">Streaks, and the motivation trap</a></li>
+        <li><span class="n">05</span><a href="#curriculum">Sidekick or syllabus?</a></li>
+        <li><span class="n">06</span><a href="#italian">Italian, specifically</a></li>
+        <li><span class="n">07</span><a href="#english">If your learner speaks English</a></li>
+        <li><span class="n">08</span><a href="#polish">If your learner speaks Polish</a></li>
+        <li><span class="n">09</span><a href="#guidelines">Eighteen guidelines</a></li>
+        <li><span class="n">10</span><a href="#sources">Sources</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <!-- ================= 01 MEMORY ================= -->
+  <section id="memory">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>How memory actually works</h2>
+      <p class="dek">The most robust findings in this entire report come not from language teaching
+      but from cognitive psychology. They are old, replicated to death, and still routinely ignored.</p>
+    </div>
+
+    <p class="lead">Here is the single most uncomfortable fact in learning science, and it comes
+    from a 2008 experiment in <cite>Science</cite> that has been replicated relentlessly ever since.
+    Students learned Swahili&ndash;English word pairs. Some kept restudying words they had already
+    got right. Others kept being <em>tested</em> on words they had already got right. A week later,
+    the restudy group remembered about 36% of the list. The repeated-testing group remembered
+    about 80%.<a class="cite" href="#s1">1</a></p>
+
+    <p>Extra studying after you first get something right does essentially nothing. Extra
+    <em>retrieving</em> does almost everything. And the cruellest part: when the students predicted
+    their own scores, their predictions were uncorrelated with reality. Restudying <em>feels</em>
+    like learning. It is a feeling, not an effect.<a class="cite" href="#s1">1</a><a class="cite" href="#s2">2</a></p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="stat-n">80%</span><span class="stat-l">Recalled after repeated testing</span></div>
+      <div class="stat"><span class="stat-n">36%</span><span class="stat-l">Recalled after repeated study</span></div>
+      <div class="stat"><span class="stat-n">r &asymp; 0</span><span class="stat-l">Learners' ability to tell the difference</span></div>
+    </div>
+
+    <div class="box box-key">
+      <span class="box-title">Design consequence</span>
+      <p>Every minute a learner spends looking at a word list is a minute stolen from a minute
+      spent trying to produce the word from an empty screen. A "review" screen that shows the
+      answer is not review. Make the default interaction <em>recall</em>, and reserve passive
+      presentation for genuinely new material.</p>
+    </div>
+
+    <h3>The spacing effect, and the number nobody uses</h3>
+
+    <p>That retrieval should be spread out is common knowledge. What is <em>not</em> common
+    knowledge is that there is an optimal gap, and that it depends entirely on how long you want
+    the memory to last. Cepeda and colleagues taught over 1,350 people a set of facts, then
+    reviewed them after gaps of up to 3.5 months, then tested them up to a year later.<a class="cite" href="#s3">3</a></p>
+
+    <p>The result is a ridge, not a cliff. Widening the gap helps &mdash; up to a point &mdash;
+    then hurts. And the peak moves: <strong>the optimal gap is roughly 10&ndash;20% of how long
+    you want to remember something.</strong> Want it for a week? Review after a day. Want it for a
+    year? Review after about a month. Most apps review on a schedule tuned to feel busy, which is
+    to say tuned for a retention interval of about a week.<a class="cite" href="#s3">3</a></p>
+
+    <figure class="full">
+      <div class="col">
+        <div class="curve-frame">
+          <svg viewBox="0 0 640 260" role="img" aria-labelledby="curveTitle curveDesc">
+            <title id="curveTitle">Forgetting curves with and without spaced review</title>
+            <desc id="curveDesc">Memory strength decays exponentially. Each spaced retrieval
+            resets it to full and flattens the subsequent decay, so the curve falls more slowly
+            after every review.</desc>
+            <g id="curveDraw"></g>
+          </svg>
+        </div>
+        <figcaption>Retention decays exponentially between reviews. Each successful retrieval
+        (vermilion) resets strength and <em>lengthens the half-life</em>, so the next decay is
+        shallower. This is exactly the quantity Duolingo's half-life regression model learns from
+        data rather than assumes.<a class="cite" href="#s5">5</a></figcaption>
+      </div>
+    </figure>
+
+    <h3>What the meta-analysis says</h3>
+
+    <p>Kim and Webb pooled 98 effect sizes from 48 experiments (N = 3,411) specifically on
+    <em>second-language</em> spaced practice. Spacing beats massing with a medium-to-large effect.
+    Two findings matter for design:<a class="cite" href="#s4">4</a></p>
+
+    <ul>
+      <li><strong>On an immediate test, short and long gaps look identical.</strong> On a delayed
+      test, long gaps win clearly. If you A/B-test your scheduler against next-day performance,
+      you will select for the worse algorithm.</li>
+      <li><strong>Expanding intervals are not reliably better than equal intervals.</strong> The
+      elaborate expanding schedule inherited from SuperMemo is not, on the evidence, the load-bearing
+      part. The load-bearing part is that the gaps exist at all and are long enough.</li>
+    </ul>
+
+    <div class="entry">
+      <span class="entry-head">Half-life regression<span class="entry-pos">Settles &amp; Meeder, ACL 2016</span></span>
+      <p>Rather than hand-tuning intervals, model each item's memory <em>half-life</em> as a
+      learned function of practice history and lexical features, fitted on real recall data.
+      Trained on 13 million Duolingo learning traces, it cut recall-prediction error by over 45%
+      against standard baselines and lifted daily engagement by 12% in a live study.</p>
+      <span class="entry-src">Open-source implementation and dataset published.</span>
+    </div>
+
+    <p>Two caveats worth knowing before you copy it. Half-life regression is fitted on
+    <em>in-app</em> recall, so it optimises for recall of app items, not language ability. And
+    later work on adaptive forgetting curves and on optimal-control formulations of review
+    scheduling has shown the problem is genuinely open &mdash; there is no settled best
+    algorithm.<a class="cite" href="#s39">39</a><a class="cite" href="#s40">40</a></p>
+
+    <h3>Desirable difficulties: when making it harder makes it better</h3>
+
+    <p>Robert and Elizabeth Bjork named the paradox in 1994: conditions that slow you down during
+    practice often speed up long-term retention and transfer. Spacing is one. Retrieval is another.
+    <strong>Interleaving</strong> &mdash; mixing item types instead of blocking them into
+    same-kind drills &mdash; is a third.<a class="cite" href="#s6">6</a><a class="cite" href="#s37">37</a></p>
+
+    <p>Blocked practice feels far more productive, which is precisely why it survives. In one
+    classic demonstration, learners who interleaved got 63% correct on a delayed test against 20%
+    for the blocked group &mdash; despite the blocked group performing better during practice.<a class="cite" href="#s6">6</a></p>
+
+    <div class="box box-caveat">
+      <span class="box-title">But not always</span>
+      <p>Interleaving is not universally good. It hurts when the material is a connected narrative
+      or a system that needs to be understood as a whole, because switching interferes with building
+      the coherent representation.<a class="cite" href="#s38">38</a> The practical rule: <strong>block during
+      first exposure to a new system, interleave everything thereafter.</strong> Teach the Italian
+      passato prossimo as a coherent thing once; then never again let a learner do twenty
+      passato-prossimo items in a row.</p>
+    </div>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 02 THE BOX ================= -->
+  <section id="box">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>What has to be in the box</h2>
+      <p class="dek">Memory science tells you how to schedule practice. It says nothing about what
+      to practise. For that you need second-language acquisition research, which is messier,
+      more contested, and &mdash; on a few points &mdash; unanimous.</p>
+    </div>
+
+    <p class="lead">The cleanest organising idea in the field is Paul Nation's <em>four strands</em>.
+    Every activity in a language course falls into one of four categories, and a well-built course
+    gives each roughly a quarter of the total time.<a class="cite" href="#s7">7</a></p>
+
+    <div class="tscroll">
+      <table>
+        <caption>Nation's four strands, and how a typical vocabulary app scores</caption>
+        <thead>
+          <tr><th>Strand</th><th>What it is</th><th>Typical app</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Meaning-focused input</strong></td>
+            <td>Reading and listening for the message: stories, video, conversation as listener</td>
+            <td><span class="maybe">partial</span> &mdash; usually sentence-level only</td>
+          </tr>
+          <tr>
+            <td><strong>Meaning-focused output</strong></td>
+            <td>Speaking and writing to convey something real to someone</td>
+            <td><span class="no">absent</span> &mdash; translation is not communication</td>
+          </tr>
+          <tr>
+            <td><strong>Language-focused learning</strong></td>
+            <td>Deliberate study of vocabulary, grammar, pronunciation, spelling</td>
+            <td><span class="yes">strong</span> &mdash; this is what apps are good at</td>
+          </tr>
+          <tr>
+            <td><strong>Fluency development</strong></td>
+            <td>Working with <em>already-known</em> material under time pressure to get fast</td>
+            <td><span class="no">rare</span> &mdash; timers exist but material is always new</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read that table as a product roadmap. The typical app is excellent at one strand out of
+    four and structurally incapable of a second. That is not a bug you can patch with better
+    flashcards; it is the shape of the category.</p>
+
+    <h3>The vocabulary numbers</h3>
+
+    <p>How many words does a learner actually need? Nation's lexical-profiling work gives
+    startlingly specific answers, and they are bigger than app marketing implies.<a class="cite" href="#s8">8</a><a class="cite" href="#s45">45</a></p>
+
+    <div class="tscroll">
+      <table>
+        <caption>Word families needed for lexical coverage of unsimplified text (Nation, 2006)</caption>
+        <thead>
+          <tr><th>Target</th><th class="num">95% coverage</th><th class="num">98% coverage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Unscripted spoken English</td><td class="num">3,000</td><td class="num">6,000&ndash;7,000</td></tr>
+          <tr><td>Written text / novels</td><td class="num">4,000&ndash;5,000</td><td class="num">8,000&ndash;9,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Why 98%? Because that is roughly the threshold for <em>unassisted</em> comprehension &mdash;
+    about one unknown word in fifty. At 95% (one in twenty) comprehension is possible but effortful
+    and support is needed. Nation's condition for the meaning-focused input strand to exist at all
+    is that 95&ndash;98% of running words are already known.<a class="cite" href="#s7">7</a><a class="cite" href="#s8">8</a></p>
+
+    <div class="box box-key">
+      <span class="box-title">Design consequence</span>
+      <p>An app that shows learners authentic content before they have the vocabulary to hit 95%
+      coverage is not giving them input; it is giving them noise. Either <strong>grade the text</strong>
+      to the learner's known-word set, or <strong>gloss aggressively</strong> so the effective
+      coverage clears the threshold. Knowing exactly which words a learner knows is the single
+      biggest structural advantage a digital course has over a book &mdash; and most apps waste it.</p>
+    </div>
+
+    <h3>Input, output, interaction</h3>
+
+    <p>Krashen's claim that comprehensible input is <em>sufficient</em> for acquisition has not
+    survived. The consensus after decades of argument is that input is necessary but not enough:
+    Swain's output hypothesis (producing language forces you to notice gaps and test hypotheses in
+    a way comprehension never does) and Long's interaction hypothesis (negotiating meaning when
+    communication breaks down drives acquisition) fill the remainder.<a class="cite" href="#s9">9</a><a class="cite" href="#s10">10</a></p>
+
+    <p>Extensive reading &mdash; large quantities of self-selected, easy text &mdash; has a
+    meta-analytic effect of d = 0.46 for controlled comparisons and d = 0.71 pre&ndash;post, across
+    34 studies and 3,942 learners. Effects held across reading comprehension, vocabulary, fluency,
+    writing, oral proficiency and motivation. Notably, effects were <em>larger</em> when text choice
+    was constrained and some accountability existed &mdash; a pure free-for-all is not
+    optimal.<a class="cite" href="#s11">11</a><a class="cite" href="#s36">36</a></p>
+
+    <h3>Explicit grammar: the argument that was actually settled</h3>
+
+    <p>This is the most politically charged question in language teaching, and the meta-analytic
+    answer has been stable for twenty-five years.</p>
+
+    <div class="entry">
+      <span class="entry-head">Norris &amp; Ortega (2000)<span class="entry-pos">49 studies</span></span>
+      <p>Focused instruction produces <strong>large</strong> target-oriented gains. <strong>Explicit
+      instruction outperforms implicit</strong> instruction. Focus-on-Form (attention to form inside
+      a communicative activity) and Focus-on-FormS (systematic form teaching) produce
+      <em>equivalent and large</em> effects. Instructional effects are durable.</p>
+      <span class="entry-src">Language Learning 50(3), 417&ndash;528.</span>
+    </div>
+
+    <div class="entry">
+      <span class="entry-head">Spada &amp; Tomita (2010)<span class="entry-pos">41 studies</span></span>
+      <p>Explicit beats implicit for <em>both</em> simple and complex grammatical features &mdash;
+      and explicit instruction contributes to spontaneous use, not merely to controlled test
+      performance.</p>
+      <span class="entry-src">Language Learning 60(2), 263&ndash;308.</span>
+    </div>
+
+    <div class="box box-caveat">
+      <span class="box-title">The honest objection</span>
+      <p>Critics &mdash; including Spada herself in later work &mdash; point out that the outcome
+      measures in these studies mostly tap <em>explicit</em> knowledge. If you test with a grammar
+      exercise, explicit teaching will win. Whether it produces the implicit knowledge that drives
+      real-time speech is less certain.<a class="cite" href="#s41">41</a> The defensible position: explicit
+      explanation is a cheap, high-yield accelerator, but it is not a substitute for the hours of
+      use that build automaticity.</p>
+    </div>
+
+    <h3>Corrective feedback</h3>
+
+    <p>Li's meta-analysis of 33 studies found a medium overall effect for corrective feedback that
+    was <em>maintained over time</em>. The subtle finding: explicit feedback produced larger
+    immediate effects, but <strong>implicit feedback was better maintained</strong>.<a class="cite" href="#s12">12</a>
+    Elsewhere, prompts (which push the learner to self-correct) outperform recasts (which simply
+    supply the right form) &mdash; consistent with everything the retrieval literature predicts.</p>
+
+    <div class="box box-key">
+      <span class="box-title">Design consequence</span>
+      <p>The standard app pattern &mdash; wrong answer, instant red X, correct answer displayed
+      &mdash; is the <em>least</em> effective feedback shape available. It supplies the form
+      instead of prompting retrieval. A better sequence: flag that something is wrong, indicate
+      <em>where</em>, let the learner try again, and only then reveal. You are converting a
+      presentation event into a second retrieval attempt.</p>
+    </div>
+
+    <h3>Tasks, and the teachability constraint</h3>
+
+    <p>Task-based language teaching &mdash; organising a course around authentic things to
+    accomplish rather than a grammar sequence &mdash; showed an overall effect of d = 0.93 across
+    52 studies of long-term classroom programmes.<a class="cite" href="#s13">13</a> That is a large effect for
+    a whole-programme intervention, though the studies vary in rigour and the comparison conditions
+    are heterogeneous.<a class="cite" href="#s42">42</a></p>
+
+    <p>Against that sits Pienemann's <strong>teachability hypothesis</strong>: learners acquire
+    certain structures in a fixed developmental order, and instruction only helps when the learner
+    is one step away from the target stage. Teaching a structure far above a learner's current
+    stage produces memorised forms, not acquisition.<a class="cite" href="#s14">14</a> This has been validated
+    specifically for Italian.<a class="cite" href="#s27">27</a> We will come back to what that order looks
+    like in Italian &mdash; it is unusually well documented.</p>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 03 APPS ================= -->
+  <section id="apps">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>What apps actually achieve</h2>
+      <p class="dek">The efficacy literature is real, growing, and considerably more nuanced than
+      either the marketing or the backlash suggests.</p>
+    </div>
+
+    <p class="lead">Start with the broad picture. Sung, Chang and Yang pooled 44 studies spanning
+    1993&ndash;2013 with 9,154 participants and found mobile-assisted language learning produced a
+    mean effect of <strong>d = 0.55</strong> over comparison conditions &mdash; a solid moderate
+    effect.<a class="cite" href="#s15">15</a> Later syntheses using mobile apps specifically have reported
+    larger figures, and a 2022 meta-analysis found vocabulary effects reaching d = 1.28 when
+    treatment ran ten weeks or longer.<a class="cite" href="#s16">16</a></p>
+
+    <div class="box box-caveat">
+      <span class="box-title">Read effect sizes with the comparison in mind</span>
+      <p>That same 2022 meta-analysis flagged <strong>high risk of bias and low quality of
+      evidence across all included studies</strong>.<a class="cite" href="#s16">16</a> And an effect size is
+      always relative to <em>something</em>. "App beats no instruction" is nearly meaningless.
+      "App beats a well-taught class" is the claim that matters, and it is much rarer.</p>
+    </div>
+
+    <h3>The Duolingo evidence, in order of independence</h3>
+
+    <div class="tscroll">
+      <table>
+        <caption>Efficacy studies of app-based language learning, most-independent first</caption>
+        <thead>
+          <tr><th>Study</th><th class="num">n</th><th class="num">Hours</th><th>Outcome</th><th>Independence</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Loewen et al. (2019), Turkish<a class="cite" href="#s18">18</a></td>
+            <td class="num">9</td><td class="num">~29</td>
+            <td>Gains stronger in reading/writing than listening/speaking; only <strong>one</strong>
+            participant would have passed a first-semester university Turkish exam</td>
+            <td><span class="yes">independent</span></td>
+          </tr>
+          <tr>
+            <td>Smith, Jiang &amp; Peters (2024), Spanish<a class="cite" href="#s20">20</a></td>
+            <td class="num">48</td><td class="num">~27</td>
+            <td>Significant gains in <em>all</em> receptive and productive measures; over one ACTFL
+            sublevel in proficiency, reading, speaking and writing. <strong>30% attrition.</strong></td>
+            <td><span class="maybe">mixed</span> &mdash; lead author external, co-authors at Duolingo</td>
+          </tr>
+          <tr>
+            <td>Jiang et al. (2021), Spanish &amp; French<a class="cite" href="#s19">19</a></td>
+            <td class="num">225</td><td class="num">~112</td>
+            <td>Reached Intermediate Low reading / Novice High listening &mdash; statistically
+            indistinguishable from <strong>fourth-semester university students</strong> on three of
+            four comparisons</td>
+            <td><span class="maybe">mixed</span></td>
+          </tr>
+          <tr>
+            <td>Vesselinov &amp; Grego (2012), Spanish<a class="cite" href="#s17">17</a></td>
+            <td class="num">196</td><td class="num">~34</td>
+            <td>Claimed equivalent to one college semester. The same team later produced a
+            comparable report for Babbel<a class="cite" href="#s49">49</a></td>
+            <td><span class="no">commissioned</span> &mdash; no control group, self-selected sample</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Put together, a defensible reading emerges. <strong>Apps demonstrably work for what they
+    actually train.</strong> Roughly 27 hours over three months moved beginners more than an ACTFL
+    sublevel across every skill measured.<a class="cite" href="#s20">20</a> Around 112 hours got learners to
+    the receptive proficiency of a fourth-semester university student.<a class="cite" href="#s19">19</a></p>
+
+    <p>But note what the strongest claim is: <em>receptive</em> proficiency, measured against
+    university students whose courses were also not primarily producing speakers. And note the
+    Turkish study, which is the most independent of the four and by far the least
+    flattering.<a class="cite" href="#s18">18</a> Turkish is agglutinative, typologically distant from English,
+    and Duolingo's Turkish course was far less developed than its Spanish one. Course quality
+    varies enormously <em>within</em> the same app &mdash; a finding the Smith study explicitly
+    warns about.<a class="cite" href="#s20">20</a></p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="stat-n">27h</span><span class="stat-l">To gain ~1 ACTFL sublevel across all skills</span></div>
+      <div class="stat"><span class="stat-n">112h</span><span class="stat-l">To reach 4th-semester receptive proficiency</span></div>
+      <div class="stat"><span class="stat-n">600h+</span><span class="stat-l">FSI estimate to professional proficiency in Italian</span></div>
+      <div class="stat"><span class="stat-n">30%</span><span class="stat-l">Attrition over 3 months, in a paid study</span></div>
+    </div>
+
+    <h3>Speech: the fastest-moving area</h3>
+
+    <p>Automatic speech recognition for pronunciation training has a meta-analytic effect of
+    <strong>g = 0.69</strong> across 15 studies. The moderators are instructive: ASR works well for
+    <em>segmental</em> pronunciation (individual sounds) but only weakly for <em>suprasegmental</em>
+    features (stress, rhythm, intonation), and it works far better when paired with explicit
+    corrective feedback than when it just scores you.<a class="cite" href="#s21">21</a><a class="cite" href="#s47">47</a></p>
+
+    <p>Conversational AI is the newest evidence base and the most relevant to what apps can become.
+    Lyu, Lai and Guo pooled 31 studies (N = 2,943) and found <strong>g = 0.608</strong> overall.
+    The moderator table is the most directly actionable data in this entire report:<a class="cite" href="#s22">22</a></p>
+
+    <p>A consistent secondary finding across this literature is worth flagging separately: talking
+    to a machine measurably reduces <strong>speaking anxiety</strong> and raises willingness to
+    communicate, because there is no social cost to getting it wrong.<a class="cite" href="#s44">44</a><a class="cite" href="#s48">48</a>
+    For a skill that most learners avoid precisely because it is embarrassing, that is not a
+    side-effect &mdash; it may be the main mechanism.</p>
+
+    <div class="tscroll">
+      <table>
+        <caption>What makes a conversational agent work &mdash; Lyu, Lai &amp; Guo (2025), Hedges's g</caption>
+        <thead>
+          <tr><th>Design choice</th><th class="num">Present</th><th class="num">Absent</th><th>Significant?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Available on mobile</td><td class="num">0.790</td><td class="num">0.189</td><td><span class="yes">yes, strongly</span></td></tr>
+          <tr><td>Accepts voice input</td><td class="num">0.809</td><td class="num">0.425</td><td><span class="yes">yes</span></td></tr>
+          <tr><td>Generative-AI powered</td><td class="num">0.833</td><td class="num">0.473</td><td><span class="yes">yes</span></td></tr>
+          <tr><td>Purpose-built vs. generic</td><td class="num">0.720</td><td class="num">0.533</td><td><span class="no">no</span></td></tr>
+          <tr><td>Longer intervention</td><td colspan="2" class="num">no relationship</td><td><span class="no">no</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-caveat">
+      <span class="box-title">The number that should keep you honest</span>
+      <p>In the same analysis, chatbots scored <strong>g = 0.841</strong> against traditional
+      instruction, <strong>g = 0.645</strong> against talking to a peer &mdash; but only
+      <strong>g = 0.323</strong> against other non-conversational technology (apps, websites,
+      learning platforms).<a class="cite" href="#s22">22</a></p>
+      <p>In other words: most of the measured advantage of an AI tutor is the advantage of
+      <em>using something interactive at all</em>. Against a decent existing app, the marginal gain
+      is small. Build the conversational layer &mdash; the evidence supports it &mdash; but do not
+      expect it to be the thing that makes or breaks the product.</p>
+    </div>
+
+    <h3>The consistent finding across every study</h3>
+
+    <p>Look across the whole efficacy literature and one asymmetry keeps recurring: <strong>apps
+    develop receptive skills faster than productive ones, and written skills faster than oral
+    ones.</strong> Loewen's Turkish learners showed it.<a class="cite" href="#s18">18</a> Even Smith's
+    positive Spanish results came with learners <em>themselves</em> reporting the lack of practical
+    listening, speaking, pronunciation and conversational support &mdash; despite having made real
+    gains in exactly those areas.<a class="cite" href="#s20">20</a> Research on Duolingo's implicit
+    pronunciation teaching found the same gap.<a class="cite" href="#s43">43</a></p>
+
+    <p>That learner perception is worth taking seriously even where the data contradicts it. People
+    who do not feel they can speak will not go and speak, whatever the test says.</p>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 04 MOTIVATION ================= -->
+  <section id="motivation">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2>Streaks, and the motivation trap</h2>
+      <p class="dek">Every hour of instruction is worthless if nobody shows up. But the mechanisms
+      that make people show up can quietly select against the behaviours that produce learning.</p>
+    </div>
+
+    <p class="lead">The dominant framework is self-determination theory: motivation is durable when
+    three needs are met &mdash; <strong>autonomy</strong> (I chose this), <strong>competence</strong>
+    (I'm getting better), and <strong>relatedness</strong> (I'm doing this with and for people).
+    Studies of gamified language apps consistently find that badges, streaks and leaderboards do
+    raise engagement, and that they do so specifically by feeding those three
+    needs.<a class="cite" href="#s23">23</a><a class="cite" href="#s24">24</a></p>
+
+    <p>The complementary framework is Dörnyei's L2 Motivational Self System, where motivation flows
+    from the gap between who you are now and a vivid <em>ideal L2 self</em> &mdash; a concrete
+    mental image of yourself using the language. Motivation strength tracks the vividness of that
+    image, and interventions that deliberately build it have been shown to
+    work.<a class="cite" href="#s25">25</a></p>
+
+    <div class="box box-caveat">
+      <span class="box-title">Where streaks go wrong</span>
+      <p>A streak is a <em>controlled</em> motivator wearing an autonomy costume. It rewards
+      showing up, not learning, so a rational learner optimises for the cheapest qualifying action
+      &mdash; which is exactly what Jiang et al. observed: <strong>20&ndash;22% of participants did
+      more than half their lessons at the lowest available difficulty</strong>, and total hours
+      logged had a <em>near-zero, non-significant correlation with actual proficiency</em>.<a class="cite" href="#s19">19</a></p>
+      <p>Time-in-app is not the outcome. If your metric is time-in-app, you will build a product
+      that maximises the thing that does not correlate with learning.</p>
+    </div>
+
+    <h3>What to do instead</h3>
+
+    <p>The self-regulated-learning literature offers a strong alternative lever. A meta-analysis of
+    SRL interventions in L2 contexts found effects of <strong>g = 1.39 on learning achievement</strong>,
+    0.45 on self-efficacy, 0.40 on strategy use &mdash; with metacognitively-grounded interventions
+    outperforming purely cognitive ones.<a class="cite" href="#s26">26</a></p>
+
+    <p>Concretely: teaching learners to set their own goals, monitor their progress and reflect on
+    what is and is not working produces larger achievement gains than most instructional
+    interventions in this report. That is autonomy and competence in SDT terms, and it is largely
+    absent from consumer language apps, which tend to make every scheduling decision <em>for</em>
+    the learner.</p>
+
+    <div class="box box-good">
+      <span class="box-title">Motivation design that isn't a streak</span>
+      <ul>
+        <li><strong>Show mastery, not activity.</strong> "You can now understand 71% of a typical
+        Italian news article" beats "14-day streak" because it feeds competence with something true.</li>
+        <li><strong>Let learners choose.</strong> Genuine choice over topic, order and difficulty
+        serves autonomy. Choice among three identical lessons does not.</li>
+        <li><strong>Make the ideal self concrete.</strong> Ask, at onboarding, what specific
+        situation they want to handle &mdash; and then show progress <em>against that situation</em>.</li>
+        <li><strong>Protect the streak from the learner.</strong> If you keep streaks, make the
+        qualifying action a real retrieval session, and let people bank rest days without loss.</li>
+        <li><strong>Don't neglect relatedness.</strong> It is the SDT need solo apps serve worst.
+        Collaborative mobile-assisted learning is a substantial research area in its own right,<a class="cite" href="#s50">50</a>
+        and a leaderboard is a very thin substitute for learning alongside someone.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 05 CURRICULUM ================= -->
+  <section id="curriculum">
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <h2>Sidekick or syllabus?</h2>
+      <p class="dek">The most consequential product decision: is this app the whole course, or a
+      component of one? The evidence supports both &mdash; but they are genuinely different products.</p>
+    </div>
+
+    <div class="versus">
+      <div class="vs-col vs-a">
+        <span class="vs-tag">Model A</span>
+        <h4>App as support</h4>
+        <p>The app handles language-focused learning &mdash; vocabulary, morphology, spelling,
+        listening discrimination &mdash; and something else handles input, output and interaction.</p>
+        <ul>
+          <li><strong>Plays to the strength.</strong> Deliberate, spaced, retrieval-based practice
+          is exactly what software does better than a classroom, where a teacher cannot give
+          individual feedback at scale.<a class="cite" href="#s21">21</a></li>
+          <li><strong>Frees the human hours.</strong> Blended-learning research finds outcomes
+          improve when a substantial share of contact time is displaced online &mdash; because the
+          remaining face-to-face time gets spent on communication rather than drills.</li>
+          <li><strong>Lower burden of proof.</strong> You need to be better than the learner's
+          existing homework, not better than a curriculum.</li>
+        </ul>
+        <p><strong>Build:</strong> a superb scheduler, aggressive personalisation to a known-word
+        model, tight loops, export and integration. Skip: culture modules, chat, syllabus framing.</p>
+      </div>
+      <div class="vs-col vs-b">
+        <span class="vs-tag">Model B</span>
+        <h4>App as the whole course</h4>
+        <p>The app is the learner's only structured contact with Italian. This is what most
+        consumer apps implicitly claim and what the efficacy studies actually test.</p>
+        <ul>
+          <li><strong>It demonstrably gets people somewhere.</strong> ~112 hours to
+          fourth-semester receptive proficiency is a real result.<a class="cite" href="#s19">19</a></li>
+          <li><strong>The four strands become your problem.</strong> You now owe the learner
+          meaning-focused input, output, and fluency development &mdash; not just
+          language-focused learning.<a class="cite" href="#s7">7</a></li>
+          <li><strong>Ceiling risk is real.</strong> Every study shows the productive and oral gap.
+          A course that never requires speech will not produce speakers.</li>
+        </ul>
+        <p><strong>Build:</strong> graded extensive reading and listening, a conversational agent
+        with voice input,<a class="cite" href="#s22">22</a> real tasks with outcomes, and explicit
+        grammar sequenced to the acquisition order.</p>
+      </div>
+    </div>
+
+    <h3>What makes an effective programme, either way</h3>
+
+    <p>Strip out the delivery mechanism and the ingredients of an effective language programme are
+    remarkably consistent across the literature:</p>
+
+    <ol>
+      <li><strong>A balance across the four strands</strong>, with roughly equal time to each.<a class="cite" href="#s7">7</a></li>
+      <li><strong>Massive comprehensible input</strong> at 95&ndash;98% known-word coverage,
+      with enough volume for repetition to do its work.<a class="cite" href="#s8">8</a><a class="cite" href="#s11">11</a></li>
+      <li><strong>Required output</strong>, because noticing the gap between what you mean and what
+      you can say is what drives restructuring.<a class="cite" href="#s10">10</a></li>
+      <li><strong>Explicit form-focus</strong>, either embedded in communication or systematic
+      &mdash; both work equally well.<a class="cite" href="#s9">9</a></li>
+      <li><strong>Feedback that prompts self-correction</strong> rather than supplying the answer.<a class="cite" href="#s12">12</a></li>
+      <li><strong>Distributed, retrieval-based review</strong> with gaps sized to the target
+      retention interval.<a class="cite" href="#s1">1</a><a class="cite" href="#s3">3</a><a class="cite" href="#s4">4</a></li>
+      <li><strong>A sequence that respects developmental readiness</strong> rather than textbook
+      convenience.<a class="cite" href="#s14">14</a></li>
+      <li><strong>Metacognitive training</strong>, so learners can steer their own practice.<a class="cite" href="#s26">26</a></li>
+      <li><strong>Real tasks with real outcomes</strong>, not exercises.<a class="cite" href="#s13">13</a></li>
+      <li><strong>Motivation grounded in a concrete future self</strong>, not in loss aversion.<a class="cite" href="#s25">25</a></li>
+    </ol>
+
+    <div class="box box-key">
+      <span class="box-title">The CEFR is your friend here</span>
+      <p>The Council of Europe's CEFR Companion Volume gives calibrated <em>can-do</em> descriptors
+      across reading, listening, speaking, writing, and &mdash; newer &mdash; mediation and
+      plurilingual competence.<a class="cite" href="#s34">34</a> Two uses: it converts vague progress into
+      concrete "I can" statements that feed the ideal-self mechanism, and it gives you an
+      externally-validated skeleton for a syllabus, which is otherwise very hard to design
+      credibly from scratch.</p>
+    </div>
+  </section>
+
+  <div class="divider"><span>&#8226; &#8226; &#8226;</span></div>
+
+  <!-- ================= 06 ITALIAN ================= -->
+  <section id="italian">
+    <div class="sec-head">
+      <span class="sec-num">06</span>
+      <h2>Italian, specifically</h2>
+      <p class="dek">Italian is unusually well served by acquisition research &mdash; there is a
+      thirty-year Italian-language research programme with data most languages would envy. Use it.</p>
+    </div>
+
+    <p class="lead">Two structural facts shape everything about teaching Italian. The first is that
+    its orthography is <em>transparent</em>: spelling maps to sound with near-total consistency. In
+    Seymour's fourteen-country comparison of first-year reading, children learning Italian, Spanish,
+    German, Greek and Finnish were at <strong>ceiling</strong> on word reading by the end of grade
+    one. English children were at <strong>34%</strong>.<a class="cite" href="#s28">28</a></p>
+
+    <p>For your product this means: decoding is essentially free. An Italian learner who knows the
+    handful of rules (<span class="itword">c/g</span> before front vowels, <span class="itword">gl</span>,
+    <span class="itword">gn</span>, <span class="itword">sc</span>, double consonants, stress) can
+    pronounce any written word and spell any heard word. Do not spend the curriculum budget an
+    English course would spend on spelling. <strong>Spend it on the double consonants and on
+    stress</strong>, which are the two places the mapping actually costs something &mdash; and where
+    the phonemic contrast is real (<span class="itword">cade</span> / <span class="itword">cadde</span>,
+    <span class="itword">papa</span> / <span class="itword">papà</span>).</p>
+
+    <p>The second fact is that Italian's core vocabulary is extraordinarily well characterised.
+    Tullio De Mauro's <em>vocabolario di base</em> identifies about 7,500 words in three tiers, of
+    which the innermost <strong><span class="itword">lessico fondamentale</span> &mdash; roughly
+    2,000 words &mdash; accounts for around 86% of everything spoken and written</strong>.<a class="cite" href="#s30">30</a></p>
+
+    <div class="box box-good">
+      <span class="box-title">A concrete curriculum spine</span>
+      <p>De Mauro's tiers give you a ready-made, empirically grounded vocabulary sequence that no
+      amount of corpus work would improve on cheaply. Teach the <span class="itword">fondamentale</span>
+      2,000 first to buy 86% coverage, then the <span class="itword">alto uso</span> and
+      <span class="itword">alta disponibilità</span> tiers out to 7,500 &mdash; which lands the
+      learner in the vicinity of the coverage thresholds from section 02. Sequence within tiers by
+      frequency; that is where a scheduler earns its keep.</p>
+    </div>
+
+    <h3>The acquisition sequences &mdash; the most useful table in this report</h3>
+
+    <p>The <em>Progetto di Pavia</em>, running since the mid-1980s, tracked 20 learners of Italian
+    aged 12&ndash;48 across eight different first languages (Albanian, Arabic, Chichewa, Chinese,
+    English, Mooré, German, Tigrinya) through roughly 120 hours of recorded speech.<a class="cite" href="#s27">27</a>
+    From that corpus come <em>implicational sequences</em>: orders in which structures reliably
+    emerge, regardless of first language. Learners move through at different speeds, but not in
+    different orders.</p>
+
+    <h4>Verb tense and mood</h4>
+    <div class="scale">
+      <i>presente</i><span class="arw">&rarr;</span>
+      <i>(aux) participio passato</i><span class="arw">&rarr;</span>
+      <i>imperfetto</i><span class="arw">&rarr;</span>
+      <i>futuro</i><span class="arw">&rarr;</span>
+      <i>condizionale</i><span class="arw">&rarr;</span>
+      <i>congiuntivo</i>
+    </div>
+
+    <p>"Implicational" means what it says: a learner who has the imperfetto will have the passato
+    prossimo and the present. The reverse does not hold. Here is the actual data table, which shows
+    it beautifully:</p>
+
+    <div class="tscroll">
+      <table>
+        <caption>Implicational scaling, Italian L2 verb system (Banfi &amp; Bernini 2003, via Chini 2016). + = acquired</caption>
+        <thead>
+          <tr><th>Learner &amp; L1</th><th>pres.</th><th>past ptcp.</th><th>imperf.</th><th>futuro</th><th>cond.</th><th>cong.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hagos &mdash; Tigrinya</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td></tr>
+          <tr><td>Chu &mdash; Chinese</td><td class="yes">+</td><td class="yes">+</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td></tr>
+          <tr><td>Markos &mdash; Tigrinya</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="no">&minus;</td><td class="no">&minus;</td><td class="no">&minus;</td></tr>
+          <tr><td>John &mdash; <strong>English</strong></td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="maybe">&plusmn;</td><td class="no">&minus;</td></tr>
+          <tr><td>Antje &mdash; German</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="no">&minus;</td></tr>
+          <tr><td>Matthias &mdash; German</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td><td class="yes">+</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Gender agreement</h4>
+    <div class="scale">
+      <i>anaphoric 3sg (lui/lei)</i><span class="arw">&rarr;</span>
+      <i>definite article</i><span class="arw">&rarr;</span>
+      <i>indefinite article</i><span class="arw">&rarr;</span>
+      <i>attributive adj.</i><span class="arw">&rarr;</span>
+      <i>predicative adj.</i><span class="arw">&rarr;</span>
+      <i>past participle</i>
+    </div>
+
+    <h4>Subordinate clauses</h4>
+    <div class="scale">
+      <i>causal</i><span class="arw">&rarr;</span>
+      <i>temporal</i><span class="arw">&rarr;</span>
+      <i>purpose</i><span class="arw">&rarr;</span>
+      <i>conditional</i><span class="arw">&rarr;</span>
+      <i>concessive</i>
+    </div>
+
+    <div class="box box-key">
+      <span class="box-title">What this means for your syllabus</span>
+      <p>Teach in the order structures actually emerge, and <strong>do not grade a learner on a
+      structure that sits beyond their current stage</strong>. That does not mean hiding the
+      congiuntivo &mdash; it should absolutely be in the input, because exposure is what eventually
+      makes it learnable. It means not requiring correct production of it, and not treating
+      participle agreement errors as failures in a learner who is still stabilising the article.<a class="cite" href="#s27">27</a></p>
+      <p>Chini's summary is blunt about the alternative: forcing paradigms too early produces
+      memorised forms with no system to attach to.</p>
+    </div>
+
+    <p>The same research programme describes three broad learner varieties every learner passes
+    through &mdash; <strong>pre-basic</strong> (no grammatical categories, purely pragmatic
+    ordering, extreme context dependence), <strong>basic</strong> (predicate-and-argument structure,
+    bare verb forms, semantic ordering), and <strong>post-basic</strong> (inflected nouns and verbs,
+    syntactic ordering).<a class="cite" href="#s27">27</a> Fine-grained morphology teaching only pays off
+    once a learner is entering the post-basic variety. Before that, the useful investment is rich,
+    comprehensible, motivating input plus useful formulaic chunks.</p>
+
+    <h3>Grammatical gender: the trainable part</h3>
+
+    <p>Italian gender is not arbitrary, and this is a design opportunity. Word-final phonemes are
+    reliable cues, and learners are demonstrably sensitive to them &mdash; studies of L2 Italian
+    show a clear implicational order of difficulty across noun endings. The catch: roughly a third
+    of both masculine and feminine "ambiguous" nouns carry no gender marking at all, which is
+    precisely where learners fail.<a class="cite" href="#s29">29</a></p>
+
+    <div class="box box-good">
+      <span class="box-title">Design consequence</span>
+      <p>Split your gender curriculum in two. <strong>Transparent nouns</strong> (<span class="itword">-o</span>
+      / <span class="itword">-a</span>, and the reliable suffixes like <span class="itword">-zione</span>,
+      <span class="itword">-tà</span>, <span class="itword">-ore</span>) should be taught as a
+      <em>rule</em> and drilled to automaticity &mdash; that is cheap coverage. <strong>Opaque
+      nouns</strong> (<span class="itword">-e</span> endings and irregulars) must be learned
+      item-by-item, which means they belong in the spaced-repetition system <em>with their
+      article attached</em>. Never store a noun without its article; store
+      <span class="itword">il ponte</span>, never <span class="itword">ponte</span>.</p>
+    </div>
+
+    <h3>How much Italian, and how long</h3>
+
+    <p>The US Foreign Service Institute classes Italian as a Category I language &mdash; among the
+    easiest for English speakers &mdash; at roughly <strong>600&ndash;750 class hours</strong> to
+    reach professional working proficiency (about upper B2 / low C1), under intensive full-time
+    instruction with native teachers.<a class="cite" href="#s35">35</a></p>
+
+    <p>Set that against the app numbers from section 03 and the picture is clear and worth being
+    honest with users about: 27 hours buys a real, measurable sublevel. 112 hours buys
+    fourth-semester receptive ability. Professional fluency is an order of magnitude beyond either,
+    and no app is going to shortcut it.</p>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 07 ENGLISH L1 ================= -->
+  <section id="english">
+    <div class="sec-head">
+      <span class="sec-num">07</span>
+      <h2>If your learner speaks English</h2>
+      <p class="dek">A large free head start on vocabulary, and four specific, predictable places
+      where English actively gets in the way.</p>
+    </div>
+
+    <p class="lead">The head start is real and measurable. The <strong>cognate facilitation
+    effect</strong> is one of the most robust findings in bilingual psycholinguistics: words that
+    are similar in form and meaning across two languages are recognised and produced faster and
+    more accurately than non-cognates, in both languages, in speech and in
+    print.<a class="cite" href="#s31">31</a> Vocabulary growth is measurably boosted by the number of
+    cognates a language pair shares, and the effect extends beyond words to easing syntactic
+    processing.</p>
+
+    <p>English and Italian share thousands, through Latin directly and through Norman French.
+    <span class="itword">Nazione</span>, <span class="itword">università</span>,
+    <span class="itword">possibile</span>, <span class="itword">condizione</span>,
+    <span class="itword">difficoltà</span> require essentially no learning. And the mappings are
+    <em>systematic</em>: English <span class="itword">-tion</span> → Italian
+    <span class="itword">-zione</span>; <span class="itword">-ty</span> →
+    <span class="itword">-tà</span>; <span class="itword">-ous</span> →
+    <span class="itword">-oso</span>; <span class="itword">-ly</span> →
+    <span class="itword">-mente</span>.</p>
+
+    <div class="box box-good">
+      <span class="box-title">Design consequence</span>
+      <p>Teach the <em>mappings</em>, not the words. A learner who internalises five suffix
+      correspondences unlocks thousands of items at once &mdash; a far better return than any
+      individual flashcard. Then use the spaced-repetition budget you just freed on the words that
+      are genuinely opaque.</p>
+      <p>And explicitly inoculate against <strong>false friends</strong>, which are the direct cost
+      of this strategy: <span class="itword">attualmente</span> (currently, not actually),
+      <span class="itword">eventualmente</span> (possibly, not eventually),
+      <span class="itword">libreria</span> (bookshop, not library),
+      <span class="itword">parenti</span> (relatives, not parents),
+      <span class="itword">morbido</span> (soft, not morbid),
+      <span class="itword">fattoria</span> (farm, not factory).</p>
+    </div>
+
+    <h3>The four predictable difficulties</h3>
+
+    <ol>
+      <li><strong>Grammatical gender.</strong> English has none, so there is no L1 hook whatsoever
+      and every noun carries an extra bit of information the learner is not used to storing.
+      See the transparent/opaque split above.<a class="cite" href="#s29">29</a></li>
+      <li><strong>The perfective/imperfective contrast.</strong> English marks aspect
+      inconsistently and lexically, so the <span class="itword">passato prossimo</span> /
+      <span class="itword">imperfetto</span> distinction has no clean L1 anchor. English speakers
+      typically over-generalise the passato prossimo and under-use the imperfetto for background
+      and description.</li>
+      <li><strong>The congiuntivo.</strong> Last in the acquisition sequence for a reason, and
+      English's residual subjunctive ("if I <em>were</em>") is too vestigial to help. Expect this
+      late, teach it late, and do not gate progress on it.<a class="cite" href="#s27">27</a></li>
+      <li><strong>Clitic pronouns and pro-drop.</strong> <span class="itword">Glielo</span>,
+      <span class="itword">ce n'è</span>, <span class="itword">me lo dai</span> &mdash; clitic
+      clusters have no English analogue, and English's obligatory subject pronoun leads learners to
+      produce <span class="itword">io penso che...</span> where a native speaker would just say
+      <span class="itword">penso che...</span></li>
+    </ol>
+
+    <p>Add pronunciation. English speakers reliably struggle with Italian's pure vowels (English
+    diphthongises almost every long vowel), with <strong>geminate consonants</strong>
+    (<span class="itword">nono</span> vs <span class="itword">nonno</span> &mdash; a real phonemic
+    contrast that English lacks entirely), and with the trilled <span class="itword">r</span>.
+    Since ASR is strongest exactly on segmental features, this is where speech technology pays off
+    best.<a class="cite" href="#s21">21</a></p>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= 08 POLISH L1 ================= -->
+  <section id="polish">
+    <div class="sec-head">
+      <span class="sec-num">08</span>
+      <h2>If your learner speaks Polish</h2>
+      <p class="dek">A very different profile: significant hidden advantages that no course tells
+      them about, one notorious difficulty, and a research finding that should change how you
+      write explanations.</p>
+    </div>
+
+    <p class="lead">Start with the finding, because it is the most practically important thing in
+    this section and it is counter-intuitive. Toth, Hlava and Gómez-Pablos studied Slavic-speaking
+    university learners (L1 Slovak, L2 English) acquiring Italian and Spanish as third languages,
+    and included a metalinguistic task asking them to explain aspectual contrasts.<a class="cite" href="#s32">32</a></p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="stat-n">93%</span><span class="stat-l">Compared Romance forms to their Slavic L1</span></div>
+      <div class="stat"><span class="stat-n">5%</span><span class="stat-l">Compared to English, their L2</span></div>
+      <div class="stat"><span class="stat-n">2%</span><span class="stat-l">Compared to another Romance language</span></div>
+    </div>
+
+    <p>These learners had studied English for roughly <strong>twelve years</strong>. Many were
+    studying more than one Romance language. And when reasoning about how Italian tense and aspect
+    work, they reached for Slovak in 161 of 173 cases. Moreover, the sentence pairs that
+    <em>could</em> be translated directly into Slovak elicited noticeably more accurate
+    reasoning.<a class="cite" href="#s32">32</a></p>
+
+    <div class="box box-key">
+      <span class="box-title">Design consequence</span>
+      <p>If your app teaches Italian through English to a Polish speaker, your grammatical
+      explanations are being silently re-translated into Polish before they land &mdash; and where
+      Polish offers no parallel, the explanation degrades. An Italian course for Polish speakers
+      should anchor explanations in <strong>Polish</strong> categories, not English ones, even if
+      the interface language is English.</p>
+      <p>This is a genuine competitive gap. Almost every commercial Italian course is built for an
+      English-speaking mind, and the research says that is the wrong mental scaffolding for a
+      Slavic-speaking learner.</p>
+    </div>
+
+    <h3>The advantages nobody mentions</h3>
+
+    <div class="tscroll">
+      <table>
+        <caption>What a Polish speaker brings to Italian that an English speaker does not</caption>
+        <thead>
+          <tr><th>Feature</th><th>Polish</th><th>Advantage in Italian</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Grammatical gender</td>
+            <td>Three genders, pervasive agreement</td>
+            <td><span class="yes">large</span> &mdash; the <em>concept</em> is already automatic; only the assignments are new</td>
+          </tr>
+          <tr>
+            <td>Verbal aspect</td>
+            <td>Lexico-grammatical, in every verb</td>
+            <td><span class="yes">large</span> &mdash; perfective/imperfective is a native intuition</td>
+          </tr>
+          <tr>
+            <td>Rich verb inflection</td>
+            <td>Person/number marked throughout</td>
+            <td><span class="yes">large</span> &mdash; conjugation tables are familiar territory</td>
+          </tr>
+          <tr>
+            <td>Pro-drop</td>
+            <td>Subject pronouns routinely omitted</td>
+            <td><span class="yes">large</span> &mdash; the English speaker's <span class="itword">io penso</span> error simply doesn't occur</td>
+          </tr>
+          <tr>
+            <td>Free-ish word order</td>
+            <td>Case marking permits flexibility</td>
+            <td><span class="yes">moderate</span> &mdash; Italian's marked orders feel natural</td>
+          </tr>
+          <tr>
+            <td>Transparent orthography</td>
+            <td>Highly regular sound&ndash;spelling</td>
+            <td><span class="yes">moderate</span> &mdash; expects spelling to be predictable, and in Italian it is</td>
+          </tr>
+          <tr>
+            <td>Vowel system</td>
+            <td>Six pure monophthongs, no diphthongisation</td>
+            <td><span class="yes">large</span> &mdash; Italian's pure vowels come nearly free<a class="cite" href="#s33">33</a></td>
+          </tr>
+          <tr>
+            <td>Trilled <span class="itword">r</span></td>
+            <td>Present in Polish</td>
+            <td><span class="yes">large</span> &mdash; no training needed at all</td>
+          </tr>
+          <tr>
+            <td>Consonant clusters</td>
+            <td>Extremely complex in Polish</td>
+            <td><span class="yes">moderate</span> &mdash; Italian's simple CV syllables are easy by comparison<a class="cite" href="#s28">28</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>That is an unusually strong hand. A Polish speaker starting Italian is in several respects
+    better positioned than an English speaker &mdash; and is almost certainly using a course that
+    assumes the opposite.</p>
+
+    <h3>The one big difficulty: articles</h3>
+
+    <p>Polish has no articles. Neither does any other Slavic language except Bulgarian and
+    Macedonian. And the research is consistent that this is not a beginner problem that resolves
+    &mdash; article errors persist into advanced proficiency. Studies of Polish learners acquiring
+    English articles document exactly this, and work on Polish-L1 learners acquiring Spanish as a
+    third language found articles remained one of the largest error sources <em>even among the most
+    advanced learners</em>.<a class="cite" href="#s33">33</a></p>
+
+    <p>Italian makes this harder than English does, because Italian articles are not just
+    definite/indefinite &mdash; they inflect for gender and number and change shape phonologically
+    (<span class="itword">il</span>, <span class="itword">lo</span>, <span class="itword">l'</span>,
+    <span class="itword">i</span>, <span class="itword">gli</span>,
+    <span class="itword">la</span>, <span class="itword">le</span>), and they fuse with prepositions
+    (<span class="itword">del</span>, <span class="itword">nella</span>,
+    <span class="itword">sugli</span>). And Italian uses the definite article in places English
+    does not: with possessives (<span class="itword">la mia casa</span>), with generics
+    (<span class="itword">il caffè fa bene</span>), with countries and languages.</p>
+
+    <div class="box box-caveat">
+      <span class="box-title">Design consequence</span>
+      <p>For Slavic-L1 learners, articles deserve a <strong>dedicated, long-running, high-frequency
+      strand</strong> of their own, running the entire length of the course &mdash; not a lesson in
+      week two. Treat it the way a well-designed course treats tones for a Mandarin learner: as a
+      permanent thread. Note also that the acquisition sequence puts definite before indefinite
+      articles,<a class="cite" href="#s27">27</a> so sequence accordingly.</p>
+    </div>
+
+    <h3>The aspect advantage, and its trap</h3>
+
+    <p>Polish aspect is a genuine asset &mdash; but the mapping to Italian is not one-to-one, and
+    the Toth study documents exactly where it breaks. In Slavic languages aspect is
+    <em>lexico-grammatical</em>: it is baked into each verb's lexical identity, with perfective and
+    imperfective forming lexical pairs. In Italian it is expressed through <em>tense morphology</em>
+    in the past.<a class="cite" href="#s32">32</a></p>
+
+    <p>Where a Slavic pair exists, transfer is clean and the learner is far ahead. Where it does
+    not, the intuition fails. The study's own example: Slovak <span class="itword">byť</span>
+    ("to be") is imperfective and has no perfective counterpart &mdash; so both
+    <span class="itword">Era una bella giornata</span> and <span class="itword">È stata una bella
+    giornata</span> collapse into the same Slovak sentence, and the Italian contrast becomes
+    invisible.<a class="cite" href="#s32">32</a></p>
+
+    <p>The broader theoretical point matters too. Third-language acquisition research has moved away
+    from wholesale transfer models toward property-by-property accounts &mdash; the Linguistic
+    Proximity and Scalpel models &mdash; where transfer happens feature by feature from whichever
+    prior language offers a match.<a class="cite" href="#s32">32</a><a class="cite" href="#s46">46</a> Practically:
+    a Polish speaker will transfer aspect from Polish, may transfer some vocabulary through English
+    (Latinate cognates work through both routes), and gets no help from either on articles.</p>
+
+    <div class="box box-good">
+      <span class="box-title">What a Polish-first Italian course would look like</span>
+      <ul>
+        <li>Articles as a permanent strand from day one, sequenced definite → indefinite → fused
+        prepositions, with heavy spaced retrieval.</li>
+        <li>Explain <span class="itword">passato prossimo</span> / <span class="itword">imperfetto</span>
+        via <em>Polish</em> aspect pairs &mdash; then explicitly flag the verbs where the pair
+        doesn't exist and the intuition will mislead.</li>
+        <li>Skip most of the pronunciation curriculum an English-speaker course needs. Spend that
+        budget on geminates and on stress placement, which Polish (fixed penultimate stress) does
+        <em>not</em> prepare a learner for.</li>
+        <li>Lean hard on cognates, but route them through both Polish Latinate vocabulary
+        (<span class="itword">rewolucja / rivoluzione</span>, <span class="itword">uniwersytet /
+        università</span>) and English.</li>
+        <li>Tell the learner about their advantages. Knowing you have a structural head start on
+        gender, aspect, conjugation and pronunciation is itself a motivational asset in
+        ideal-self terms.<a class="cite" href="#s25">25</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="divider"><span>&#8226; &#8226; &#8226;</span></div>
+
+  <!-- ================= 09 GUIDELINES ================= -->
+  <section id="guidelines">
+    <div class="sec-head">
+      <span class="sec-num">09</span>
+      <h2>Eighteen guidelines</h2>
+      <p class="dek">Everything above, compressed into things you can actually build. Ordered by
+      how much difference they make relative to how much they cost.</p>
+    </div>
+
+    <div class="guides">
+      <div class="guide">
+        <div><h4>Make retrieval the default interaction</h4>
+        <p>If a screen shows the answer before the learner has tried to produce it, it is not
+        practice. Restudying feels like learning and isn't.<a class="cite" href="#s1">1</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Size review gaps to the retention target, not to engagement</h4>
+        <p>Optimal gap ≈ 10&ndash;20% of how long you want the memory to last. And never validate a
+        scheduler on next-day performance &mdash; short and long gaps look identical immediately and
+        diverge only later.<a class="cite" href="#s3">3</a><a class="cite" href="#s4">4</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Model memory strength per item, don't hand-tune intervals</h4>
+        <p>Half-life regression cut prediction error 45%+ and lifted engagement 12%. But fit it on
+        outcomes you actually care about, not just in-app recall.<a class="cite" href="#s5">5</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Block on first exposure, interleave forever after</h4>
+        <p>New systems need coherent presentation once. After that, mixing item types beats
+        blocking them, even though it feels worse.<a class="cite" href="#s6">6</a><a class="cite" href="#s38">38</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Track a known-word model and grade all content against it</h4>
+        <p>Input only works above ~95% coverage. Knowing precisely which words a learner knows is
+        software's biggest structural advantage over a textbook.<a class="cite" href="#s7">7</a><a class="cite" href="#s8">8</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Audit your product against the four strands</h4>
+        <p>Most apps do one of four well. Name which strands you are not serving, and decide
+        deliberately whether to build them or to be honest that you are a supplement.<a class="cite" href="#s7">7</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Prompt self-correction before revealing the answer</h4>
+        <p>Wrong → red X → correct answer is the weakest feedback shape. Flag, localise, allow a
+        retry, then reveal. It converts a presentation into a retrieval.<a class="cite" href="#s12">12</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Teach grammar explicitly &mdash; and sequence it developmentally</h4>
+        <p>Explicit instruction wins across meta-analyses. But teach in acquisition order, and don't
+        assess structures beyond the learner's current stage.<a class="cite" href="#s9">9</a><a class="cite" href="#s10">10</a><a class="cite" href="#s14">14</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Require output, not just recognition</h4>
+        <p>Every efficacy study shows the same receptive/productive gap. Multiple choice is not
+        production, and translation is not communication.<a class="cite" href="#s10">10</a><a class="cite" href="#s18">18</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Build the conversational layer with voice, on mobile</h4>
+        <p>Mobile availability (g 0.79 vs 0.19), voice input (0.81 vs 0.43) and generative AI (0.83
+        vs 0.47) are the significant moderators. Purpose-built vs generic is not.<a class="cite" href="#s22">22</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Use ASR for sounds, not for prosody &mdash; and pair it with explicit feedback</h4>
+        <p>ASR has a large effect on segmentals, small on suprasegmentals, and works much better
+        when it explains than when it merely scores.<a class="cite" href="#s21">21</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Replace activity metrics with mastery metrics</h4>
+        <p>Hours logged had a near-zero correlation with proficiency, and a fifth of learners
+        farmed the easiest available lessons. Measure what you want to cause.<a class="cite" href="#s19">19</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Teach learners to steer their own learning</h4>
+        <p>Self-regulated-learning interventions produced g = 1.39 on achievement &mdash; larger than
+        most instructional interventions here, and almost absent from consumer apps.<a class="cite" href="#s26">26</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>Anchor motivation in a concrete future self</h4>
+        <p>Ask what specific situation the learner wants to handle, then report progress against
+        <em>that</em>. CEFR can-do descriptors give you calibrated language for it.<a class="cite" href="#s25">25</a><a class="cite" href="#s34">34</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>For Italian: sequence vocabulary on the <span class="itword">vocabolario di base</span></h4>
+        <p>2,000 words for ~86% coverage, 7,500 for the useful ceiling. An empirically grounded
+        spine you get for free.<a class="cite" href="#s30">30</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>For Italian: split gender teaching by transparency</h4>
+        <p>Rule-teach the transparent endings; item-learn the opaque ones in spaced repetition,
+        always stored with the article attached.<a class="cite" href="#s29">29</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>For English speakers: teach suffix mappings, then inoculate against false friends</h4>
+        <p>Five correspondences unlock thousands of words. Then spend the saved budget on gender,
+        aspect, clitics and geminates &mdash; the four predictable failure points.<a class="cite" href="#s31">31</a></p></div>
+      </div>
+      <div class="guide">
+        <div><h4>For Polish speakers: explain in Polish categories, and make articles permanent</h4>
+        <p>Slavic learners reason about Romance grammar via their L1 93% of the time, after a decade
+        of English. And articles never stop being hard &mdash; give them a strand, not a
+        lesson.<a class="cite" href="#s32">32</a><a class="cite" href="#s33">33</a></p></div>
+      </div>
+    </div>
+
+    <div class="box box-key">
+      <span class="box-title">If you only do three things</span>
+      <p><strong>One:</strong> make every practice interaction a retrieval attempt, with gaps sized
+      to a long retention interval rather than to daily engagement. <strong>Two:</strong> pick which
+      of Nation's four strands you serve, and say so honestly rather than implying you are a full
+      course. <strong>Three:</strong> build for the learner's actual first language &mdash; for
+      Italian that means the acquisition sequences from Pavia, and for a Polish speaker it means an
+      entirely different course from the one an English speaker needs.</p>
+    </div>
+  </section>
+
+  <div class="divider"><span>&#167;</span></div>
+
+  <!-- ================= SOURCES ================= -->
+  <section id="sources">
+    <div class="sec-head">
+      <span class="sec-num">10</span>
+      <h2>Sources</h2>
+      <p class="dek">All fifty are cached locally in <code>research/sources/</code>. Where a
+      publisher blocked automated download, the abstract and key statistics are captured in
+      <code>CACHED-NOTES-paywalled.md</code>; those entries are marked <em>notes</em>.</p>
+    </div>
+
+    <div class="bib">
+
+      <div class="bib-item" id="s1"><span class="bib-n">1</span><div class="bib-body">
+        Karpicke, J. D., &amp; Roediger, H. L. (2008). The critical importance of retrieval for
+        learning. <cite>Science</cite>, 319(5865), 966–968.
+        <a href="https://doi.org/10.1126/science.1152408">doi:10.1126/science.1152408</a>
+        <span class="bib-file">karpicke-roediger-2008-retrieval.pdf</span></div></div>
+
+      <div class="bib-item" id="s2"><span class="bib-n">2</span><div class="bib-body">
+        Karpicke, J. D. Retrieval-based learning: A decade of progress. <cite>Learning and Memory:
+        A Comprehensive Reference</cite>.
+        <span class="bib-file">retrieval-based-learning-decade-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s3"><span class="bib-n">3</span><div class="bib-body">
+        Cepeda, N. J., Vul, E., Rohrer, D., Wixted, J. T., &amp; Pashler, H. (2008). Spacing effects
+        in learning: A temporal ridgeline of optimal retention. <cite>Psychological Science</cite>,
+        19(11), 1095–1102.
+        <a href="https://doi.org/10.1111/j.1467-9280.2008.02209.x">doi:10.1111/j.1467-9280.2008.02209.x</a>
+        <span class="bib-file">cepeda-2008-temporal-ridgeline-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s4"><span class="bib-n">4</span><div class="bib-body">
+        Kim, S. K., &amp; Webb, S. (2022). The effects of spaced practice on second language
+        learning: A meta-analysis. <cite>Language Learning</cite>, 72(1), 269–319.
+        <a href="https://doi.org/10.1111/lang.12479">doi:10.1111/lang.12479</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s5"><span class="bib-n">5</span><div class="bib-body">
+        Settles, B., &amp; Meeder, B. (2016). A trainable spaced repetition model for language
+        learning. <cite>Proceedings of ACL 2016</cite>, 1848–1858.
+        <a href="https://aclanthology.org/P16-1174/">aclanthology.org/P16-1174</a>
+        <span class="bib-file">settles-meeder-2016-halflife-regression.pdf</span></div></div>
+
+      <div class="bib-item" id="s6"><span class="bib-n">6</span><div class="bib-body">
+        Bjork, E. L., &amp; Bjork, R. A. Introducing desirable difficulties into practice and
+        instruction: Obstacles and opportunities.
+        <span class="bib-file">bjork-bjork-2011-desirable-difficulties.pdf</span></div></div>
+
+      <div class="bib-item" id="s7"><span class="bib-n">7</span><div class="bib-body">
+        Nation, P. (2007). The four strands. <cite>Innovation in Language Learning and
+        Teaching</cite>, 1(1), 2–13.
+        <a href="https://doi.org/10.2167/illt039.0">doi:10.2167/illt039.0</a>
+        <span class="bib-file">nation-2007-four-strands.pdf</span></div></div>
+
+      <div class="bib-item" id="s8"><span class="bib-n">8</span><div class="bib-body">
+        Nation, I. S. P. (2006). How large a vocabulary is needed for reading and listening?
+        <cite>Canadian Modern Language Review</cite>, 63(1), 59–82.
+        <span class="bib-file">nation-2006-how-large-a-vocabulary.pdf</span></div></div>
+
+      <div class="bib-item" id="s9"><span class="bib-n">9</span><div class="bib-body">
+        Norris, J. M., &amp; Ortega, L. (2000). Effectiveness of L2 instruction: A research
+        synthesis and quantitative meta-analysis. <cite>Language Learning</cite>, 50(3), 417–528.
+        <a href="https://doi.org/10.1111/0023-8333.00136">doi:10.1111/0023-8333.00136</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s10"><span class="bib-n">10</span><div class="bib-body">
+        Spada, N., &amp; Tomita, Y. (2010). Interactions between type of instruction and type of
+        language feature: A meta-analysis. <cite>Language Learning</cite>, 60(2), 263–308.
+        <a href="https://doi.org/10.1111/j.1467-9922.2010.00562.x">doi:10.1111/j.1467-9922.2010.00562.x</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s11"><span class="bib-n">11</span><div class="bib-body">
+        Nakanishi, T. (2015). A meta-analysis of extensive reading research. <cite>TESOL
+        Quarterly</cite>, 49(1), 6–37.
+        <a href="https://doi.org/10.1002/tesq.157">doi:10.1002/tesq.157</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s12"><span class="bib-n">12</span><div class="bib-body">
+        Li, S. (2010). The effectiveness of corrective feedback in SLA: A meta-analysis.
+        <cite>Language Learning</cite>, 60(2), 309–365.
+        <a href="https://doi.org/10.1111/j.1467-9922.2010.00561.x">doi:10.1111/j.1467-9922.2010.00561.x</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s13"><span class="bib-n">13</span><div class="bib-body">
+        Bryfonski, L., &amp; McKay, T. H. (2019). TBLT implementation and evaluation: A
+        meta-analysis. <cite>Language Teaching Research</cite>, 23(5), 603–632.
+        <a href="https://doi.org/10.1177/1362168817744389">doi:10.1177/1362168817744389</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s14"><span class="bib-n">14</span><div class="bib-body">
+        Pienemann, M. (1989). Is language teachable? Psycholinguistic experiments and hypotheses.
+        <cite>Applied Linguistics</cite>, 10(1), 52–79.
+        <span class="bib-file">pienemann-1989-is-language-teachable.pdf</span></div></div>
+
+      <div class="bib-item" id="s15"><span class="bib-n">15</span><div class="bib-body">
+        Sung, Y.-T., Chang, K.-E., &amp; Yang, J.-M. (2015). How effective are mobile devices for
+        language learning? A meta-analysis. <cite>Educational Research Review</cite>, 16, 68–84.
+        <a href="https://doi.org/10.1016/j.edurev.2015.09.001">doi:10.1016/j.edurev.2015.09.001</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s16"><span class="bib-n">16</span><div class="bib-body">
+        Booton, S. A., et al. (2022). A meta-analysis on mobile-assisted language learning
+        applications: Benefits and risks. <cite>Psychologica Belgica</cite>, 62(1), 1–19.
+        <a href="https://doi.org/10.5334/pb.1146">doi:10.5334/pb.1146</a>
+        <span class="bib-file">booton-2022-mall-benefits-risks.pdf</span></div></div>
+
+      <div class="bib-item" id="s17"><span class="bib-n">17</span><div class="bib-body">
+        Vesselinov, R., &amp; Grego, J. (2012). <cite>Duolingo effectiveness study: Final
+        report</cite>. Commissioned by Duolingo.
+        <span class="bib-file">vesselinov-grego-2012-duolingo-report.pdf</span></div></div>
+
+      <div class="bib-item" id="s18"><span class="bib-n">18</span><div class="bib-body">
+        Loewen, S., Crowther, D., Isbell, D. R., Kim, K. M., Maloney, J., Miller, Z. F., &amp;
+        Rawal, H. (2019). Mobile-assisted language learning: A Duolingo case study.
+        <cite>ReCALL</cite>, 31(3), 293–311.
+        <a href="https://doi.org/10.1017/S0958344019000065">doi:10.1017/S0958344019000065</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s19"><span class="bib-n">19</span><div class="bib-body">
+        Jiang, X., Rollinson, J., Plonsky, L., Gustafson, E., &amp; Pajak, B. (2021). Evaluating the
+        reading and listening outcomes of beginning-level Duolingo courses. <cite>Foreign Language
+        Annals</cite>, 54(4), 974–1002.
+        <a href="https://doi.org/10.1111/flan.12600">doi:10.1111/flan.12600</a> — <em>notes</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s20"><span class="bib-n">20</span><div class="bib-body">
+        Smith, B., Jiang, X., &amp; Peters, R. (2024). The effectiveness of Duolingo in developing
+        receptive and productive language knowledge and proficiency. <cite>Language Learning &amp;
+        Technology</cite>, 28(1), 1–26.
+        <a href="https://hdl.handle.net/10125/73595">hdl.handle.net/10125/73595</a>
+        <span class="bib-file">isbell-2024-duolingo-llt.pdf</span></div></div>
+
+      <div class="bib-item" id="s21"><span class="bib-n">21</span><div class="bib-body">
+        Ngo, T. T.-N., Chen, H. H.-J., &amp; Lai, K. K.-W. (2024). The effectiveness of automatic
+        speech recognition in ESL/EFL pronunciation: A meta-analysis. <cite>ReCALL</cite>, 36(1),
+        4–21. <a href="https://doi.org/10.1017/S0958344023000113">doi:10.1017/S0958344023000113</a>
+        <span class="bib-file">ngo-chen-2024-asr-pronunciation-meta.pdf</span></div></div>
+
+      <div class="bib-item" id="s22"><span class="bib-n">22</span><div class="bib-body">
+        Lyu, B., Lai, C., &amp; Guo, J. (2025). Effectiveness of chatbots in improving language
+        learning: A meta-analysis of comparative studies. <cite>International Journal of Applied
+        Linguistics</cite>, 35(2), 834–851.
+        <a href="https://doi.org/10.1111/ijal.12668">doi:10.1111/ijal.12668</a> — <em>notes, full text captured</em>
+        <span class="bib-file">CACHED-NOTES-paywalled.md</span></div></div>
+
+      <div class="bib-item" id="s23"><span class="bib-n">23</span><div class="bib-body">
+        Investigating the influence of gamification on motivation and learning outcomes in online
+        language learning (2024). <cite>Frontiers in Psychology</cite>, 15, 1295709.
+        <a href="https://doi.org/10.3389/fpsyg.2024.1295709">doi:10.3389/fpsyg.2024.1295709</a>
+        <span class="bib-file">frontiers-2024-gamification-motivation.pdf</span></div></div>
+
+      <div class="bib-item" id="s24"><span class="bib-n">24</span><div class="bib-body">
+        Language learners' intentions to use gamified learning apps: The role of gameful experience
+        and self-determination.
+        <span class="bib-file">gamified-apps-intentions-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s25"><span class="bib-n">25</span><div class="bib-body">
+        Papi, M. (2010). The L2 motivational self system, L2 anxiety, and motivated behavior: A
+        structural equation modeling approach. <cite>System</cite>, 38(3), 467–479.
+        <span class="bib-file">papi-2010-l2-motivational-self-system.pdf</span></div></div>
+
+      <div class="bib-item" id="s26"><span class="bib-n">26</span><div class="bib-body">
+        The effectiveness of self-regulated learning interventions on L2 learning achievement,
+        strategy employment and self-efficacy: A meta-analytic study (2022). <cite>Frontiers in
+        Psychology</cite>, 13, 1021101.
+        <a href="https://doi.org/10.3389/fpsyg.2022.1021101">doi:10.3389/fpsyg.2022.1021101</a>
+        <span class="bib-file">srl-interventions-l2-meta-analysis-frontiers.pdf</span></div></div>
+
+      <div class="bib-item" id="s27"><span class="bib-n">27</span><div class="bib-body">
+        Chini, M. (2016). Elementi utili per una didattica dell'italiano L2 alla luce della ricerca
+        acquisizionale. <cite>Italiano LinguaDue</cite>, 8(2). Includes the Pavia Project
+        implicational sequences (Banfi &amp; Bernini 2003; Chini 1995; Berruto 2001).
+        <span class="bib-file">italiano-l2-didattica-promoitals.pdf · chini-2016-italiano-l2-ricerca.pdf</span></div></div>
+
+      <div class="bib-item" id="s28"><span class="bib-n">28</span><div class="bib-body">
+        Seymour, P. H. K., Aro, M., &amp; Erskine, J. M. (2003). Foundation literacy acquisition in
+        European orthographies. <cite>British Journal of Psychology</cite>, 94(2), 143–174.
+        Chapter version cached.
+        <span class="bib-file">seymour-2003-early-reading-european-orthographies.pdf</span></div></div>
+
+      <div class="bib-item" id="s29"><span class="bib-n">29</span><div class="bib-body">
+        Research on acquisition of Italian grammatical gender: Italian grammatical gender — a corpus
+        study from an SLA perspective; and Chapter 5, The second language acquisition of grammatical
+        gender and number in Italian, in <cite>Studies in Bilingualism</cite> 63.
+        <a href="https://doi.org/10.3138/cmlr.54.2.239">doi:10.3138/cmlr.54.2.239</a></div></div>
+
+      <div class="bib-item" id="s30"><span class="bib-n">30</span><div class="bib-body">
+        De Mauro, T. (2016). <cite>Il Nuovo vocabolario di base della lingua italiana</cite>
+        (originally 1980, <cite>Guida all'uso delle parole</cite>). Internazionale.
+        <span class="bib-file">demauro-nuovo-vocabolario-di-base.pdf · demauro-2016-presentazione-nvdb.pdf</span></div></div>
+
+      <div class="bib-item" id="s31"><span class="bib-n">31</span><div class="bib-body">
+        Rabinovich, E., Tsvetkov, Y., &amp; Wintner, S. Native language cognate effects on second
+        language lexical choice. <cite>TACL</cite>. See also Sherkina-Lieber &amp; colleagues on the
+        cognate facilitation effect in L1 and L2 naming,
+        <a href="https://doi.org/10.1016/j.jml.2015.09.001">doi:10.1016/j.jml.2015.09.001</a>
+        <span class="bib-file">cognate-effects-lexical-choice-arxiv.pdf</span></div></div>
+
+      <div class="bib-item" id="s32"><span class="bib-n">32</span><div class="bib-body">
+        Toth, Z., Hlava, T., &amp; Gómez-Pablos, B. (2024). Tense and aspect in the interlanguage of
+        Slavic speakers learning Romance languages. <cite>International Journal of
+        Multilingualism</cite>, 21(4), 2239–2267. Open access.
+        <a href="https://doi.org/10.1080/14790718.2023.2224007">doi:10.1080/14790718.2023.2224007</a>
+        <span class="bib-file">toth-2023-slavic-tense-aspect-romance-fulltext.txt</span></div></div>
+
+      <div class="bib-item" id="s33"><span class="bib-n">33</span><div class="bib-body">
+        The complexities Polish students encounter with the use of English articles.
+        <cite>International Journal of Education and Research</cite>, 1(9). See also work on Spanish
+        L3 articles in Polish-L1/English-L2 learners, and on Polish phonology and L2 transfer.
+        <span class="bib-file">polish-learners-articles-ijern.pdf</span></div></div>
+
+      <div class="bib-item" id="s34"><span class="bib-n">34</span><div class="bib-body">
+        Council of Europe (2020). <cite>Common European Framework of Reference for Languages:
+        Companion Volume with New Descriptors</cite>. 237 pp.
+        <span class="bib-file">cefr-companion-volume-2020-full.pdf</span></div></div>
+
+      <div class="bib-item" id="s35"><span class="bib-n">35</span><div class="bib-body">
+        US Foreign Service Institute language difficulty rankings — Italian as Category I,
+        ~600–750 hours to ILR Speaking-3 / Reading-3.
+        <span class="bib-file">fsi-language-difficulty-ranking.html</span></div></div>
+
+      <div class="bib-item" id="s36"><span class="bib-n">36</span><div class="bib-body">
+        Renandya, W. A., &amp; Jacobs, G. M. (2016). Extensive reading and listening in the L2
+        classroom. In <cite>English Language Teaching Today</cite>.
+        <span class="bib-file">extensive-reading-listening-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s37"><span class="bib-n">37</span><div class="bib-body">
+        The effects of interleaved spaced repetition on L2 learning. <cite>CALL-EJ</cite>, 25(3),
+        172–194 (2024).
+        <span class="bib-file">interleaved-spaced-repetition-callej.pdf</span></div></div>
+
+      <div class="bib-item" id="s38"><span class="bib-n">38</span><div class="bib-body">
+        Bjork, R. A., &amp; Bjork, E. L. (2019). The myth that blocking one's study or practice by
+        topic or skill enhances learning. In <cite>Education Myths</cite>. Also: Metcalfe &amp;
+        Bjork, Desirable difficulties and studying in the region of proximal learning.
+        <span class="bib-file">bjork-bjork-2019-blocking-myth.pdf · metcalfe-bjork-region-proximal-learning.pdf</span></div></div>
+
+      <div class="bib-item" id="s39"><span class="bib-n">39</span><div class="bib-body">
+        Zaidi, A., Caines, A., Moore, R., Buttery, P., &amp; Rice, A. (2020). Adaptive forgetting
+        curves for spaced repetition language learning. <cite>AIED 2020</cite>.
+        <span class="bib-file">adaptive-forgetting-curves-2020-arxiv.pdf</span></div></div>
+
+      <div class="bib-item" id="s40"><span class="bib-n">40</span><div class="bib-body">
+        Tabibian, B., Upadhyay, U., De, A., Zarezade, A., Schölkopf, B., &amp; Gomez-Rodriguez, M.
+        Optimizing human learning. <cite>PNAS</cite>.
+        <span class="bib-file">optimizing-human-learning-arxiv.pdf</span></div></div>
+
+      <div class="bib-item" id="s41"><span class="bib-n">41</span><div class="bib-body">
+        The justification for explicit grammar instruction is overstated. <cite>MEXTESOL
+        Journal</cite>.
+        <span class="bib-file">explicit-grammar-overstated-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s42"><span class="bib-n">42</span><div class="bib-body">
+        Boers, F., &amp; Faez, F. (2023). Meta-analysis to estimate the relative effectiveness of
+        TBLT programs: Are we there yet? <cite>Language Teaching Research</cite>.
+        <a href="https://doi.org/10.1177/13621688231167573">doi:10.1177/13621688231167573</a></div></div>
+
+      <div class="bib-item" id="s43"><span class="bib-n">43</span><div class="bib-body">
+        Taylor, C. How effective is Duolingo at promoting implicit pronunciation learning?
+        <cite>Speak Out!</cite>, 40(1).
+        <span class="bib-file">duolingo-implicit-pronunciation-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s44"><span class="bib-n">44</span><div class="bib-body">
+        Investigating the role of AI-powered conversation bots in enhancing L2 speaking skills and
+        reducing speaking anxiety (2025). <cite>Humanities and Social Sciences Communications</cite>.
+        <a href="https://doi.org/10.1057/s41599-025-05550-z">doi:10.1057/s41599-025-05550-z</a>
+        <span class="bib-file">nature-2025-ai-conversation-bots-speaking-anxiety.pdf</span></div></div>
+
+      <div class="bib-item" id="s45"><span class="bib-n">45</span><div class="bib-body">
+        Lexical text coverage and learners' vocabulary size. <cite>Reading in a Foreign
+        Language</cite>.
+        <span class="bib-file">laufer-lexical-coverage-eric.pdf</span></div></div>
+
+      <div class="bib-item" id="s46"><span class="bib-n">46</span><div class="bib-body">
+        The effect of previously acquired languages on third language acquisition (2024).
+        <cite>Heliyon</cite>, 10(4), e26202.
+        <span class="bib-file">l3-previous-languages-effect-pmc.pdf</span></div></div>
+
+      <div class="bib-item" id="s47"><span class="bib-n">47</span><div class="bib-body">
+        The impact of automatic speech recognition technology on second language pronunciation and
+        speaking skills of EFL learners (2023). <cite>Frontiers in Psychology</cite>, 14, 1210187.
+        <span class="bib-file">frontiers-2023-asr-pronunciation.pdf</span></div></div>
+
+      <div class="bib-item" id="s48"><span class="bib-n">48</span><div class="bib-body">
+        AI-driven chatbots in second language education: A systematic review.
+        <cite>International Journal of AI in Language Education</cite>, 2(2), 2025.
+        <span class="bib-file">ai-chatbots-l2-systematic-review-ijaile.pdf</span></div></div>
+
+      <div class="bib-item" id="s49"><span class="bib-n">49</span><div class="bib-body">
+        Vesselinov, R., &amp; Grego, J. (2016). <cite>The Babbel efficacy study</cite>. Commissioned.
+        <span class="bib-file">vesselinov-2016-babbel-study.pdf</span></div></div>
+
+      <div class="bib-item" id="s50"><span class="bib-n">50</span><div class="bib-body">
+        A systematic review of collaborative mobile-assisted language learning (C-MALL) practices
+        (2024). <cite>Humanities and Social Sciences Communications</cite>.
+        <a href="https://doi.org/10.1057/s41599-024-03940-3">doi:10.1057/s41599-024-03940-3</a>
+        <span class="bib-file">c-mall-systematic-review-nature-2024.pdf</span></div></div>
+
+    </div>
+  </section>
+
+</div>
+</div>
+
+<footer>
+  <div class="wrap col">
+    <p>Compiled 22 August 2026 for the italian-app project. Fifty sources cached in
+    <code>research/sources/</code> with an index at <code>INDEX.md</code> and a re-download script
+    at <code>download.sh</code>.</p>
+    <p>Effect sizes are reported as their authors reported them — Cohen's <em>d</em> or Hedges's
+    <em>g</em> — and are not directly comparable across meta-analyses with different comparison
+    conditions. Where a finding rests on company-commissioned research, that is stated in the text.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Forgetting curves: exponential decay, half-life lengthening after each retrieval.
+  var g = document.getElementById('curveDraw');
+  if(!g) return;
+  var W=640,H=260,PAD_L=44,PAD_R=18,PAD_T=18,PAD_B=34;
+  var x0=PAD_L, x1=W-PAD_R, y0=PAD_T, y1=H-PAD_B;
+  var NS='http://www.w3.org/2000/svg';
+
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function X(t){return x0+t*(x1-x0);}          // t in 0..1 (time)
+  function Y(s){return y1-s*(y1-y0);}          // s in 0..1 (strength)
+
+  // axes
+  g.appendChild(el('line',{x1:x0,y1:y1,x2:x1,y2:y1,stroke:'var(--rule-strong)','stroke-width':1}));
+  g.appendChild(el('line',{x1:x0,y1:y0,x2:x0,y2:y1,stroke:'var(--rule-strong)','stroke-width':1}));
+
+  // gridline at 50%
+  g.appendChild(el('line',{x1:x0,y1:Y(.5),x2:x1,y2:Y(.5),stroke:'var(--rule)','stroke-width':1,'stroke-dasharray':'3 4'}));
+
+  function label(x,y,txt,anchor,color,size){
+    var t=el('text',{x:x,y:y,'text-anchor':anchor||'start',fill:color||'var(--muted)',
+      'font-family':'ui-monospace, SF Mono, Menlo, monospace','font-size':size||10});
+    t.textContent=txt; g.appendChild(t); return t;
+  }
+  label(x0-8,Y(1)+3,'100%','end');
+  label(x0-8,Y(.5)+3,'50%','end');
+  label(x0-8,Y(0)+3,'0%','end');
+  label(x0,y1+22,'time →','start');
+
+  // --- unreviewed decay (single steep curve) ---
+  function decayPath(tStart,tEnd,halfLife,startS){
+    var d='',n=90;
+    for(var i=0;i<=n;i++){
+      var t=tStart+(tEnd-tStart)*(i/n);
+      var s=startS*Math.pow(0.5,(t-tStart)/halfLife);
+      d+=(i?' L':'M')+X(t).toFixed(2)+' '+Y(s).toFixed(2);
+    }
+    return d;
+  }
+
+  // no-review baseline
+  g.appendChild(el('path',{d:decayPath(0,1,0.13,1),fill:'none',
+    stroke:'var(--muted)','stroke-width':1.4,'stroke-dasharray':'4 4','opacity':'.75'}));
+
+  // spaced-review curve: reviews at t = .18, .42, .72; half-life grows each time
+  var reviews=[0.18,0.42,0.72];
+  var hls=[0.13,0.20,0.30,0.46];
+  var segStart=0, strength=1, dAll='';
+  for(var r=0;r<=reviews.length;r++){
+    var segEnd = (r<reviews.length)? reviews[r] : 1;
+    var seg=decayPath(segStart,segEnd,hls[r],strength);
+    dAll += (r? ' ' : '') + seg;
+    // strength at end of segment
+    strength = strength*Math.pow(0.5,(segEnd-segStart)/hls[r]);
+    if(r<reviews.length){
+      // vertical reset to full
+      dAll += ' M'+X(segEnd).toFixed(2)+' '+Y(strength).toFixed(2)+
+              ' L'+X(segEnd).toFixed(2)+' '+Y(1).toFixed(2);
+      strength=1; segStart=segEnd;
+    }
+  }
+  g.appendChild(el('path',{d:dAll,fill:'none',stroke:'var(--vermilion)','stroke-width':2,
+    'stroke-linejoin':'round','stroke-linecap':'round'}));
+
+  // review markers
+  reviews.forEach(function(t,i){
+    g.appendChild(el('circle',{cx:X(t),cy:Y(1),r:3.5,fill:'var(--vermilion)'}));
+    label(X(t),y1+22,'review '+(i+1),'middle','var(--vermilion)',9);
+  });
+
+  label(x1-4,Y(0.055),'no review','end','var(--muted)',10);
+  label(X(0.87),Y(0.80),'with spacing','middle','var(--vermilion)',10);
+})();
+</script>

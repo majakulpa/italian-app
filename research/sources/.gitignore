@@ -1,0 +1,13 @@
+# The cached source papers stay local and are not committed:
+# ~32MB of binary PDFs, most of them copyrighted academic articles that
+# shouldn't be redistributed through this repo. Run ./download.sh to rebuild
+# the openly downloadable set; see INDEX.md for what belongs here and
+# CACHED-NOTES-paywalled.md for the sources that can't be fetched automatically.
+*.pdf
+*.html
+toth-2023-slavic-tense-aspect-romance-fulltext.txt
+
+# but always keep the metadata
+!INDEX.md
+!CACHED-NOTES-paywalled.md
+!download.sh

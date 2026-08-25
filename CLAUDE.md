@@ -31,4 +31,8 @@ the project structure, what's built, and the roadmap.
 
 - Commit at logical checkpoints, roughly one module/feature per commit,
   matching the existing history style.
-- Always ask before `git push`.
+- Pushing a feature branch and opening a PR is part of finishing a piece
+  of work — do it without asking. A change nobody can review isn't done.
+- Never merge a PR, force-push a shared branch, or push straight to
+  `main` without explicit approval. The PR is the review gate; don't
+  step around it.

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
-import { loadProgress, saveProgress, touchStreak, drillKey, topicKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, drillKey, topicKnownCount } from "../../shared/storage.js";
 import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
@@ -13,7 +13,6 @@ import AnswerMark from "../../shared/AnswerMark.jsx";
 import AnswerStatus from "../../shared/AnswerStatus.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
-import StreakChip from "../../shared/StreakChip.jsx";
 
 // A header or cell is either a plain string or { it, en }; subject pronouns
 // stay plain strings and pick their English up from PRONOUN_GLOSS, so the
@@ -121,7 +120,6 @@ function GrammarHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -195,12 +193,7 @@ function GrammarHome({ onPick, onExit, progress }) {
   );
 }
 
-function Lesson({ level, topic, onBack, onPick, onStudySession }) {
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+function Lesson({ level, topic, onBack, onPick }) {
   const { explanation } = topic;
 
   return (
@@ -282,18 +275,13 @@ function fillBlank(item) {
   return item.prompt.replace("___", item.answer);
 }
 
-function Drill({ level, topic, onBack, onMarkDrill, onStudySession }) {
+function Drill({ level, topic, onBack, onMarkDrill }) {
   const questions = useMemo(() => buildDrillQuestions(topic), [topic]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const q = questions[index];
 
@@ -474,7 +462,6 @@ export default function GrammarModule({ onExit }) {
   // Goes through reviewItem rather than markWord so every answer also moves
   // the drill's Leitner box — ordinary study is what feeds the review queue.
   const onMarkDrill = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
-  const onStudySession = () => setProgress((p) => touchStreak(p));
 
   if (!session) return <GrammarHome onPick={onPick} onExit={onExit} progress={progress} />;
   if (session.mode === "lesson") {
@@ -484,7 +471,6 @@ export default function GrammarModule({ onExit }) {
         topic={session.topic}
         onBack={onBack}
         onPick={onPick}
-        onStudySession={onStudySession}
       />
     );
   }
@@ -494,7 +480,6 @@ export default function GrammarModule({ onExit }) {
       topic={session.topic}
       onBack={onBack}
       onMarkDrill={onMarkDrill}
-      onStudySession={onStudySession}
     />
   );
 }

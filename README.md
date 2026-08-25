@@ -33,17 +33,20 @@ install icon appears in the address bar.
 ```
 src/
   App.jsx                        App shell + the MODULES registry
-  Dashboard.jsx                  Home screen: streak, overall %, level ladder, module cards, review band
+  Dashboard.jsx                  Home screen: coverage + solid words, level ladder, module cards, review band
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
-    storage.js                   localStorage progress/streak persistence, shared by all modules
+    storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
     stats.js                     Reads that progress back across all four modules (dashboard counts)
     srs.js                       Leitner scheduler: boxes, due dates, the review queue
+    wordState.js                 The four word states (unseen/learning/known/solid), derived from the boxes
+    coverage.js                  Frequency-weighted share of running Italian the learner would know
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
-    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx, StreakChip.jsx
+    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
+    fondamentale.js              De Mauro's base vocabulary in rank order, with English + Polish glosses
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
@@ -67,7 +70,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-Vitest + React Testing Library. Covers persistence/streak logic, the Leitner
+Vitest + React Testing Library. Covers persistence and migration, the Leitner
 scheduler, speech support detection, the module UI flows, and the data itself
 — every gloss key has to occur in its own paragraph, every comprehension
 answer has to be one of its options, and the four data files have to agree on
@@ -134,13 +137,46 @@ categories/dialogues/stories each, and four grammar topics.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
-- **Dashboard** — the home screen reads that progress back: the day streak and
-  an overall completion figure in a header band, an A1–C1 ladder of roundels
+- **Coverage** — the headline figure, and the one number the app wants you to
+  care about: what share of running Italian you could now follow.
+  `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency
+  order with English *and* Polish glosses (300 of a 2,000 target so far);
+  `src/shared/coverage.js` weights each word by 1/rank, Zipf-style, normalised
+  so the whole 2,000 comes to 86% of running text. That weighting is the whole
+  point — counted flat, memorising the back half of the list would claim half
+  of Italian; weighted, it claims about a tenth, which is the truth. A word
+  counts once it is `known` or `solid`, meaning Leitner box 3 or above.
+  `coverageBands` splits the reservoir into ten bands of 200 for the screen
+  that will draw it.
+
+  The figure is capped low by the content that ships, which is worth knowing
+  before reading anything into it: coverage learns that a word is known only
+  from the vocabulary module's 120 words, and just 20 of those are in the base
+  2,000. Master every word, drill, dialogue and story in the app and the
+  headline reads **1.6%** and **20 / 2000 solid** — that is the ceiling, and
+  `coverage.test.js` pins it so it cannot drift or flatline unnoticed. Raising
+  it means seeding more of the lexicon or widening what feeds the bridge.
+- **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
+  (boxes 3–4) or `solid` (the top box, reached by answering right at the end of
+  box 4's 7-day interval). All four are derived from the Leitner box in
+  `src/shared/wordState.js`, never stored: `srs.js` writes the box and the
+  status together, so a stored state would just be the first copy to go stale.
+  There is no `met` state: reading a story glosses a word but writes no word
+  status, so a fifth state for "seen in input, never recalled" would be one no
+  code path could produce. It comes back when stories get a word-level write.
+- **Dashboard** — the home screen reads that progress back: coverage and the
+  solid-word count in a header band, an A1–C1 ladder of roundels
   showing how far each level is, and a progress bar with a real count on each
   module card. Read-only, and it re-reads storage every time you come back from
   a module. `src/shared/stats.js` is the only place that counts: its registry
-  reuses the same key builders the modules write with, so the dashboard can't
-  drift from what a module considers done. The overall and per-level
+  reuses the same key builders the modules write with, so a module card can't
+  drift from what that module considers done. Note that "done" on a module
+  card and "known" in the coverage band are deliberately different bars — a
+  card counts the stored `known` status, which `reviewItem` writes on the
+  first correct answer (box 2), while coverage waits for box 3. Answer a word
+  right once and the Vocabulary card reads `1 / 120` while coverage still
+  reads `0%`. The card is measuring what you have worked through; coverage is
+  measuring what would survive a gap. The per-level
   percentages average the four modules rather than pooling every unit —
   otherwise vocabulary's 120 words would swamp the other three.
 - **Spaced repetition** — a five-box Leitner scheduler over vocabulary and
@@ -157,7 +193,12 @@ categories/dialogues/stories each, and four grammar topics.
   items simply count as due the first time round.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
   mastered words, drill items, completed dialogues and finished stories,
-  plus a daily study streak, shared across modules.
+  shared across modules. The blob is versioned and migrated on load, so a
+  save written by an older build keeps everything it earned.
+
+  There is deliberately no streak. Hours logged and days-in-a-row correlated
+  with almost nothing in the evidence review, and a metric that rewards
+  showing up rather than knowing more is a metric this app shouldn't optimise.
 - **Pronunciation** — speaker icons next to Italian text play it aloud via
   the browser's `SpeechSynthesis` API.
 - **Accessibility** — the app targets WCAG 2.1 AA, and the suite holds it

@@ -4,7 +4,6 @@ import {
   saveProgress,
   wordKey,
   markWord,
-  touchStreak,
   categoryKnownCount,
   drillKey,
   topicKnownCount,
@@ -14,6 +13,7 @@ import {
   addDaysISO,
   loadThemeMode,
   saveThemeMode,
+  PROGRESS_VERSION,
 } from "./storage.js";
 
 const level = { id: "A1" };
@@ -37,7 +37,7 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-const EMPTY = { words: {}, schedule: {}, streak: { count: 0, lastDate: null } };
+const EMPTY = { version: PROGRESS_VERSION, words: {}, schedule: {} };
 
 describe("loadProgress", () => {
   it("returns empty progress when nothing is stored", () => {
@@ -46,9 +46,9 @@ describe("loadProgress", () => {
 
   it("returns stored progress", () => {
     const progress = {
+      version: PROGRESS_VERSION,
       words: { "A1:greetings:ciao": "known" },
       schedule: { "A1:greetings:ciao": { box: 2, due: "2026-08-06", last: "2026-08-05" } },
-      streak: { count: 3, lastDate: "2026-08-05" },
     };
     localStorage.setItem("italiano:progress:v1", JSON.stringify(progress));
     expect(loadProgress()).toEqual(progress);
@@ -64,31 +64,65 @@ describe("loadProgress", () => {
     expect(loadProgress()).toEqual({ ...EMPTY, words: { a: "known" } });
   });
 
-  // A blob with only a streak — what you'd have after opening a session and
-  // never answering anything — must not spread `words: undefined` over the
-  // empty defaults and crash the first lookup.
   it("fills in words and schedule when a save has neither", () => {
-    localStorage.setItem("italiano:progress:v1", JSON.stringify({ streak: { count: 2, lastDate: "2026-08-05" } }));
-    expect(loadProgress()).toEqual({ words: {}, schedule: {}, streak: { count: 2, lastDate: "2026-08-05" } });
+    localStorage.setItem("italiano:progress:v1", JSON.stringify({ schedule: null }));
+    expect(loadProgress()).toEqual(EMPTY);
   });
 
   // The whole reason scheduling went into its own map: a blob saved before
   // the scheduler existed has to keep loading, with its words intact and an
-  // empty schedule, without any migration step.
+  // empty schedule.
   it("loads a pre-scheduler blob with its words intact and no schedule", () => {
-    const v1 = { words: { "A1:greetings:ciao": "known" }, streak: { count: 4, lastDate: "2026-08-05" } };
-    localStorage.setItem("italiano:progress:v1", JSON.stringify(v1));
+    localStorage.setItem("italiano:progress:v1", JSON.stringify({ words: { "A1:greetings:ciao": "known" } }));
 
-    expect(loadProgress()).toEqual({ ...v1, schedule: {} });
+    expect(loadProgress()).toEqual({ ...EMPTY, words: { "A1:greetings:ciao": "known" } });
+  });
+});
+
+// The migration that matters: a real v1 save, written by the app before the
+// streak was retired, has to come through with everything a learner earned.
+// The only thing that may disappear is the streak counter itself.
+describe("loadProgress — migrating a version 1 save", () => {
+  const V1 = {
+    words: { "A1:greetings:ciao": "known", "grammar:A1:present-are:1": "learning" },
+    schedule: { "A1:greetings:ciao": { box: 4, due: "2026-09-01", last: "2026-08-25" } },
+    streak: { count: 37, lastDate: "2026-08-22" },
+  };
+
+  it("keeps every word and every schedule entry", () => {
+    localStorage.setItem("italiano:progress:v1", JSON.stringify(V1));
+
+    const loaded = loadProgress();
+    expect(loaded.words).toEqual(V1.words);
+    expect(loaded.schedule).toEqual(V1.schedule);
+  });
+
+  it("drops the streak and stamps the new version", () => {
+    localStorage.setItem("italiano:progress:v1", JSON.stringify(V1));
+
+    const loaded = loadProgress();
+    expect(loaded.version).toBe(PROGRESS_VERSION);
+    expect(loaded).not.toHaveProperty("streak");
+  });
+
+  // Migration has to be idempotent: the app saves what it loaded, so the
+  // migrated blob goes straight back into the same slot and is read again on
+  // the next visit.
+  it("re-loads a migrated save unchanged", () => {
+    localStorage.setItem("italiano:progress:v1", JSON.stringify(V1));
+
+    const once = loadProgress();
+    saveProgress(once);
+    expect(loadProgress()).toEqual(once);
   });
 });
 
 describe("saveProgress / loadProgress roundtrip", () => {
   it("persists progress across save/load", () => {
     const progress = {
+      version: PROGRESS_VERSION,
       words: { "A1:greetings:ciao": "known" },
       schedule: { "A1:greetings:ciao": { box: 3, due: "2026-08-09", last: "2026-08-06" } },
-      streak: { count: 1, lastDate: "2026-08-06" },
     };
     saveProgress(progress);
     expect(loadProgress()).toEqual(progress);
@@ -124,14 +158,14 @@ describe("wordKey", () => {
 
 describe("markWord", () => {
   it("sets a word's status without mutating the original progress", () => {
-    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    const progress = { words: {} };
     const next = markWord(progress, "A1:greetings:ciao", "known");
     expect(next.words).toEqual({ "A1:greetings:ciao": "known" });
     expect(progress.words).toEqual({});
   });
 
   it("overwrites an existing word's status", () => {
-    const progress = { words: { "A1:greetings:ciao": "learning" }, streak: { count: 0, lastDate: null } };
+    const progress = { words: { "A1:greetings:ciao": "learning" } };
     const next = markWord(progress, "A1:greetings:ciao", "known");
     expect(next.words["A1:greetings:ciao"]).toBe("known");
   });
@@ -144,13 +178,12 @@ describe("categoryKnownCount", () => {
         "A1:greetings:ciao": "known",
         "A1:greetings:grazie": "learning",
       },
-      streak: { count: 0, lastDate: null },
     };
     expect(categoryKnownCount(progress, level, category)).toBe(1);
   });
 
   it("returns 0 when nothing is marked known", () => {
-    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    const progress = { words: {} };
     expect(categoryKnownCount(progress, level, category)).toBe(0);
   });
 });
@@ -174,13 +207,12 @@ describe("topicKnownCount", () => {
         "grammar:A1:present-are:1": "known",
         "grammar:A1:present-are:2": "learning",
       },
-      streak: { count: 0, lastDate: null },
     };
     expect(topicKnownCount(progress, level, topic)).toBe(1);
   });
 
   it("returns 0 when nothing is marked known", () => {
-    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    const progress = { words: {} };
     expect(topicKnownCount(progress, level, topic)).toBe(0);
   });
 });
@@ -199,48 +231,13 @@ describe("conversationKey", () => {
 
 describe("isConversationDone", () => {
   it("returns true once the dialogue is marked done", () => {
-    const progress = { words: { "conversation:A1:cafe": "done" }, streak: { count: 0, lastDate: null } };
+    const progress = { words: { "conversation:A1:cafe": "done" } };
     expect(isConversationDone(progress, level, dialogue)).toBe(true);
   });
 
   it("returns false when not yet marked done", () => {
-    const progress = { words: {}, streak: { count: 0, lastDate: null } };
+    const progress = { words: {} };
     expect(isConversationDone(progress, level, dialogue)).toBe(false);
-  });
-});
-
-describe("touchStreak", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("starts a streak at 1 on the first-ever study session", () => {
-    const progress = { words: {}, streak: { count: 0, lastDate: null } };
-    const next = touchStreak(progress);
-    expect(next.streak).toEqual({ count: 1, lastDate: todayISO() });
-  });
-
-  it("does not change the streak when studying again the same day", () => {
-    const today = todayISO();
-    const progress = { words: {}, streak: { count: 2, lastDate: today } };
-    const next = touchStreak(progress);
-    expect(next.streak).toEqual({ count: 2, lastDate: today });
-  });
-
-  it("increments the streak when studying exactly one day after the last session", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-06T12:00:00Z"));
-    const progress = { words: {}, streak: { count: 2, lastDate: "2026-08-05" } };
-    const next = touchStreak(progress);
-    expect(next.streak).toEqual({ count: 3, lastDate: "2026-08-06" });
-  });
-
-  it("resets the streak to 1 after a multi-day gap", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-06T12:00:00Z"));
-    const progress = { words: {}, streak: { count: 5, lastDate: "2026-07-01" } };
-    const next = touchStreak(progress);
-    expect(next.streak).toEqual({ count: 1, lastDate: "2026-08-06" });
   });
 });
 

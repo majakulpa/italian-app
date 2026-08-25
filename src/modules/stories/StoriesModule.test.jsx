@@ -32,21 +32,6 @@ async function completeStory(user) {
 }
 
 describe("StoriesHome", () => {
-  // See the note in GrammarModule.test.jsx: the streak badge is shared markup,
-  // so each module home has to check that it still renders its own.
-  it("shows a running streak, and nothing before one has started", () => {
-    const { unmount } = renderStories();
-    expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
-    unmount();
-
-    localStorage.setItem(
-      "italiano:progress:v1",
-      JSON.stringify({ words: {}, streak: { count: 5, lastDate: "2026-08-17" } }),
-    );
-    renderStories();
-    expect(screen.getByText(/^5 days$/)).toBeInTheDocument();
-  });
-
   it("shows A1 stories by default with their taglines and reading time", () => {
     renderStories();
     expect(screen.getByText("Stories")).toBeInTheDocument();

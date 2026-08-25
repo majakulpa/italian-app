@@ -69,7 +69,6 @@ describe("the app shell", () => {
         [wordKey(a1Vocab, greetings, greetings.words[0])]: "known",
         [drillKey(a1Grammar, presentAre, presentAre.drills[0])]: "known",
       },
-      streak: { count: 3, lastDate: "2026-08-18" },
       schedule: {
         [wordKey(a1Vocab, greetings, greetings.words[0])]: { box: 1, due: "2020-01-01" },
       },
@@ -212,7 +211,6 @@ describe("the review session", () => {
     const word = greetings.words[0];
     saveProgress({
       words: { [wordKey(a1Vocab, greetings, word)]: "known" },
-      streak: { count: 1, lastDate: "2026-08-18" },
       schedule: { [wordKey(a1Vocab, greetings, word)]: { box: 1, due: "2020-01-01" } },
     });
 

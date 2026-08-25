@@ -20,7 +20,7 @@ import { wordKey, drillKey, storyKey, conversationKey } from "./storage.js";
 // depends on when the suite runs.
 const TODAY = "2026-08-17";
 
-const EMPTY = { words: {}, schedule: {}, streak: { count: 0, lastDate: null } };
+const EMPTY = { words: {}, schedule: {} };
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
 const greetings = a1Vocab.categories[0];
@@ -228,17 +228,6 @@ describe("reviewItem", () => {
     expect(before.schedule).toEqual({});
   });
 
-  it("keeps the streak and other items alone", () => {
-    const before = {
-      words: { [VOCAB_KEYS[1]]: "known" },
-      schedule: { [VOCAB_KEYS[1]]: { box: 3, due: "2026-09-01", last: TODAY } },
-      streak: { count: 9, lastDate: TODAY },
-    };
-    const after = reviewItem(before, VOCAB_KEYS[0], true, TODAY);
-
-    expect(after.streak).toEqual(before.streak);
-    expect(after.schedule[VOCAB_KEYS[1]]).toEqual(before.schedule[VOCAB_KEYS[1]]);
-  });
 
   // Answering an item correctly should take it out of today's queue — the
   // round trip that makes a review session actually shrink the backlog.

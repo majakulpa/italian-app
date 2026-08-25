@@ -43,9 +43,6 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: /All modules/ }));
 
     expect(screen.getByRole("button", { name: /Vocabulary/ })).toHaveTextContent(`1 / ${TOTAL_WORDS}`);
-    // Opening the deck also started the daily streak, so the dashboard's
-    // header picks that up on the same remount.
-    expect(screen.getByText(/^1 day$/)).toBeInTheDocument();
   });
 
   // Review is a route rather than a MODULES entry, so nothing else covers
@@ -56,7 +53,7 @@ describe("App", () => {
     const key = wordKey(level, level.categories[0], level.categories[0].words[0]);
     localStorage.setItem(
       "italiano:progress:v1",
-      JSON.stringify({ words: { [key]: "learning" }, schedule: {}, streak: { count: 0, lastDate: null } }),
+      JSON.stringify({ words: { [key]: "learning" }, schedule: {} }),
     );
     render(<App />);
 

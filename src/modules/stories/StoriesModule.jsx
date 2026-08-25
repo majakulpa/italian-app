@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, ChevronRight, Check, Clock, X } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { STORY_LEVELS } from "../../data/stories.js";
-import { loadProgress, saveProgress, touchStreak, markWord, storyKey, isStoryDone } from "../../shared/storage.js";
+import { loadProgress, saveProgress, markWord, storyKey, isStoryDone } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import { tokenize, splitToken, lookupGloss } from "./gloss.js";
@@ -14,7 +14,6 @@ import AnswerStatus from "../../shared/AnswerStatus.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
-import StreakChip from "../../shared/StreakChip.jsx";
 
 function StoriesHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(STORY_LEVELS[0]);
@@ -28,7 +27,6 @@ function StoriesHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -439,10 +437,7 @@ export default function StoriesModule({ onExit }) {
     saveProgress(progress);
   }, [progress]);
 
-  const onPick = (level, story) => {
-    setProgress((p) => touchStreak(p));
-    setSession({ level, story, phase: "read" });
-  };
+  const onPick = (level, story) => setSession({ level, story, phase: "read" });
   const onBack = () => setSession(null);
   const onMarkDone = (key, status) => setProgress((p) => markWord(p, key, status));
 

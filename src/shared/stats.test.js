@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MODULE_STATS, moduleStats, levelStats, overallStats, levelLadder } from "./stats.js";
+import { MODULE_STATS, moduleStats, levelStats, levelLadder } from "./stats.js";
 import { MODULES } from "../App.jsx";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
@@ -10,7 +10,7 @@ import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
 // Pure arithmetic over a seeded progress object — no rendering, so these can
 // pin the exact numbers the dashboard will show.
 
-const EMPTY = { words: {}, streak: { count: 0, lastDate: null } };
+const EMPTY = { words: {} };
 
 function withWords(entries) {
   return { ...EMPTY, words: entries };
@@ -147,21 +147,6 @@ describe("levelStats", () => {
   // rung rather than dividing by zero and rendering "NaN%".
   it("reports an unknown level as empty instead of blowing up", () => {
     expect(levelStats(EMPTY, "Z9")).toEqual({ done: 0, total: 0, pct: 0 });
-  });
-});
-
-describe("overallStats", () => {
-  it("reports 0% on fresh progress and counts every unit in the app", () => {
-    const stats = overallStats(EMPTY);
-    const units = MODULE_STATS.reduce((sum, mod) => sum + moduleStats(EMPTY, mod.id).total, 0);
-
-    expect({ done: stats.done, pct: stats.pct, total: stats.total }).toEqual({ done: 0, pct: 0, total: units });
-  });
-
-  it("rises when anything anywhere is finished", () => {
-    const progress = withWords({ [firstStoryKey()]: "done" });
-    expect(overallStats(progress).done).toBe(1);
-    expect(overallStats(progress).pct).toBeGreaterThan(0);
   });
 });
 

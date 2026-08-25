@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, ChevronRight, Check, User } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
-import { loadProgress, saveProgress, touchStreak, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
+import { loadProgress, saveProgress, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
 import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
-import StreakChip from "../../shared/StreakChip.jsx";
 
 function ConversationsHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(CONVERSATION_LEVELS[0]);
@@ -23,7 +22,6 @@ function ConversationsHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -169,15 +167,10 @@ function YouBubble({ pick, level }) {
   );
 }
 
-function Dialogue({ level, dialogue, onBack, onMarkDone, onStudySession }) {
+function Dialogue({ level, dialogue, onBack, onMarkDone }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [picks, setPicks] = useState([]);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const choose = (option) => {
     const nextPicks = [...picks, option];
@@ -307,7 +300,6 @@ export default function ConversationsModule({ onExit }) {
   const onPick = (level, dialogue) => setSession({ level, dialogue });
   const onBack = () => setSession(null);
   const onMarkDone = (key, status) => setProgress((p) => markWord(p, key, status));
-  const onStudySession = () => setProgress((p) => touchStreak(p));
 
   if (!session) return <ConversationsHome onPick={onPick} onExit={onExit} progress={progress} />;
   return (
@@ -316,7 +308,6 @@ export default function ConversationsModule({ onExit }) {
       dialogue={session.dialogue}
       onBack={onBack}
       onMarkDone={onMarkDone}
-      onStudySession={onStudySession}
     />
   );
 }

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
-import { loadProgress, saveProgress, touchStreak, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, wordKey, categoryKnownCount } from "../../shared/storage.js";
 import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import { speakItalian, isSpeechSupported } from "../../shared/speech.js";
@@ -15,7 +15,6 @@ import TopBar from "../../shared/TopBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
-import StreakChip from "../../shared/StreakChip.jsx";
 
 function VocabHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
@@ -29,7 +28,6 @@ function VocabHome({ onPick, onExit, progress }) {
         >
           <ArrowLeft size={16} /> All modules
         </button>
-        <StreakChip progress={progress} />
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -124,17 +122,12 @@ function VocabHome({ onPick, onExit, progress }) {
   );
 }
 
-function Flashcards({ level, category, onBack, onMarkWord, onStudySession }) {
+function Flashcards({ level, category, onBack, onMarkWord }) {
   const order = useMemo(() => shuffle(category.words), [category]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [stats, setStats] = useState({ known: 0, learning: 0 });
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const word = order[index];
 
@@ -308,18 +301,13 @@ function buildQuizQuestions(category) {
   });
 }
 
-function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
+function Quiz({ level, category, onBack, onMarkWord }) {
   const questions = useMemo(() => buildQuizQuestions(category), [category]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const q = questions[index];
 
@@ -458,18 +446,13 @@ function Quiz({ level, category, onBack, onMarkWord, onStudySession }) {
   );
 }
 
-function ListeningQuiz({ level, category, onBack, onMarkWord, onStudySession }) {
+function ListeningQuiz({ level, category, onBack, onMarkWord }) {
   const questions = useMemo(() => buildQuizQuestions(category), [category]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    onStudySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const q = questions[index];
 
@@ -652,7 +635,6 @@ export default function VocabModule({ onExit }) {
   // Goes through reviewItem rather than markWord so every answer also moves
   // the word's Leitner box — ordinary study is what feeds the review queue.
   const onMarkWord = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
-  const onStudySession = () => setProgress((p) => touchStreak(p));
 
   if (!session) return <VocabHome onPick={onPick} onExit={onExit} progress={progress} />;
   if (session.mode === "flashcards") {
@@ -662,7 +644,6 @@ export default function VocabModule({ onExit }) {
         category={session.category}
         onBack={onBack}
         onMarkWord={onMarkWord}
-        onStudySession={onStudySession}
       />
     );
   }
@@ -673,7 +654,6 @@ export default function VocabModule({ onExit }) {
         category={session.category}
         onBack={onBack}
         onMarkWord={onMarkWord}
-        onStudySession={onStudySession}
       />
     );
   }
@@ -683,7 +663,6 @@ export default function VocabModule({ onExit }) {
       category={session.category}
       onBack={onBack}
       onMarkWord={onMarkWord}
-      onStudySession={onStudySession}
     />
   );
 }

@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { ChevronRight, Timer } from "lucide-react";
 import { TOKENS, tint } from "./shared/theme.js";
 import { loadProgress } from "./shared/storage.js";
-import { moduleStats, overallStats, levelLadder } from "./shared/stats.js";
+import { moduleStats, levelLadder } from "./shared/stats.js";
 import { dueCount } from "./shared/srs.js";
-import StreakChip from "./shared/StreakChip.jsx";
+import { coverage } from "./shared/coverage.js";
+import { FONDAMENTALE_TARGET } from "./data/fondamentale.js";
 
-// The home screen: streak and overall completion, an A1–C1 ladder, and the
+// The home screen: how much Italian is now legible, an A1–C1 ladder, and the
 // module list with real counts on each card. Read-only — it reports progress,
 // it never writes any.
 //
@@ -15,7 +16,6 @@ import StreakChip from "./shared/StreakChip.jsx";
 // pick up fresh numbers each time you come back from studying.
 export default function Dashboard({ modules, onSelect }) {
   const [progress] = useState(loadProgress);
-  const overall = overallStats(progress);
   const due = dueCount(progress);
 
   return (
@@ -29,23 +29,7 @@ export default function Dashboard({ modules, onSelect }) {
         </h1>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          paddingBottom: 14,
-          borderBottom: `1px solid ${TOKENS.line}`,
-          marginBottom: 24,
-          minHeight: 20,
-        }}
-      >
-        <StreakChip progress={progress} />
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0, marginLeft: "auto" }}>
-          <span style={{ fontWeight: 700, color: TOKENS.ink }}>{overall.pct}%</span> complete
-        </p>
-      </div>
+      <CoverageBand progress={progress} />
 
       {due > 0 && <ReviewBand due={due} onSelect={onSelect} />}
 
@@ -60,10 +44,59 @@ export default function Dashboard({ modules, onSelect }) {
   );
 }
 
+// The headline, and the one number this app wants a learner to care about:
+// how much of everyday Italian they could now follow, weighted by how often
+// each word actually occurs (see shared/coverage.js). It replaced a "%
+// complete" figure, which measured how much of the app had been consumed —
+// the activity metric the evidence review says to stop optimising, and one
+// that stops meaning anything the moment the content runs out.
+//
+// Beside it, solid words: the ones that came back right after a week away —
+// box 4's interval is 7 days, and answering right at the end of it is what
+// promotes a word to the top box (see BOX_DAYS in shared/srs.js). The 21 days
+// is what a word waits *once* it is solid, not the gap that earns the label.
+// That is the count that moves slowly and honestly, which is the whole point
+// of showing it instead of a streak. It is counted against the 2,000 — the
+// same population the percentage describes — and shown as a fraction so it
+// can't be read as "every word I have ever studied".
+//
+// Both numbers are capped low by the content that ships: 1.6% and 20 solid is
+// everything the app can currently teach. shared/coverage.js explains why and
+// coverage.test.js pins it.
+function CoverageBand({ progress }) {
+  const { pct, counts } = coverage(progress);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
+        paddingBottom: 14,
+        borderBottom: `1px solid ${TOKENS.line}`,
+        marginBottom: 24,
+      }}
+    >
+      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
+        <span style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink }}>{pct}%</span>{" "}
+        of everyday Italian
+      </p>
+      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: 0 }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: TOKENS.ink }}>
+          {counts.solid} / {FONDAMENTALE_TARGET}
+        </span>{" "}
+        solid
+      </p>
+    </div>
+  );
+}
+
 // Shown only when something is actually due — a permanent "0 due" row would
 // be a nag on every visit and tell you nothing. Gold rather than a level
 // accent: a review mixes levels, and theme.js already reserves that colour
-// for streaks and celebration.
+// for prompts and celebration.
 function ReviewBand({ due, onSelect }) {
   return (
     <button

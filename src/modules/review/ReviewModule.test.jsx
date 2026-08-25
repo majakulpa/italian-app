@@ -22,7 +22,7 @@ const DRILL_KEY = drillKey(a1Grammar, topic, drill);
 function seedDue(words, schedule = {}) {
   localStorage.setItem(
     "italiano:progress:v1",
-    JSON.stringify({ words, schedule, streak: { count: 0, lastDate: null } }),
+    JSON.stringify({ words, schedule }),
   );
 }
 
@@ -194,18 +194,6 @@ describe("ReviewModule", () => {
     await user.click(screen.getByRole("button", { name: "Back to home" }));
 
     expect(exits).toEqual(["exit"]);
-  });
-
-  it("starts the daily streak when a session opens", () => {
-    seedDue({ [WORD_KEY]: "learning" });
-    renderReview();
-    expect(loadProgress().streak).toEqual({ count: 1, lastDate: todayISO() });
-  });
-
-  // Nothing due means nothing was studied, so it shouldn't count as a day.
-  it("does not touch the streak when nothing is due", () => {
-    renderReview();
-    expect(loadProgress().streak.count).toBe(0);
   });
 
   it("leaves via the back button", async () => {

@@ -51,11 +51,18 @@ export default function Dashboard({ modules, onSelect }) {
 // the activity metric the evidence review says to stop optimising, and one
 // that stops meaning anything the moment the content runs out.
 //
-// Beside it, solid words: the ones that came back right after three weeks
-// away. That is the count that moves slowly and honestly, which is the whole
-// point of showing it instead of a streak. It is counted against the 2,000 —
-// the same population the percentage describes — and shown as a fraction so
-// it can't be read as "every word I have ever studied".
+// Beside it, solid words: the ones that came back right after a week away —
+// box 4's interval is 7 days, and answering right at the end of it is what
+// promotes a word to the top box (see BOX_DAYS in shared/srs.js). The 21 days
+// is what a word waits *once* it is solid, not the gap that earns the label.
+// That is the count that moves slowly and honestly, which is the whole point
+// of showing it instead of a streak. It is counted against the 2,000 — the
+// same population the percentage describes — and shown as a fraction so it
+// can't be read as "every word I have ever studied".
+//
+// Both numbers are capped low by the content that ships: 1.6% and 20 solid is
+// everything the app can currently teach. shared/coverage.js explains why and
+// coverage.test.js pins it.
 function CoverageBand({ progress }) {
   const { pct, counts } = coverage(progress);
 

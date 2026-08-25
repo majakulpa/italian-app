@@ -39,7 +39,7 @@ src/
     storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
     stats.js                     Reads that progress back across all four modules (dashboard counts)
     srs.js                       Leitner scheduler: boxes, due dates, the review queue
-    wordState.js                 The five word states (unseen/met/learning/known/solid), derived from the boxes
+    wordState.js                 The four word states (unseen/learning/known/solid), derived from the boxes
     coverage.js                  Frequency-weighted share of running Italian the learner would know
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
@@ -148,18 +148,35 @@ categories/dialogues/stories each, and four grammar topics.
   counts once it is `known` or `solid`, meaning Leitner box 3 or above.
   `coverageBands` splits the reservoir into ten bands of 200 for the screen
   that will draw it.
-- **Word states** — a word is `unseen`, `met` (glossed in input, never
-  recalled), `learning` (boxes 1–2), `known` (boxes 3–4) or `solid` (the top
-  box). All five are derived from the Leitner box in `src/shared/wordState.js`,
-  never stored: `srs.js` writes the box and the status together, so a stored
-  state would just be the first copy to go stale.
+
+  The figure is capped low by the content that ships, which is worth knowing
+  before reading anything into it: coverage learns that a word is known only
+  from the vocabulary module's 120 words, and just 20 of those are in the base
+  2,000. Master every word, drill, dialogue and story in the app and the
+  headline reads **1.6%** and **20 / 2000 solid** — that is the ceiling, and
+  `coverage.test.js` pins it so it cannot drift or flatline unnoticed. Raising
+  it means seeding more of the lexicon or widening what feeds the bridge.
+- **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
+  (boxes 3–4) or `solid` (the top box, reached by answering right at the end of
+  box 4's 7-day interval). All four are derived from the Leitner box in
+  `src/shared/wordState.js`, never stored: `srs.js` writes the box and the
+  status together, so a stored state would just be the first copy to go stale.
+  There is no `met` state: reading a story glosses a word but writes no word
+  status, so a fifth state for "seen in input, never recalled" would be one no
+  code path could produce. It comes back when stories get a word-level write.
 - **Dashboard** — the home screen reads that progress back: coverage and the
   solid-word count in a header band, an A1–C1 ladder of roundels
   showing how far each level is, and a progress bar with a real count on each
   module card. Read-only, and it re-reads storage every time you come back from
   a module. `src/shared/stats.js` is the only place that counts: its registry
-  reuses the same key builders the modules write with, so the dashboard can't
-  drift from what a module considers done. The per-level
+  reuses the same key builders the modules write with, so a module card can't
+  drift from what that module considers done. Note that "done" on a module
+  card and "known" in the coverage band are deliberately different bars — a
+  card counts the stored `known` status, which `reviewItem` writes on the
+  first correct answer (box 2), while coverage waits for box 3. Answer a word
+  right once and the Vocabulary card reads `1 / 120` while coverage still
+  reads `0%`. The card is measuring what you have worked through; coverage is
+  measuring what would survive a gap. The per-level
   percentages average the four modules rather than pooling every unit —
   otherwise vocabulary's 120 words would swamp the other three.
 - **Spaced repetition** — a five-box Leitner scheduler over vocabulary and

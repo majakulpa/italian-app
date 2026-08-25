@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { coverage, coverageBands, lexiconStates, rankWeight, LEXICON_COVERAGE, BAND_SIZE } from "./coverage.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../data/fondamentale.js";
 import { LEVELS } from "../data/vocab.js";
-import { wordKey } from "./storage.js";
+import { wordKey, markWord } from "./storage.js";
 import { reviewItem } from "./srs.js";
 import { MAX_BOX } from "./srs.js";
+import { MODULE_STATS } from "./stats.js";
 
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
@@ -67,7 +68,7 @@ describe("coverage", () => {
     expect(result.seeded).toBe(FONDAMENTALE.length);
   });
 
-  it("counts every rank exactly once across the five states", () => {
+  it("counts every rank exactly once across the four states", () => {
     const progress = study(EMPTY, keyFor("madre"), MAX_BOX);
     const { counts } = coverage(progress);
 
@@ -98,22 +99,25 @@ describe("coverage", () => {
     expect(coverage(study(EMPTY, key, 2)).fraction).toBeGreaterThan(0);
   });
 
-  it("counts a word met but never recalled as met, and not as coverage", () => {
-    const progress = { ...EMPTY, words: { [keyFor("madre")]: "met" } };
-    const result = coverage(progress);
-
-    expect(result.counts.met).toBe(1);
-    expect(result.fraction).toBe(0);
-  });
-
-  // The arithmetic sanity check from the header comment: knowing the first
-  // 300 words of Italian is worth roughly two thirds of running text — which
-  // is also why the design's serial can't open at 400 words.
-  it("puts the whole seeded 300 at about two thirds of running text", () => {
+  // The arithmetic sanity check from the header comment. Stated as what it
+  // actually pins: a property of the *weighting*, that ranks 1–300 carry about
+  // two thirds of running text. It says nothing about which Italian words sit
+  // at those ranks — fondamentale.test.js owns the word list's quality — so
+  // the ranks are summed directly rather than read off the entries, which
+  // would have dressed a constant up as a fact about the data.
+  it("puts ranks 1–300 at about two thirds of running text", () => {
     let top300 = 0;
-    for (const entry of FONDAMENTALE) top300 += rankWeight(entry.rank);
+    for (let r = 1; r <= 300; r += 1) top300 += rankWeight(r);
     expect(top300).toBeGreaterThan(0.6);
     expect(top300).toBeLessThan(0.7);
+  });
+
+  // ...and the link that makes the figure above describe the shipped file:
+  // the seeded entries really are ranks 1–300 and not any 300 ranks.
+  it("has seeded exactly the ranks that two thirds figure is about", () => {
+    expect(FONDAMENTALE.map((e) => e.rank)).toEqual(
+      Array.from({ length: 300 }, (_, i) => i + 1),
+    );
   });
 });
 
@@ -170,5 +174,110 @@ describe("coverageBands", () => {
 
     expect(studied[index].counts.solid).toBe(1);
     expect(studied.filter((b, i) => i !== index).every((b) => b.counts.solid === 0)).toBe(true);
+  });
+
+  // A band reports two different percentages and they are not interchangeable.
+  // `pct` is the band's share of ALL running Italian — it is what the ten
+  // bands add up to the headline with. `bandPct` is how much of *this band*
+  // the learner has, which is the one a progress bar inside a band wants.
+  // Drawing a bar from `pct` would show a full band as a stub, because a late
+  // band is only worth a couple of points of running text in the first place.
+  it("separates a band's share of all Italian from its share of itself", () => {
+    const studied = coverageBands(study(EMPTY, keyFor("madre"), MAX_BOX));
+    const index = Math.floor((rankOf("la madre") - 1) / BAND_SIZE);
+    const band = studied[index];
+
+    // Same numerator, different denominators: all of running text vs the band.
+    // Both quoted to one decimal, which is the file's stated contract.
+    const oneDecimal = (f) => Math.round(f * 1000) / 10;
+    expect(band.pct).toBe(oneDecimal(band.fraction));
+    expect(band.bandPct).toBe(oneDecimal(band.fraction / band.weight));
+
+    // And the gap is the whole point: this band is worth a small slice of
+    // Italian, so its share of itself is far larger than its share of all of
+    // it. A bar drawn from `pct` would be the wrong one by this factor.
+    expect(band.bandPct).toBeGreaterThan(band.pct * 10);
+  });
+
+  // The bound that makes bandPct safe to draw a bar with, and pct unsafe:
+  // bandPct is a real 0–100, while pct can never reach 100 for any band.
+  it("keeps bandPct a real percentage and pct a slice of the whole", () => {
+    const full = coverageBands(EMPTY);
+
+    expect(full.every((b) => b.bandPct >= 0 && b.bandPct <= 100)).toBe(true);
+    expect(full.every((b) => b.pct <= b.weightPct)).toBe(true);
+    expect(Math.max(...full.map((b) => b.weightPct))).toBeLessThan(100);
+  });
+});
+
+// ── The ceiling ─────────────────────────────────────────────────────────
+//
+// The headline is bounded by the content that ships, and the bound is low.
+// Coverage learns that a word is known from one place — the vocabulary
+// module's 120 words — and only 20 of those 120 normalise onto a
+// FONDAMENTALE lemma. The other 100 move the figure by exactly zero, no
+// matter how well they are learned, because they are not in the base 2,000.
+//
+// So this is the tripwire the reviewer asked for: it pins what a learner who
+// has mastered *everything the app contains* actually sees. If the headline
+// is ever again a near-constant that no amount of study can move, one of
+// these numbers changes and this test says so. Raising them is the point —
+// seed more of the lexicon, or widen the bridge, and come update this test on
+// purpose. What must not happen is the ceiling moving silently.
+describe("the ceiling a fully-mastered account reaches", () => {
+  // Built through the modules' own write paths — reviewItem for the two graded
+  // modules, markWord for the two that are only ever finished — so this is a
+  // progress blob a real learner could own, not a hand-made fixture.
+  function masterEverything() {
+    let progress = EMPTY;
+
+    for (const mod of MODULE_STATS) {
+      for (const level of mod.levels) {
+        for (const unit of mod.units(level)) {
+          if (mod.scheduled) {
+            for (let i = 0; i < MAX_BOX; i += 1) {
+              progress = reviewItem(progress, unit.key, true, "2026-08-23");
+            }
+          } else {
+            progress = markWord(progress, unit.key, mod.doneStatus);
+          }
+        }
+      }
+    }
+
+    return progress;
+  }
+
+  const mastered = masterEverything();
+
+  // Sanity: the blob really does have everything at the top of the ladder,
+  // otherwise the numbers below would be a ceiling on nothing.
+  it("really has mastered every unit the app ships", () => {
+    const scheduled = MODULE_STATS.filter((m) => m.scheduled).flatMap((m) =>
+      m.levels.flatMap((l) => m.units(l)),
+    );
+    expect(scheduled.length).toBeGreaterThan(0);
+    expect(scheduled.every((u) => mastered.schedule[u.key].box === MAX_BOX)).toBe(true);
+  });
+
+  it("cannot get the headline above 1.6%, however much the learner studies", () => {
+    expect(coverage(mastered).pct).toBe(1.6);
+  });
+
+  // The other half of the headline. 20 of 120 vocabulary words are in the base
+  // 2,000, so "x / 2000 solid" stops at 20 — the denominator is a promise the
+  // shipped content cannot come close to keeping.
+  it("cannot get the solid count above 20 of the 2,000", () => {
+    expect(coverage(mastered).counts.solid).toBe(20);
+  });
+
+  // Naming the cause, so a failure above is diagnosable: it is the bridge from
+  // vocabulary to lexicon that is narrow, not the scheduler or the weighting.
+  it("bridges only 20 of the vocabulary module's 120 words onto a lemma", () => {
+    const vocab = MODULE_STATS.find((m) => m.id === "vocab");
+    const words = vocab.levels.flatMap((l) => vocab.units(l));
+
+    expect(words).toHaveLength(120);
+    expect(lexiconStates(mastered).size).toBe(20);
   });
 });

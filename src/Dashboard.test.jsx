@@ -7,7 +7,7 @@ import { LEVELS } from "./data/vocab.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { wordKey, storyKey } from "./shared/storage.js";
 import { reviewItem } from "./shared/srs.js";
-import { coverage } from "./shared/coverage.js";
+import { LEXICON_COVERAGE } from "./shared/coverage.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "./data/fondamentale.js";
 
 // The dashboard reads storage once on mount, so every test seeds
@@ -32,19 +32,26 @@ const A1_WORD = (() => {
   return wordKey(level, level.categories[0], level.categories[0].words[0]);
 })();
 
-// A vocab word that is also in the fondamentale list, so studying it moves
-// the coverage figure. Found rather than hardcoded: which of the 120 vocab
-// words overlap the lexicon changes as the lexicon grows past 300.
+// A vocab word that is also in the fondamentale list, so studying it moves the
+// coverage figure. Named outright rather than discovered by re-implementing
+// coverage.js's normalise() here — the old version of this helper stripped
+// "il/lo/la/i/gli/le " and not "l'" or "un'", so it was a second, subtly
+// different copy of production logic living in a test. Both halves of the
+// overlap are asserted below, so if "bene" ever leaves either list this fails
+// loudly instead of silently picking some other word.
+const LEXICON_LEMMA = "bene";
+
 const LEXICON_WORD = (() => {
-  const lemmas = new Set(FONDAMENTALE.map((e) => e.it.replace(/^(il|lo|la|i|gli|le) /, "")));
   for (const level of LEVELS) {
     for (const category of level.categories) {
-      const word = category.words.find((w) => lemmas.has(w.it));
+      const word = category.words.find((w) => w.it === LEXICON_LEMMA);
       if (word) return { key: wordKey(level, category, word), word };
     }
   }
-  throw new Error("no vocab word overlaps the fondamentale list");
+  throw new Error(`no vocab word "${LEXICON_LEMMA}"`);
 })();
+
+const LEXICON_RANK = FONDAMENTALE.find((e) => e.it === LEXICON_LEMMA).rank;
 
 // Right five times running puts an item in the top Leitner box, which is what
 // "solid" means. Seeded through reviewItem so the box and the status agree
@@ -70,17 +77,31 @@ describe("Dashboard", () => {
   });
 
   // The headline the streak and the "% complete" figure were replaced with.
-  // It has to be the frequency-weighted number, not a word count, so the test
-  // reads the expected value out of coverage.js rather than hardcoding a
-  // percentage that would drift the moment the lexicon grows.
-  it("shows the coverage figure and the solid-word count once a word is solid", () => {
-    const progress = seedSolid(LEXICON_WORD.key);
+  //
+  // The expected percentage is worked out here from the documented formula —
+  // Zipf 1/rank, normalised so the whole 2,000 comes to LEXICON_COVERAGE,
+  // quoted to one decimal — rather than by calling coverage() and comparing it
+  // to itself. Asking the unit under test what it expects only ever proves the
+  // number reached the screen; it cannot prove the number is right, and would
+  // stay green if the weighting were replaced with a word count tomorrow.
+  it("shows the frequency-weighted coverage figure once a word is solid", () => {
+    seedSolid(LEXICON_WORD.key);
     render(<Dashboard modules={MODULES} onSelect={() => {}} />);
 
-    const expected = coverage(progress);
-    expect(expected.pct).toBeGreaterThan(0);
-    expect(screen.getByText(/of everyday Italian/)).toHaveTextContent(`${expected.pct}% of everyday Italian`);
+    let harmonic = 0;
+    for (let r = 1; r <= FONDAMENTALE_TARGET; r += 1) harmonic += 1 / r;
+    const share = LEXICON_COVERAGE / harmonic / LEXICON_RANK;
+    const expected = Math.round(share * 1000) / 10;
+
+    expect(expected).toBeGreaterThan(0);
+    expect(screen.getByText(/of everyday Italian/)).toHaveTextContent(`${expected}% of everyday Italian`);
     expect(screen.getByText(/solid$/)).toHaveTextContent(`1 / ${FONDAMENTALE_TARGET} solid`);
+  });
+
+  // The overlap the two tests above rely on, asserted rather than assumed.
+  it("studies a word that really is in both the deck and the lexicon", () => {
+    expect(LEXICON_WORD.word.it).toBe(LEXICON_LEMMA);
+    expect(FONDAMENTALE.some((e) => e.it === LEXICON_LEMMA)).toBe(true);
   });
 
   // A word answered right once sits in box 2 — learning, not known — so it

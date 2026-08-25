@@ -1,7 +1,12 @@
 // localStorage-backed progress tracking, shared by every module.
 // Progress shape (version 2): { version: 2,
-//                    words: { "<level>:<category>:<it>": "met" | "learning" | "known" },
+//                    words: { "<level>:<category>:<it>": "learning" | "known" | "done" },
 //                    schedule: { "<same key>": { box, due, last } } }
+//
+// "learning" and "known" are written by reviewItem for a graded vocab or
+// grammar answer; "done" is written by the stories and conversations modules,
+// whose units are finished rather than known. Those three are the whole set —
+// wordState.test.js pins that no other status can reach the map.
 //
 // `words` and `schedule` are deliberately two maps rather than one map of
 // richer objects: the status string is read by every module home and every
@@ -10,7 +15,7 @@
 // simply has no `schedule` key and loads with an empty one — see srs.js for
 // what an item with no schedule entry means.
 //
-// The five-state word model the dashboard and coverage figure are built on is
+// The four-state word model the dashboard and coverage figure are built on is
 // *derived* from these two maps rather than stored beside them — see
 // wordState.js. Storing a state as well as a box would let the two disagree.
 

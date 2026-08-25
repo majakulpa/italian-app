@@ -33,13 +33,31 @@
 // gap between those two is the difference between decoding and reading.
 //
 // ── What counts as covered ──────────────────────────────────────────────
-// `known` and `solid` (Leitner box 3 and up). Not `met` — a word glossed once
-// in a story is recognised, not retrievable — and not `learning`, which is
-// boxes 1–2, still same-day and next-day recall. Coverage claims you would
+// `known` and `solid` (Leitner box 3 and up). Not `learning`, which is boxes
+// 1–2, still same-day and next-day recall. Coverage claims you would
 // understand the word in running text, so it wants the states that survived a
-// real gap. This is a judgement call and the design doesn't settle it: screen
-// 01 puts "834 parole" next to the coverage figure, and 834 there is the count
-// of every word touched at all.
+// real gap. The design settles this the same way: screen 01 of design/02-la-
+// citta.html puts "715 parole" beside the coverage figure and La Riserva puts
+// "834", and the difference is exactly this rule — 834 is every word touched
+// at all, 715 is the known-or-better subset the percentage is made of.
+//
+// ── The ceiling, stated because it is low ───────────────────────────────
+// Coverage learns that a word is known from one place: the vocabulary
+// module's 120 words, matched onto lemmas by lexiconStates() below. Only 20
+// of those 120 are in the base 2,000, so a learner who masters every word,
+// drill, dialogue and story the app ships sees 1.6% and "20 / 2000 solid",
+// and cannot see more. The other 100 vocabulary words are real Italian and
+// worth learning; they are simply outside the population this figure is a
+// percentage of.
+//
+// That is a property of the content, not a bug in the arithmetic — the
+// weighting is right, the list is 300 of a 2,000 target, and the bridge is
+// deliberately one narrow seam. But it means the headline is close to a
+// constant today, and nobody should discover that from a user. The ceiling is
+// pinned by test in coverage.test.js ("the ceiling a fully-mastered account
+// reaches") so it can never move, or fail to move, silently. Widening it is a
+// product decision: seed more of the lexicon, widen what feeds the bridge, or
+// change what the headline is a percentage of.
 
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../data/fondamentale.js";
 import { MODULE_STATS } from "./stats.js";
@@ -123,6 +141,22 @@ export function lexiconStates(progress) {
 
 // One slice of the reservoir: how much of running text ranks `from`..`to` are
 // worth, how much of that the learner has, and the state of every rank in it.
+//
+// Three percentages, and they answer three different questions — mixing them
+// up is how a band bar ends up drawn at 4% when the learner has finished the
+// band. All three share a numerator or a denominator with another, so:
+//
+//   pct       — the slice's share of ALL running Italian. Adds up across the
+//               ten bands to the headline figure. Never reaches 100 for a
+//               band; the whole 2,000 only reaches LEXICON_COVERAGE.
+//   weightPct — what the slice is worth in total, learner aside ("queste 200
+//               da sole valgono 61,8 punti di copertura").
+//   bandPct   — how much of THIS slice the learner has, 0–100. The only one
+//               of the three a progress bar inside a band should be drawn
+//               from. No guard against a zero-weight slice: every caller
+//               passes a non-empty range inside 1..FONDAMENTALE_TARGET, so
+//               `weight` is always positive, and a branch no input can reach
+//               is a branch no test can honestly cover.
 function tally(states, from, to) {
   const counts = Object.fromEntries(WORD_STATES.map((s) => [s, 0]));
   let fraction = 0;
@@ -137,7 +171,17 @@ function tally(states, from, to) {
     if (SEEDED.has(rank)) seeded += 1;
   }
 
-  return { from, to, counts, seeded, fraction, weight, pct: pct(fraction), weightPct: pct(weight) };
+  return {
+    from,
+    to,
+    counts,
+    seeded,
+    fraction,
+    weight,
+    pct: pct(fraction),
+    weightPct: pct(weight),
+    bandPct: pct(fraction / weight),
+  };
 }
 
 // Coverage is quoted to one decimal — the design's "41,2%" — because whole
@@ -154,8 +198,8 @@ export function coverage(progress) {
 }
 
 // The band breakdown La Riserva draws: ten fasce of 200, weakest words last.
-// `weightPct` is what the whole band is worth ("queste 200 da sole valgono
-// 4,3 punti di copertura"); `pct` is how much of it the learner has.
+// See tally() above for which of the three percentages answers which question
+// — `bandPct` is the one that means "how much of this band the learner has".
 export function coverageBands(progress) {
   const states = lexiconStates(progress);
   const count = Math.ceil(FONDAMENTALE_TARGET / BAND_SIZE);

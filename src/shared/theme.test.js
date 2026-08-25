@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TOKENS, THEME_STYLE, LEVEL_ACCENTS, tint } from "./theme.js";
+import { TOKENS, THEME_STYLE, CITY_STYLE, LEVEL_ACCENTS, CITY_ACCENTS, CITY_RULES, citySurface, tint } from "./theme.js";
 import { parsePalettes, contrastRatio, mix, round, AA_TEXT, AA_NON_TEXT } from "../test/contrast.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
@@ -47,6 +47,10 @@ describe("THEME_STYLE", () => {
     const referenced = new Set([
       ...referencedBy(TOKENS),
       ...Object.values(LEVEL_ACCENTS).flatMap((a) => [...referencedBy(a)]),
+      ...Object.values(CITY_ACCENTS).flatMap((a) => [...referencedBy(a)]),
+      // CITY_STYLE is a stylesheet rather than a token map, and it reaches
+      // for a variable too — a focus ring painted in nothing is invisible.
+      ...[...CITY_STYLE.matchAll(/var\((--color-[a-z-]+)\)/g)].map((m) => m[1]),
     ]);
 
     expect([...referenced].filter((v) => !declared.has(v))).toEqual([]);
@@ -189,5 +193,109 @@ describe("palette contrast (WCAG 2.1 AA)", () => {
       .map(([accent, ratio]) => `${accent} border on card: ${round(ratio)}`);
 
     expect(failures).toEqual([]);
+  });
+});
+
+// ── La Città ────────────────────────────────────────────────────────────
+// The city palette is vivid where the rest of the app is muted, which is
+// exactly the combination that goes wrong quietly: a fill bright enough to
+// look good is rarely dark enough to carry text, and the outline that fixes
+// it in light mode disappears in dark mode. Every pairing the map paints is
+// checked here, both ways round.
+describe("La Città palette contrast (WCAG 2.1 AA)", () => {
+  const palettes = parsePalettes(THEME_STYLE);
+  const MODES = Object.entries(palettes).map(([mode, vars]) => [mode, vars]);
+  const SURFACES = ["--color-paper", "--color-paper-deep", "--color-card"];
+
+  const named = (token) => token.match(/var\((--color-[a-z-]+)\)/)[1];
+  const PAIRS = Object.entries(CITY_ACCENTS).map(([id, a]) => [id, named(a.fill), named(a.ink)]);
+
+  it.each(MODES)("%s: each district's ink clears 4.5:1 on its own fill", (_mode, vars) => {
+    const failures = PAIRS.map(([id, fill, ink]) => [id, contrastRatio(vars[ink], vars[fill])])
+      .filter(([, ratio]) => ratio < AA_TEXT)
+      .map(([id, ratio]) => `${id}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // SC 1.4.11 on a district tile, which is a control. What draws the
+  // boundary changes with the mode and that is deliberate: in light mode the
+  // near-black outline does it (16:1 on paper) while the fills themselves are
+  // pale against cream; in dark mode the outline vanishes into the page and
+  // the bright fill does it instead. Either is enough on its own, so the
+  // rule is that at least one of the two has to clear 3:1 — asserting the
+  // outline alone would fail in dark mode and asserting the fill alone would
+  // fail in light, and both assertions would be describing the wrong thing.
+  it.each(MODES)("%s: every district tile is 3:1 distinguishable from every surface", (_mode, vars) => {
+    const failures = [];
+    for (const [id, fill] of PAIRS) {
+      for (const surface of SURFACES) {
+        const best = Math.max(
+          contrastRatio(vars["--color-city-ink"], vars[surface]),
+          contrastRatio(vars[fill], vars[surface]),
+        );
+        if (best < AA_NON_TEXT) failures.push(`${id} on ${surface}: ${round(best)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  // The same 3px rule on a neutral surface — the map plate, a shut district,
+  // the dashed note under the map. This one has nothing but itself to make
+  // the edge, so it has to clear 3:1 outright, which is why it flips.
+  it.each(MODES)("%s: the neutral city edge clears 3:1 on every surface", (_mode, vars) => {
+    const failures = SURFACES.map((surface) => [surface, contrastRatio(vars["--color-city-edge"], vars[surface])])
+      .filter(([, ratio]) => ratio < AA_NON_TEXT)
+      .map(([surface, ratio]) => `city-edge on ${surface}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // A focus ring you can't see is not a focus ring (SC 2.4.11 / 1.4.11). It
+  // is painted in grape and the map plate is paper-deep, so that is the
+  // pairing that has to hold.
+  it.each(MODES)("%s: the focus ring clears 3:1 against the map plate", (_mode, vars) => {
+    expect(round(contrastRatio(vars["--color-grape"], vars["--color-paper-deep"]))).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+describe("the four rules of the city design system", () => {
+  // design/02-la-citta.html states them as four, and the whole claim is that
+  // they are applied everywhere. citySurface() is the "everywhere" — if a
+  // component can get a chunky surface without going through it, the rules
+  // are advice rather than a system.
+  it("gives a district tile a 3px border, an 18px radius and a hard offset shadow", () => {
+    const tile = citySurface("tomato");
+
+    expect(tile.border).toBe(`3px solid ${TOKENS.cityInk}`);
+    expect(tile.borderRadius).toBe(18);
+    expect(tile.boxShadow).toBe(`4px 4px 0 ${TOKENS.cityShadow}`);
+    // Rule 2: hard, never blurred. A third length in the shadow is a blur.
+    expect(tile.boxShadow.trim().split(/\s+/)).toHaveLength(4);
+  });
+
+  // Rule 3: flat fills. A gradient anywhere is the thing that would make the
+  // whole set of tiles stop reading as stickers.
+  it("fills flat, with no gradient anywhere in the palette", () => {
+    for (const accent of Object.keys(CITY_ACCENTS)) {
+      expect(citySurface(accent).background).not.toMatch(/gradient/);
+    }
+  });
+
+  it("keeps the same shape for a neutral surface, in the flipping edge colour", () => {
+    const plate = citySurface();
+
+    expect(plate.border).toBe(`${CITY_RULES.border}px solid ${TOKENS.cityEdge}`);
+    expect(plate.borderRadius).toBe(CITY_RULES.radius);
+    expect(plate.background).toBe(TOKENS.card);
+  });
+
+  it("pairs every accent with its own ink rather than a shared text colour", () => {
+    const inks = Object.values(CITY_ACCENTS).map((a) => a.ink);
+    for (const [id, accent] of Object.entries(CITY_ACCENTS)) {
+      expect(accent.fill, id).toBeTruthy();
+      expect(accent.ink, id).not.toBe(accent.fill);
+    }
+    expect(new Set(inks).size).toBe(inks.length);
   });
 });

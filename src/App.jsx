@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BookOpen, MessageCircle, GraduationCap, ScrollText } from "lucide-react";
-import { TOKENS, FONTS_IMPORT, THEME_STYLE } from "./shared/theme.js";
+import { TOKENS, FONTS_IMPORT, THEME_STYLE, CITY_STYLE } from "./shared/theme.js";
 import ThemeToggle from "./shared/ThemeToggle.jsx";
 import NavMenu from "./shared/NavMenu.jsx";
 import Dashboard from "./Dashboard.jsx";
@@ -28,6 +28,7 @@ export default function App() {
     <div style={{ background: TOKENS.paper, minHeight: "100vh" }}>
       <style>{FONTS_IMPORT}</style>
       <style>{THEME_STYLE}</style>
+      <style>{CITY_STYLE}</style>
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10, display: "flex", gap: 8 }}>
         <NavMenu modules={MODULES} active={active} onSelect={setActive} />
         <ThemeToggle />
@@ -35,10 +36,10 @@ export default function App() {
       {/* One landmark around whatever screen is showing, so a screen-reader
           user can jump straight to the content past the fixed nav buttons. */}
       <main>
-        {!active && <Dashboard modules={MODULES} onSelect={setActive} />}
+        {!active && <Dashboard onSelect={setActive} />}
         {/* Review is a route, not a module: it has no content or progress of
             its own, so it stays out of MODULES (and out of the NavMenu that
-            renders from it) and is reached from the dashboard's Review band. */}
+            renders from it). La Piazza on the map is how you reach it. */}
         {active === "review" && <ReviewModule onExit={() => setActive(null)} />}
         {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
         {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}

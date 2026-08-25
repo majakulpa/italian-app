@@ -13,6 +13,7 @@ import { GRAMMAR_LEVELS } from "./data/grammar.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
+import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
 
 // Accessibility is the one property that isn't any single component's — a
@@ -51,7 +52,12 @@ afterEach(() => {
 });
 
 describe("the app shell", () => {
-  it("has an accessible dashboard", async () => {
+  // Two states, not one: the city on a fresh account has shut districts on
+  // it, and a shut district is a different bit of markup from an open one
+  // (aria-disabled, a padlock, a note underneath). Scanning only the seeded
+  // map would leave the day-one screen — the one every learner sees first —
+  // unaudited.
+  it("has an accessible city map on a fresh account, shut districts and all", async () => {
     const { container } = render(<App />);
     await expectNoViolations(container, { fragment: false });
   });
@@ -63,7 +69,7 @@ describe("the app shell", () => {
     await expectNoViolations(container, { fragment: false });
   });
 
-  it("has an accessible dashboard with progress and a review band showing", async () => {
+  it("has an accessible city map with progress on it and La Piazza open", async () => {
     saveProgress({
       words: {
         [wordKey(a1Vocab, greetings, greetings.words[0])]: "known",
@@ -75,6 +81,33 @@ describe("the app shell", () => {
     });
     const { container } = render(<App />);
     await expectNoViolations(container, { fragment: false });
+  });
+});
+
+describe("the city map", () => {
+  // A locked district must stay operable by keyboard. `disabled` would take
+  // it out of the tab order entirely, which is the "door you didn't know was
+  // there" the design argues against — so it carries aria-disabled instead,
+  // and this is the test that stops anyone swapping it back.
+  it("keeps a shut district focusable, and announced as unavailable", () => {
+    render(<App />);
+
+    const cinema = screen.getByRole("button", { name: /Il Cinema/ });
+    expect(cinema).toHaveAttribute("aria-disabled", "true");
+    expect(cinema).not.toBeDisabled();
+
+    cinema.focus();
+    expect(document.activeElement).toBe(cinema);
+  });
+
+  it("leaves no district out of the tab order, open or shut", () => {
+    render(<App />);
+
+    for (const { name } of DISTRICTS) {
+      const tile = screen.getByRole("button", { name: new RegExp(name) });
+      tile.focus();
+      expect(document.activeElement, name).toBe(tile);
+    }
   });
 });
 
@@ -231,6 +264,20 @@ describe("the review session", () => {
 describe("Italian text is marked as Italian", () => {
   const italianAncestor = (node) => node.closest('[lang="it"]');
 
+  it("marks the district names on the map, which are Italian place names", () => {
+    render(<App />);
+
+    // A shut district's name appears twice — on its tile and in the note
+    // stating what opens it — and both are Italian.
+    for (const { name } of DISTRICTS) {
+      for (const label of screen.getAllByText(name)) {
+        expect(italianAncestor(label), name).not.toBeNull();
+      }
+    }
+    // The counts beside them are English, and must not claim otherwise.
+    expect(italianAncestor(screen.getByText(/words$/))).toBeNull();
+  });
+
   it("marks the word, the example and the prompt in the vocabulary module", async () => {
     const user = userEvent.setup();
     render(<VocabModule onExit={() => {}} />);
@@ -295,7 +342,7 @@ describe("keyboard reachability", () => {
   it("leaves no interactive control out of the tab order", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: /Grammar/ }));
+    await user.click(screen.getByRole("button", { name: /Il Cantiere/ }));
     await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
 
     const controls = screen.getAllByRole("button");

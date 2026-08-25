@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import App from "./App.jsx";
 import { LEVELS } from "./data/vocab.js";
 import { wordKey } from "./shared/storage.js";
+import { DISTRICTS } from "./shared/districts.js";
 
 const TOTAL_WORDS = LEVELS.flatMap((l) => l.categories).flatMap((c) => c.words).length;
 
@@ -12,14 +13,14 @@ beforeEach(() => {
 });
 
 describe("App", () => {
-  it("shows the module menu with every module enabled", () => {
+  it("opens on the city, with every district that ships drawn on it", () => {
     render(<App />);
     expect(screen.getByText("Italiano")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
 
-    for (const name of ["Vocabulary", "Grammar", "Conversations", "Stories"]) {
-      expect(screen.getByRole("button", { name: new RegExp(name) })).toBeEnabled();
+    for (const { name } of DISTRICTS) {
+      expect(screen.getByRole("button", { name: new RegExp(name) })).toBeInTheDocument();
     }
-    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument();
   });
 
   // The dashboard reads storage once per mount rather than subscribing to it,
@@ -31,10 +32,9 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByRole("button", { name: /Vocabulary/ })).toHaveTextContent(`0 / ${TOTAL_WORDS}`);
-    expect(screen.queryByText(/^\d+ days?$/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /L'Officina/ })).toHaveTextContent(`0 / ${TOTAL_WORDS}`);
 
-    await user.click(screen.getByRole("button", { name: /Vocabulary/ }));
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
     await user.click(screen.getByText("Tap to reveal translation"));
     await user.click(screen.getByRole("button", { name: /I knew it/ }));
@@ -42,12 +42,12 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     await user.click(screen.getByRole("button", { name: /All modules/ }));
 
-    expect(screen.getByRole("button", { name: /Vocabulary/ })).toHaveTextContent(`1 / ${TOTAL_WORDS}`);
+    expect(screen.getByRole("button", { name: /L'Officina/ })).toHaveTextContent(`1 / ${TOTAL_WORDS}`);
   });
 
   // Review is a route rather than a MODULES entry, so nothing else covers
-  // that the dashboard's band actually reaches a session and gets back.
-  it("reaches the review session from the dashboard band and returns", async () => {
+  // that La Piazza actually reaches a session and gets back.
+  it("reaches the review session through La Piazza and returns", async () => {
     const user = userEvent.setup();
     const level = LEVELS.find((l) => l.id === "A1");
     const key = wordKey(level, level.categories[0], level.categories[0].words[0]);
@@ -57,11 +57,11 @@ describe("App", () => {
     );
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Review/ }));
+    await user.click(screen.getByRole("button", { name: /La Piazza/ }));
     expect(screen.getByText(/· REVIEW/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
   it("keeps Review out of the module switcher, which lists content modules only", async () => {
@@ -73,47 +73,56 @@ describe("App", () => {
     expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories"]);
   });
 
-  it("opens the Vocabulary module and returns to the menu via its back button", async () => {
+  it("opens vocabulary from L'Officina and returns to the city", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Vocabulary/ }));
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     expect(screen.getByText("Parole in viaggio")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
-    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  it("opens the Grammar module and returns to the menu via its back button", async () => {
+  it("opens grammar from Il Cantiere and returns to the city", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Grammar/ }));
+    await user.click(screen.getByRole("button", { name: /Il Cantiere/ }));
     expect(screen.getByText("Regole in tasca")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
-    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  it("opens the Conversations module and returns to the menu via its back button", async () => {
+  it("opens conversations from Il Mercato and returns to the city", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Conversations/ }));
+    await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
     expect(screen.getByText("Due parole")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
-    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  it("opens the Stories module and returns to the menu via its back button", async () => {
+  // Il Cinema is shut on a fresh account and cannot be opened with the
+  // content that ships — 600 solid words is past the app's own ceiling of 20
+  // — so the map is not a route to the stories module today. The switcher
+  // still is. That gap is deliberate for now and stated here rather than
+  // papered over: the map gates the district, the menu does not gate the
+  // module behind it.
+  it("leaves the stories module reachable from the switcher while Il Cinema is shut", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Stories/ }));
+    expect(screen.getByRole("button", { name: /Il Cinema/ })).toHaveAccessibleName(/locked/);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Stories" }));
     expect(screen.getByText("Quattro pagine")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
-    expect(screen.getByText("Benvenuto")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 });

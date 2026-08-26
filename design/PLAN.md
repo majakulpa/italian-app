@@ -3,9 +3,24 @@
 One page: what the app is becoming, what is built, what is next, and which
 decisions are already settled so they don't get re-argued.
 
-The full design is [`02-la-citta.html`](02-la-citta.html) (21 screens). The
-evidence behind it is in [`../research/`](../research/). This file is the
-working plan; update it as chunks land.
+This file is the working plan; update it as chunks land.
+
+### The visual designs
+
+GitHub shows `.html` files as source code, so open the published links to
+actually see them — the repo copies are the source of truth and the links are
+republished from them.
+
+| | Screens | Live | Source |
+|---|---|---|---|
+| **La Città** — the current design | 21 | [open](https://claude.ai/code/artifact/23fba711-0323-44ba-aaf9-81fad0d2956e) | [`02-la-citta.html`](02-la-citta.html) |
+| **Three concepts** — superseded, kept for the reasoning | 27 | [open](https://claude.ai/code/artifact/a43f6ede-deec-4636-83ff-14f9528a5aae) | [`01-three-concepts.html`](01-three-concepts.html) |
+| **Evidence review** — the research behind every decision | 50 sources | [open](https://claude.ai/code/artifact/ab63d8c1-421b-4bfe-add5-a68a00b480e7) | [`../research/evidence-review.html`](../research/evidence-review.html) |
+
+To view a source copy locally: `open design/02-la-citta.html`.
+
+**If you edit a design file, republish it** — otherwise the link and the repo
+drift apart, which has already happened once.
 
 ---
 

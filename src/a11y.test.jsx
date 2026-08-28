@@ -284,7 +284,12 @@ describe("Le Mappe", () => {
   });
 
   it("has an accessible summary at the end of a run", async () => {
-    const user = userEvent.setup();
+    // `delay: null` matters here rather than anywhere else in this file:
+    // this is the only test that types whole words for a whole deck — six
+    // drills, seven answers once the deliberate miss is counted. At the
+    // default inter-keystroke delay that is hundreds of async ticks, which
+    // fits in the 30s above uninstrumented and does not fit under coverage.
+    const user = userEvent.setup({ delay: null });
     const { container } = render(<MappeModule onExit={() => {}} />);
     await openDrill(user);
 

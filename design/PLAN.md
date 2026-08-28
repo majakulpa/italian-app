@@ -132,7 +132,7 @@ unit of value, and the part of the design most worth having.
 
 Four workbenches, per screen 07:
 
-- **Le Mappe** — ✅ built ([#10](https://github.com/majakulpa/italian-app/pull/10)).
+- **Le Mappe** — ✅ built ([#11](https://github.com/majakulpa/italian-app/pull/11)).
   Suffix correspondences as rules, not word lists: `-zione`, `-ità`, `-ico`,
   `-ista`, each with the Polish road, the English road, what the ending brings
   with it, and the false friends the rule creates. The drill is production —

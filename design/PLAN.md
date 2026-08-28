@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ▶︎ next |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe built |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -54,7 +54,12 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/wordState.js` — `unseen → learning → known → solid`, derived from the Leitner box, never stored.
 - `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `lexiconStates()`, `rankWeight()`.
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
+- `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
+  roads, its notes, its false friends and 5–6 production drills.
+- `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
+  shared-prefix arithmetic the located feedback is built on.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
+  Le Mappe is in the new one, per the rule in open question 4.
 
 ---
 
@@ -120,28 +125,40 @@ large, untestable diff for no behaviour change.
 
 ---
 
-## Next chunk — L'Officina
+## Current chunk — L'Officina
 
 The word workshop, and the district that makes the lexicon visible. Cheapest per
 unit of value, and the part of the design most worth having.
 
 Four workbenches, per screen 07:
 
+- **Le Mappe** — ✅ built ([#10](https://github.com/majakulpa/italian-app/pull/10)).
+  Suffix correspondences as rules, not word lists: `-zione`, `-ità`, `-ico`,
+  `-ista`, each with the Polish road, the English road, what the ending brings
+  with it, and the false friends the rule creates. The drill is production —
+  the app's first typed exercise — and a wrong answer is located rather than
+  solved.
 - **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
-  Blocked on open question 1.
-- **Le Mappe** — suffix correspondences taught as rules, not word lists.
-  `-cja / -tion → -zione` unlocks ~1,100 words. Polish route first where it is
-  shorter (`lekcja → lezione` beats `lesson → lezione`). Each card teaches its
-  own false friends, because they are the direct cost of the strategy.
+  Still blocked on open question 1.
 - **Gli Articoli** — the permanent strand. Polish has no articles and the errors
   survive into advanced proficiency, so this never stops appearing.
 - **Falsi Amici** — the traps collected as you hit them: `colazione` ≠ *kolacja*,
-  `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*.
+  `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed Le Mappe
+  first, because Le Mappe is where most of them get generated.
+
+Still to do before the chunk closes:
+
+- **The hub screen** (design 07). Until it exists the `officina` district still
+  routes to `vocab`, and Le Mappe is reached through the NavMenu. That seam is
+  deliberate and is named in `districts.test.js` so it can't be forgotten.
+- **Word detail** (design 11), which is the other half of what makes the
+  lexicon visible.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,
 then reveal. The standard wrong→red X→answer pattern is the weakest feedback
-shape available.
+shape available. Le Mappe implements this in `modules/mappe/feedback.js`; reuse
+it rather than re-deciding it.
 
 ---
 

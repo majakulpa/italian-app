@@ -70,7 +70,22 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Menu" }));
     const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
-    expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories"]);
+    expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories", "Le Mappe"]);
+  });
+
+  // Le Mappe has no district of its own yet — the `officina` district still
+  // routes to `vocab` until the L'Officina hub screen lands — so the
+  // switcher is the only way in, and that route needs to actually work.
+  it("opens Le Mappe from the switcher and returns to the city", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Le Mappe" }));
+    expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
   it("opens vocabulary from L'Officina and returns to the city", async () => {

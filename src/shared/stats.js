@@ -2,7 +2,7 @@
 //
 // Every module already writes into the same `progress.words` map, namespaced
 // by its own key builder in storage.js. This file is the one place that reads
-// that map back across all four modules at once, so the dashboard can't drift
+// that map back across every module at once, so the dashboard can't drift
 // from what a module itself counts as done: the unitKeys functions below call
 // the very same key builders the modules use.
 
@@ -10,7 +10,8 @@ import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
-import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
+import { MAPS } from "../data/mappe.js";
+import { wordKey, drillKey, conversationKey, storyKey, mappeKey } from "./storage.js";
 
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
@@ -58,6 +59,30 @@ export const MODULE_STATS = [
     units: (level) => level.stories.map((s) => ({ key: storyKey(level, s), item: s, group: null })),
     doneStatus: "done",
   },
+  {
+    id: "mappe",
+    // `levels` is really "the containers this module enumerates units from".
+    // For the other four that is the CEFR ladder; Le Mappe has no ladder,
+    // because a suffix correspondence isn't A1 or B2 — `-cja → -zione` is
+    // worth the same on day one as in year two. So its containers are the
+    // maps themselves. levelStats() looks a container up by level id, finds
+    // none, and leaves Le Mappe out of every rung, which is the right answer
+    // rather than a gap.
+    levels: MAPS,
+    // Not in the review queue, and this is a decision rather than an
+    // oversight. Two reasons, both about what the queue is for. A Leitner box
+    // schedules a *lexical item*, which decays one word at a time; a map is a
+    // productive rule, and once `-cja → -zione` is installed it doesn't fade
+    // word by word — the words it unlocks decay, and those belong to the
+    // lexicon, which vocab already feeds. And La Piazza is a multiple-choice
+    // surface: putting a typed production item into it would either turn
+    // "produce first" back into recognition, or need a second interaction
+    // model inside ReviewModule, which is a change to La Piazza and not to
+    // Le Mappe. Revisit when La Piazza learns to ask for typing.
+    scheduled: false,
+    units: (map) => map.drills.map((d) => ({ key: mappeKey(map, d), item: d, group: map })),
+    doneStatus: "known",
+  },
 ];
 
 function tally(done, total) {
@@ -73,7 +98,9 @@ function countLevel(progress, mod, level) {
 // Averaging module percentages, rather than pooling every unit into one
 // fraction. Pooled, vocabulary's 120 words would be over half of the app's
 // units and finishing a whole story would barely move the bar — averaging
-// makes each of the four modules worth a quarter of the figure.
+// makes each of the four levelled modules worth a quarter of the figure.
+// Le Mappe is not one of them: it declares no CEFR level, so it contributes
+// to no rung and doesn't dilute the four that do.
 function averagePct(tallies) {
   if (tallies.length === 0) return 0;
   return Math.round(tallies.reduce((sum, t) => sum + t.pct, 0) / tallies.length);
@@ -93,7 +120,7 @@ export function moduleStats(progress, moduleId) {
   );
 }
 
-// How far one level is, across all four modules. `pct` is the averaged
+// How far one level is, across the modules that have that level. `pct` is the averaged
 // figure; `done`/`total` stay raw so a caller can still show counts.
 export function levelStats(progress, levelId) {
   const perModule = MODULE_STATS.flatMap((mod) => {

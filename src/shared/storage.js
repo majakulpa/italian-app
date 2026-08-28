@@ -114,6 +114,18 @@ export function isStoryDone(progress, level, story) {
   return progress.words[storyKey(level, story)] === "done";
 }
 
+// Le Mappe drills work like grammar drills — right first time is "known",
+// anything else is "learning" — so they need no new shape in the blob, only
+// their own namespace. A save written before Le Mappe existed simply has no
+// "mappe:" keys in it and loads unchanged; nothing here had to be versioned.
+export function mappeKey(map, drill) {
+  return `mappe:${map.id}:${drill.id}`;
+}
+
+export function mapKnownCount(progress, map) {
+  return map.drills.filter((d) => progress.words[mappeKey(map, d)] === "known").length;
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

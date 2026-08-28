@@ -80,6 +80,7 @@ export default function NavMenu({ modules, active, onSelect }) {
             <NavItem
               key={mod.id}
               label={mod.name}
+              lang={mod.lang}
               icon={mod.icon}
               isActive={active === mod.id}
               disabled={!mod.ready}
@@ -92,7 +93,10 @@ export default function NavMenu({ modules, active, onSelect }) {
   );
 }
 
-function NavItem({ label, icon: Icon, isActive, disabled, onClick }) {
+// `lang` is undefined for an English name, which leaves the attribute off
+// entirely and lets the item inherit the page's language — the correct
+// markup, rather than lang="en" repeated on every row.
+function NavItem({ label, lang, icon: Icon, isActive, disabled, onClick }) {
   return (
     <button
       role="menuitem"
@@ -118,7 +122,9 @@ function NavItem({ label, icon: Icon, isActive, disabled, onClick }) {
       }}
     >
       <Icon size={16} style={{ flexShrink: 0 }} />
-      <span style={{ flex: 1 }}>{label}</span>
+      <span lang={lang} style={{ flex: 1 }}>
+        {label}
+      </span>
       {disabled && (
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: 0.5, color: TOKENS.inkSoft }}>
           SOON

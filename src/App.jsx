@@ -10,6 +10,7 @@ import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
+import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 
 // Add new modules here as they're built. `ready: true` modules render their
 // component; `ready: false` modules show a "coming soon" card on the dashboard.
@@ -24,9 +25,10 @@ export const MODULES = [
   { id: "grammar", name: "Grammar", icon: GraduationCap, ready: true },
   { id: "conversations", name: "Conversations", icon: MessageCircle, ready: true },
   { id: "stories", name: "Stories", icon: ScrollText, ready: true },
-  // Le Mappe is the first of L'Officina's four workbenches. Until the
-  // Officina hub screen lands, the NavMenu is how it is reached — the
-  // `officina` district in shared/districts.js still routes to `vocab`.
+  // Le Mappe is one of L'Officina's workbenches, reached from the hub the
+  // `officina` district routes to. It keeps its NavMenu entry all the same:
+  // the switcher lists every content module, and Le Mappe would otherwise be
+  // the one module missing from it.
   { id: "mappe", name: "Le Mappe", lang: "it", icon: Signpost, ready: true },
 ];
 
@@ -46,10 +48,13 @@ export default function App() {
           user can jump straight to the content past the fixed nav buttons. */}
       <main>
         {!active && <Dashboard onSelect={setActive} />}
-        {/* Review is a route, not a module: it has no content or progress of
-            its own, so it stays out of MODULES (and out of the NavMenu that
-            renders from it). La Piazza on the map is how you reach it. */}
+        {/* Review and L'Officina are routes, not modules: neither has content
+            or progress of its own, so they stay out of MODULES (and out of
+            the NavMenu that renders from it). The map is how you reach them —
+            La Piazza for the review session, L'Officina for the workshop,
+            which then opens the benches inside itself. */}
         {active === "review" && <ReviewModule onExit={() => setActive(null)} />}
+        {active === "officina" && <OfficinaModule onExit={() => setActive(null)} />}
         {active === "vocab" && <VocabModule onExit={() => setActive(null)} />}
         {active === "grammar" && <GrammarModule onExit={() => setActive(null)} />}
         {active === "conversations" && <ConversationsModule onExit={() => setActive(null)} />}

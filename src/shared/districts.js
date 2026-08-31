@@ -44,7 +44,12 @@ export const DISTRICTS = [
   {
     id: "officina",
     name: "L'Officina",
-    route: "vocab",
+    // The workshop hub (modules/officina), not a module: it holds no content
+    // of its own, and the benches inside it open the modules that do. Its
+    // `module` stays `vocab` because that is what the tile counts — the words
+    // in the district. Le Mappe's units are drills, which do not belong in an
+    // "N / M words" figure.
+    route: "officina",
     module: "vocab",
     accent: "grape",
     icon: Wrench,

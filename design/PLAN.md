@@ -54,6 +54,11 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/wordState.js` — `unseen → learning → known → solid`, derived from the Leitner box, never stored.
 - `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `lexiconStates()`, `rankWeight()`.
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
+  `officina` routes to its own hub rather than straight to a module.
+- `src/modules/officina/` — the L'Officina hub (design 07) and its bench roster.
+  Two benches open something (the vocabulary deck, Le Mappe); three state what
+  they are waiting on and show no figure, because the design's numbers for them
+  are drawings rather than measurements.
 - `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
   roads, its notes, its false friends and 5–6 production drills.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
@@ -146,11 +151,13 @@ Four workbenches, per screen 07:
   `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed Le Mappe
   first, because Le Mappe is where most of them get generated.
 
+The hub screen (design 07) is built ([#12](https://github.com/majakulpa/italian-app/pull/12)).
+`officina` routes to it, Le Mappe is reached from the map rather than only
+through the NavMenu, and the vocabulary deck sits on it as a fifth bench —
+the district used to route straight there, so it needed a door of its own.
+
 Still to do before the chunk closes:
 
-- **The hub screen** (design 07). Until it exists the `officina` district still
-  routes to `vocab`, and Le Mappe is reached through the NavMenu. That seam is
-  deliberate and is named in `districts.test.js` so it can't be forgotten.
 - **Word detail** (design 11), which is the other half of what makes the
   lexicon visible.
 

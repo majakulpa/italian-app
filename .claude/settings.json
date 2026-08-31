@@ -1,9 +1,29 @@
 {
   "permissions": {
+    "ask": [
+      "Agent"
+    ],
+    "deny": [
+      "Bash(gh pr merge)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr review --approve*)",
+      "Bash(git push origin main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)"
+    ],
     "allow": [
       "mcp__Claude_Browser__read_page",
+      "mcp__Claude_Browser__read_console_messages",
       "Bash(npx vitest run *)",
-      "mcp__Claude_Browser__read_console_messages"
+      "Bash(npm test)",
+      "Bash(npm run test:coverage)",
+      "Bash(npm run build)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      "Bash(rg *)"
     ]
   }
 }

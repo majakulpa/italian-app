@@ -9,6 +9,7 @@ import {
 } from "./districts.js";
 import { MODULE_STATS } from "./stats.js";
 import { MODULES } from "../App.jsx";
+import { BENCHES } from "../modules/officina/benches.js";
 import { CITY_ACCENTS } from "./theme.js";
 import * as coverageModule from "./coverage.js";
 import { LEVELS } from "../data/vocab.js";
@@ -73,8 +74,12 @@ function pretendSolidWords(count) {
 }
 
 describe("the district roster", () => {
+  // A district's route is either a module id or one of the two screens that
+  // are routes without being modules — the review session and L'Officina's
+  // hub, both of which hold no content or progress of their own and so have
+  // no MODULES entry to be found under.
   it("routes every district at something the app can actually show", () => {
-    const routes = new Set([...MODULES.map((m) => m.id), "review"]);
+    const routes = new Set([...MODULES.map((m) => m.id), "review", "officina"]);
     for (const district of DISTRICTS) {
       expect(routes, district.id).toContain(district.route);
     }
@@ -92,24 +97,31 @@ describe("the district roster", () => {
   // Every module that has a district has to keep it, or re-casting the home
   // screen as a city would have quietly hidden one.
   //
-  // Le Mappe is the one exception, and it is named here rather than the
-  // check being loosened to "some modules". It is the first of L'Officina's
-  // four workbenches, and the `officina` district still routes to `vocab`
-  // until the hub screen (design 02-la-citta.html, screen 07) lands with the
-  // rest of that chunk — so for now the NavMenu is its front door. This list
-  // empties again when the hub arrives, and it is meant to.
-  const BEHIND_THE_MENU = ["mappe"];
+  // This test used to carry a BEHIND_THE_MENU exception list holding "mappe",
+  // because the `officina` district still routed straight to `vocab` and the
+  // NavMenu was Le Mappe's only front door. The hub screen closed that, so
+  // the list is gone — but a hub means a module can now be reached one door
+  // in rather than straight off a district, so what is checked is
+  // reachability from the map rather than "is a district". A module in
+  // MODULE_STATS and on neither list is content the map cannot get to.
+  it("gives every module a front door on the map, whether or not it owns a district", () => {
+    const fromMap = [
+      ...DISTRICTS.filter((d) => d.module).map((d) => d.module),
+      ...BENCHES.filter((b) => b.module).map((b) => b.module),
+    ];
 
-  it("gives every module a front door on the map, bar the ones still behind the menu", () => {
-    expect(
-      DISTRICTS.filter((d) => d.module)
-        .map((d) => d.module)
-        .sort(),
-    ).toEqual(
-      MODULE_STATS.map((m) => m.id)
-        .filter((id) => !BEHIND_THE_MENU.includes(id))
-        .sort(),
-    );
+    expect([...new Set(fromMap)].sort()).toEqual(MODULE_STATS.map((m) => m.id).sort());
+  });
+
+  // The other half of that: a bench that claims a module has to name one
+  // that exists, and it has to open it. A `route` pointing nowhere would be
+  // a card that does nothing when pressed.
+  it("opens a real module from every bench that says it opens one", () => {
+    const ids = MODULES.map((m) => m.id);
+    for (const bench of BENCHES.filter((b) => b.route)) {
+      expect(ids, bench.id).toContain(bench.route);
+      expect(bench.module, bench.id).toBe(bench.route);
+    }
   });
 
   // Rule 4 of the design system: colour carries meaning, so each district

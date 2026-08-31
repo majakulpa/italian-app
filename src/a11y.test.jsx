@@ -8,6 +8,8 @@ import ConversationsModule from "./modules/conversations/ConversationsModule.jsx
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
+import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
+import { BENCHES } from "./modules/officina/benches.js";
 import { expectNoViolations } from "./test/a11y.js";
 import { LEVELS } from "./data/vocab.js";
 import { GRAMMAR_LEVELS } from "./data/grammar.js";
@@ -242,6 +244,26 @@ describe("the stories module", () => {
   });
 });
 
+describe("L'Officina", () => {
+  // The hub has a state the rest of the app doesn't: a card that is a real
+  // button, carries a whole paragraph of text, and is aria-disabled because
+  // the bench behind it isn't built. That is the state worth scanning.
+  it("has an accessible workshop, benches that don't open yet and all", async () => {
+    const { container } = render(<OfficinaModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("leaves no bench out of the tab order, open or not", () => {
+    render(<OfficinaModule onExit={() => {}} />);
+
+    for (const bench of BENCHES) {
+      const card = screen.getByRole("button", { name: new RegExp(bench.name) });
+      card.focus();
+      expect(document.activeElement, bench.id).toBe(card);
+    }
+  });
+});
+
 describe("Le Mappe", () => {
   const openMap = async (user) => user.click(screen.getByRole("button", { name: /-cja/ }));
   const openDrill = async (user) => {
@@ -396,6 +418,19 @@ describe("Italian text is marked as Italian", () => {
     expect(italianAncestor(screen.getByText("lezione"))).not.toBeNull();
     // The English road's prompt takes the document's own language.
     expect(screen.getByText("nation").closest("[lang]")).toBeNull();
+  });
+
+  // Five bench names on one screen, four of them Italian and one of them
+  // English — so this is a place the marking can be wrong in two directions,
+  // and both are checked.
+  it("marks the Italian bench names in L'Officina, and leaves the English one alone", () => {
+    render(<OfficinaModule onExit={() => {}} />);
+
+    for (const bench of BENCHES) {
+      const name = screen.getByText(bench.name);
+      expect(name.closest("[lang]")?.getAttribute("lang") ?? null, bench.id).toBe(bench.lang ?? null);
+    }
+    expect(italianAncestor(screen.getByText("Qui si smontano le parole."))).not.toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

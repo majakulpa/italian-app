@@ -157,10 +157,10 @@ function Screen({ children }) {
 
 // ── The list of maps ─────────────────────────────────────────────────────
 
-function MappeHome({ progress, onOpen, onExit }) {
+function MappeHome({ progress, onOpen, onExit, exitLabel }) {
   return (
     <Screen>
-      <BackLink label="All modules" onClick={onExit} />
+      <BackLink label={exitLabel} onClick={onExit} />
 
       <div style={{ textAlign: "center", margin: "18px 0 22px" }}>
         <Eyebrow style={{ color: TOKENS.inkSoft, letterSpacing: 3, display: "block", marginBottom: 6 }}>
@@ -579,10 +579,11 @@ function Summary({ map, results, onBack, onAgain }) {
   );
 }
 
-// onExit returns to the city map (see src/App.jsx). Le Mappe is reached
-// through the NavMenu for now: the `officina` district still routes to
-// `vocab` until the L'Officina hub screen lands with the rest of that chunk.
-export default function MappeModule({ onExit }) {
+// Two ways in, so two things `onExit` can mean: L'Officina's hub opens this
+// as a child of itself and comes back to the workshop, and the NavMenu opens
+// it at the top level and comes back to the city. `exitLabel` is how the back
+// link says which of the two it is about to do.
+export default function MappeModule({ onExit, exitLabel = "All modules" }) {
   const [progress, setProgress] = useState(loadProgress);
   const [session, setSession] = useState(null);
 
@@ -596,7 +597,9 @@ export default function MappeModule({ onExit }) {
   const onGrade = (key, status) => setProgress((p) => markWord(p, key, status));
 
   if (session === null) {
-    return <MappeHome progress={progress} onExit={onExit} onOpen={(map) => setSession({ map, mode: "card" })} />;
+    return (
+      <MappeHome progress={progress} onExit={onExit} exitLabel={exitLabel} onOpen={(map) => setSession({ map, mode: "card" })} />
+    );
   }
 
   const back = () => setSession(null);

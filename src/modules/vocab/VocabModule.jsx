@@ -16,7 +16,7 @@ import SessionSummary from "../../shared/SessionSummary.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 
-function VocabHome({ onPick, onExit, progress }) {
+function VocabHome({ onPick, onExit, exitLabel, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
 
   return (
@@ -26,7 +26,7 @@ function VocabHome({ onPick, onExit, progress }) {
           onClick={onExit}
           style={{ border: "none", background: "transparent", cursor: "pointer", color: TOKENS.inkSoft, display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: 13, padding: 0 }}
         >
-          <ArrowLeft size={16} /> All modules
+          <ArrowLeft size={16} /> {exitLabel}
         </button>
       </div>
 
@@ -622,7 +622,11 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
 }
 
 // onExit returns to the app's module menu (see src/App.jsx)
-export default function VocabModule({ onExit }) {
+// `exitLabel` says where the back link goes. It defaults to "All modules"
+// — the NavMenu route, which is where the other module interiors still point
+// — and L'Officina's hub passes its own name, because opening the deck from
+// the workshop comes back to the workshop.
+export default function VocabModule({ onExit, exitLabel = "All modules" }) {
   const [session, setSession] = useState(null);
   const [progress, setProgress] = useState(loadProgress);
 
@@ -636,7 +640,7 @@ export default function VocabModule({ onExit }) {
   // the word's Leitner box — ordinary study is what feeds the review queue.
   const onMarkWord = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
 
-  if (!session) return <VocabHome onPick={onPick} onExit={onExit} progress={progress} />;
+  if (!session) return <VocabHome onPick={onPick} onExit={onExit} exitLabel={exitLabel} progress={progress} />;
   if (session.mode === "flashcards") {
     return (
       <Flashcards

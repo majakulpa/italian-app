@@ -89,14 +89,27 @@ describe("the district roster", () => {
     }
   });
 
-  // Every one of the four existing modules has to keep a front door, or
-  // re-casting the home screen as a city would have quietly hidden one.
-  it("gives all four modules a front door", () => {
+  // Every module that has a district has to keep it, or re-casting the home
+  // screen as a city would have quietly hidden one.
+  //
+  // Le Mappe is the one exception, and it is named here rather than the
+  // check being loosened to "some modules". It is the first of L'Officina's
+  // four workbenches, and the `officina` district still routes to `vocab`
+  // until the hub screen (design 02-la-citta.html, screen 07) lands with the
+  // rest of that chunk — so for now the NavMenu is its front door. This list
+  // empties again when the hub arrives, and it is meant to.
+  const BEHIND_THE_MENU = ["mappe"];
+
+  it("gives every module a front door on the map, bar the ones still behind the menu", () => {
     expect(
       DISTRICTS.filter((d) => d.module)
         .map((d) => d.module)
         .sort(),
-    ).toEqual(MODULE_STATS.map((m) => m.id).sort());
+    ).toEqual(
+      MODULE_STATS.map((m) => m.id)
+        .filter((id) => !BEHIND_THE_MENU.includes(id))
+        .sort(),
+    );
   });
 
   // Rule 4 of the design system: colour carries meaning, so each district

@@ -42,6 +42,7 @@ src/
     wordState.js                 The four word states (unseen/learning/known/solid), derived from the boxes
     coverage.js                  Frequency-weighted share of running Italian the learner would know
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
+    typedAnswer.js               Accent-tolerant matching for typed answers, and the shared-prefix arithmetic behind "where it went wrong"
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
                                   Small presentational/utility pieces shared across modules
   data/
@@ -50,12 +51,15 @@ src/
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
+    mappe.js                     Le Mappe: suffix correspondences, their two roads, their notes, their false friends and their drills
   modules/
     vocab/VocabModule.jsx              Flashcards + quiz UI (done)
     grammar/GrammarModule.jsx          Lesson (explanation) + drill UI (done)
     conversations/ConversationsModule.jsx  Chat-style guided dialogues (done)
     stories/StoriesModule.jsx          Reader + word glosses + comprehension quiz (done)
     stories/gloss.js                   Splits a paragraph into tappable glossed words
+    mappe/MappeModule.jsx              Suffix maps: the card that teaches one, and the typed drill (done)
+    mappe/feedback.js                  Judges a typed answer and says *where* it went wrong
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -137,6 +141,29 @@ categories/dialogues/stories each, and four grammar topics.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
+- **Le Mappe** — suffix correspondences taught as rules rather than word lists,
+  and the first workbench of L'Officina. Four maps so far — `-cja/-tion →
+  -zione`, `-ity/-ość → -ità`, `-yczny/-ic → -ico`, `-ysta/-ist → -ista` —
+  each a card that gives the Polish road first where it is the shorter one,
+  the English road second, what the ending brings with it (gender, plural,
+  stress, the honest exceptions) and the false friends the rule creates:
+  `colazione` is a perfectly formed `-zione` noun meaning breakfast, and the
+  Polish `kolacja` it came from is supper.
+
+  The drill is **production** — you type the Italian, the app's first typed
+  exercise — with accent-tolerant matching in `src/shared/typedAnswer.js`, so
+  `possibilita` is accepted and then spelled back to you as `possibilità`. A
+  wrong answer is *located, not solved*: the feedback says whether the ending
+  landed, how far the answer stayed on track, and — on the items where the map
+  itself is what fails — that the rule was applied correctly and the rule is
+  the problem. Only a spent second attempt reveals anything. A right answer
+  names the sub-patterns nobody taught, like Latin's `ct → tt` in
+  `aktywność → attività`.
+
+  Le Mappe deliberately sits outside the Leitner queue; the reasoning is
+  beside its `scheduled: false` flag in `src/shared/stats.js`. It is reached
+  from the nav menu, not from the city map, until the L'Officina hub screen
+  lands.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency
@@ -215,9 +242,10 @@ categories/dialogues/stories each, and four grammar topics.
    flashcard and drill sessions still shuffle a whole category. Ordering each
    deck by what's due would make every session, not just Review, benefit from
    it.
-4. **Typed recall / production** — every mode is recognition (pick an option,
-   flip a card). Typing the Italian, with accent-tolerant matching, is the
-   obvious missing exercise.
+4. **Typed recall / production, everywhere else** — Le Mappe now types, and
+   `src/shared/typedAnswer.js` is the reusable half of it. The vocabulary and
+   grammar sessions are still recognition, and the review queue is still
+   multiple-choice, which is the reason Le Mappe stays out of it.
 
 ## Accessibility
 

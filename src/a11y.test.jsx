@@ -7,11 +7,13 @@ import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
+import MappeModule from "./modules/mappe/MappeModule.jsx";
 import { expectNoViolations } from "./test/a11y.js";
 import { LEVELS } from "./data/vocab.js";
 import { GRAMMAR_LEVELS } from "./data/grammar.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { CONVERSATION_LEVELS } from "./data/conversations.js";
+import { MAPS } from "./data/mappe.js";
 import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
@@ -37,6 +39,7 @@ const greetings = a1Vocab.categories.find((c) => c.id === "greetings");
 const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const presentAre = a1Grammar.topics.find((t) => t.id === "present-are");
 const a1Story = STORY_LEVELS.find((l) => l.id === "A1").stories[0];
+const zione = MAPS.find((m) => m.id === "zione");
 
 beforeEach(() => {
   localStorage.clear();
@@ -239,6 +242,68 @@ describe("the stories module", () => {
   });
 });
 
+describe("Le Mappe", () => {
+  const openMap = async (user) => user.click(screen.getByRole("button", { name: /-cja/ }));
+  const openDrill = async (user) => {
+    await openMap(user);
+    await user.click(screen.getByRole("button", { name: /Practise the rule/ }));
+  };
+  const type = async (user, text) => {
+    await user.type(screen.getByLabelText(/Write it in Italian/), text);
+    await user.click(screen.getByRole("button", { name: /^(Check|Next|See how it went)/ }));
+  };
+
+  it("has an accessible list of maps", async () => {
+    const { container } = render(<MappeModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible mapping card, both roads and the trap", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<MappeModule onExit={() => {}} />);
+    await openMap(user);
+    await expectNoViolations(container);
+  });
+
+  // Three states of the drill, not one. An unanswered typed field, a wrong
+  // answer mid-item (the field goes aria-invalid and a located verdict
+  // appears under it) and a settled one (the field turns read-only) are three
+  // different bits of markup, and the middle one is the state this module
+  // exists for.
+  it("has an accessible drill, empty and part-way through an answer", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<MappeModule onExit={() => {}} />);
+    await openDrill(user);
+    await expectNoViolations(container);
+
+    await type(user, "rivolucione");
+    await expectNoViolations(container);
+
+    await type(user, "rivolucione");
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible summary at the end of a run", async () => {
+    // `delay: null` matters here rather than anywhere else in this file:
+    // this is the only test that types whole words for a whole deck — six
+    // drills, seven answers once the deliberate miss is counted. At the
+    // default inter-keystroke delay that is hundreds of async ticks, which
+    // fits in the 30s above uninstrumented and does not fit under coverage.
+    const user = userEvent.setup({ delay: null });
+    const { container } = render(<MappeModule onExit={() => {}} />);
+    await openDrill(user);
+
+    for (const [i, drill] of zione.drills.entries()) {
+      // Miss the first one on purpose, so the summary is scanned with its
+      // "worth another look" list rendered rather than empty.
+      await type(user, i === 0 ? "nonsense" : drill.it);
+      if (i === 0) await type(user, "nonsense");
+      await user.click(screen.getByRole("button", { name: /^(Next|See how it went)/ }));
+    }
+    await expectNoViolations(container);
+  });
+});
+
 describe("the review session", () => {
   it("has an accessible mixed session and summary", async () => {
     const word = greetings.words[0];
@@ -317,6 +382,20 @@ describe("Italian text is marked as Italian", () => {
     const dialogue = CONVERSATION_LEVELS[0].dialogues[0];
     expect(italianAncestor(screen.getByText(dialogue.steps[0].them.it))).not.toBeNull();
     expect(italianAncestor(screen.getByText(dialogue.steps[0].options[0].it))).not.toBeNull();
+  });
+
+  // Le Mappe is the first screen in the app with three languages on it at
+  // once, so it is the first place the marking can be wrong in two
+  // directions rather than one.
+  it("marks Polish as Polish and Italian as Italian in Le Mappe", async () => {
+    const user = userEvent.setup();
+    render(<MappeModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /-cja/ }));
+
+    expect(screen.getByText("lekcja").closest("[lang]")).toHaveAttribute("lang", "pl");
+    expect(italianAncestor(screen.getByText("lezione"))).not.toBeNull();
+    // The English road's prompt takes the document's own language.
+    expect(screen.getByText("nation").closest("[lang]")).toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

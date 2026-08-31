@@ -5,7 +5,8 @@ import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
-import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
+import { MAPS } from "../data/mappe.js";
+import { wordKey, drillKey, conversationKey, storyKey, mappeKey } from "./storage.js";
 
 // Pure arithmetic over a seeded progress object — no rendering, so these can
 // pin the exact numbers the dashboard will show.
@@ -35,6 +36,7 @@ const firstStoryKey = () => {
   const level = A1(STORY_LEVELS);
   return storyKey(level, level.stories[0]);
 };
+const firstMappeKey = () => mappeKey(MAPS[0], MAPS[0].drills[0]);
 
 describe("MODULE_STATS", () => {
   // The dashboard renders App's MODULES and looks each one up here by id — a
@@ -77,6 +79,24 @@ describe("MODULE_STATS", () => {
   it("schedules vocabulary and grammar only", () => {
     expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar"]);
   });
+
+  // Le Mappe declares its maps where the other modules declare CEFR levels,
+  // and that is deliberate: a suffix rule is not A1 or B2. The invariant that
+  // has to hold is that a map id can never *collide* with a level id, or
+  // levelStats would start folding mapping drills into a rung of the ladder.
+  it("keeps Le Mappe out of the CEFR ladder entirely", () => {
+    const mappe = MODULE_STATS.find((m) => m.id === "mappe");
+    expect(mappe.levels).toBe(MAPS);
+
+    const ladder = LEVELS.map((l) => l.id);
+    for (const map of MAPS) expect(ladder).not.toContain(map.id);
+
+    // And drilling a map moves no rung of the ladder, in either direction.
+    const drilled = withWords({ [firstMappeKey()]: "known" });
+    for (const id of ladder) {
+      expect({ id, ...levelStats(drilled, id) }).toEqual({ id, ...levelStats(EMPTY, id) });
+    }
+  });
 });
 
 describe("moduleStats", () => {
@@ -97,19 +117,27 @@ describe("moduleStats", () => {
     expect(moduleStats(withWords({ [firstVocabKey()]: "learning" }), "vocab").done).toBe(0);
   });
 
-  it("counts a drill, a dialogue and a story under their own modules", () => {
+  it("counts a drill, a dialogue, a story and a mapping drill under their own modules", () => {
     const progress = withWords({
       [firstDrillKey()]: "known",
       [firstDialogueKey()]: "done",
       [firstStoryKey()]: "done",
+      [firstMappeKey()]: "known",
     });
 
     expect({
       grammar: moduleStats(progress, "grammar").done,
       conversations: moduleStats(progress, "conversations").done,
       stories: moduleStats(progress, "stories").done,
+      mappe: moduleStats(progress, "mappe").done,
       vocab: moduleStats(progress, "vocab").done,
-    }).toEqual({ grammar: 1, conversations: 1, stories: 1, vocab: 0 });
+    }).toEqual({ grammar: 1, conversations: 1, stories: 1, mappe: 1, vocab: 0 });
+  });
+
+  // The card counts what landed first time, the same bar the grammar card
+  // uses — a drill that needed a second look is progress but not mastery.
+  it("does not count a mapping drill that took two attempts", () => {
+    expect(moduleStats(withWords({ [firstMappeKey()]: "learning" }), "mappe").done).toBe(0);
   });
 
   it("returns an empty tally for an unknown module id", () => {

@@ -8,6 +8,7 @@ import ConversationsModule from "./modules/conversations/ConversationsModule.jsx
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
+import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
 import { expectNoViolations } from "./test/a11y.js";
@@ -16,6 +17,7 @@ import { GRAMMAR_LEVELS } from "./data/grammar.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
+import { STRANDS, ZERO } from "./data/articoli.js";
 import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
@@ -42,6 +44,7 @@ const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const presentAre = a1Grammar.topics.find((t) => t.id === "present-are");
 const a1Story = STORY_LEVELS.find((l) => l.id === "A1").stories[0];
 const zione = MAPS.find((m) => m.id === "zione");
+const determinativo = STRANDS[0];
 
 beforeEach(() => {
   localStorage.clear();
@@ -326,6 +329,87 @@ describe("Le Mappe", () => {
   });
 });
 
+describe("Gli Articoli", () => {
+  // An option's accessible name is the form, or "no article" for the zero
+  // article — an em dash is silence to a screen reader, so it is aria-hidden
+  // and carries a visually-hidden name instead.
+  const option = (form) => {
+    const label = form === ZERO ? "no article" : form;
+    return screen.getByRole("button", { name: (name) => name === label || name.startsWith(`${label} `) });
+  };
+  const openDrill = async (user) => {
+    await user.click(screen.getByRole("button", { name: new RegExp(determinativo.name) }));
+    await user.click(screen.getByRole("button", { name: /Practise it/ }));
+  };
+
+  it("has an accessible list of strands", async () => {
+    const { container } = render(<ArticoliModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible teaching card with every rule on it", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ArticoliModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: new RegExp(determinativo.name) }));
+    await expectNoViolations(container);
+  });
+
+  // Three states of the drill, not one. Unanswered, mid-item after a wrong
+  // first attempt (one option goes aria-disabled and a located verdict
+  // appears under it, with nothing revealed), and settled (every option goes
+  // aria-disabled and the rule and the Polish card open). The middle one is
+  // the state this module exists for.
+  it("has an accessible drill, empty, part-way through, and settled", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ArticoliModule onExit={() => {}} />);
+    await openDrill(user);
+    await expectNoViolations(container);
+
+    await user.click(option(ZERO));
+    await expectNoViolations(container);
+
+    await user.click(option("un"));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible summary at the end of a run", async () => {
+    // `delay: null` for the same reason Le Mappe's summary scan uses it: this
+    // is the only scan here that clicks through a whole strand — five items,
+    // six answers once the deliberate miss is counted — and at the default
+    // inter-event delay that is hundreds of async ticks, which fits in the
+    // 30s ceiling uninstrumented and does not fit under coverage.
+    const user = userEvent.setup({ delay: null });
+    const { container } = render(<ArticoliModule onExit={() => {}} />);
+    await openDrill(user);
+
+    for (const [i, item] of determinativo.items.entries()) {
+      // Miss the first one on purpose, so the summary is scanned with its
+      // "worth another look" list rendered rather than empty.
+      const wrong = item.options.filter((o) => o !== item.answer);
+      await user.click(option(i === 0 ? wrong[0] : item.answer));
+      if (i === 0) await user.click(option(wrong[1]));
+      await user.click(screen.getByRole("button", { name: /^(Continua|See how it went)/ }));
+    }
+    await expectNoViolations(container);
+  });
+
+  // Every option is a real <button>, including the ones already ruled out —
+  // aria-disabled rather than `disabled`, so nothing drops out of the tab
+  // order under a keyboard user in the middle of an item.
+  it("leaves no option out of the tab order, live or ruled out", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    await openDrill(user);
+    await user.click(option(ZERO));
+
+    for (const form of determinativo.items[0].options) {
+      const button = option(form);
+      button.focus();
+      expect(document.activeElement, form).toBe(button);
+    }
+  });
+});
+
 describe("the review session", () => {
   it("has an accessible mixed session and summary", async () => {
     const word = greetings.words[0];
@@ -431,6 +515,29 @@ describe("Italian text is marked as Italian", () => {
       expect(name.closest("[lang]")?.getAttribute("lang") ?? null, bench.id).toBe(bench.lang ?? null);
     }
     expect(italianAncestor(screen.getByText("Qui si smontano le parole."))).not.toBeNull();
+  });
+
+  // The first screen in the app that puts a whole Polish *sentence* on it
+  // rather than a Polish word inside a pair — the anchor card is a first-class
+  // layer per PLAN.md, so it has to be announced in Polish and not in English
+  // phonetics.
+  it("marks the Italian sentence, the Polish anchor and the options in Gli Articoli", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: new RegExp(determinativo.name) }));
+    await user.click(screen.getByRole("button", { name: /Practise it/ }));
+
+    const item = determinativo.items[0];
+    // The prompt, and the article options under it.
+    expect(italianAncestor(screen.getByText(new RegExp(item.before)))).not.toBeNull();
+    expect(screen.getByText(item.options[0]).closest("[lang]")).toHaveAttribute("lang", "it");
+
+    await user.click(screen.getByRole("button", { name: (name) => name === item.answer }));
+
+    expect(screen.getByText(item.anchor.pl).closest("[lang]")).toHaveAttribute("lang", "pl");
+    // The English explanation beside it is not Polish, and must not claim to be.
+    expect(screen.getByText(item.anchor.says).closest('[lang="pl"]')).toBeNull();
+    expect(italianAncestor(screen.getByText(item.anchor.says))).toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

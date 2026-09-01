@@ -1,16 +1,19 @@
 // L'Officina's workbenches, as data.
 //
 // design/02-la-citta.html screen 07 draws four benches — La Riserva, Le
-// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Exactly
-// one of those four has anything behind it today, so exactly one of them
-// carries a figure here.
+// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Two of
+// those four have something behind them today, so two of them carry a figure
+// here.
 //
 // ── Why the mockup's numbers are not in this file ───────────────────────
 // The design's cards read `834 / 2000`, `4 / 8`, `giorno 148`, `71% ↑` and
-// `12 presi`. Every one of those is a drawing, not a measurement: there is no
-// articles data, nothing records which traps you have walked into, and the
-// Riserva's own quantity is still an open question (PLAN.md, open question
-// 1). PLAN.md's "only gate on numbers you have measured" is the rule that
+// `12 presi`. Every one of those is a drawing, not a measurement: nothing
+// records which traps you have walked into, and the Riserva's own quantity is
+// still an open question (PLAN.md, open question 1). Gli Articoli now has
+// data behind it and so has a figure — but not that figure: `giorno 148` is a
+// day counter, which is a streak wearing a different label, and PLAN.md
+// deleted the streak permanently. What its badge counts is sentences answered
+// right first time, read back out of storage. PLAN.md's "only gate on numbers you have measured" is the rule that
 // kept four invented padlocks off the city map, and a figure invented to make
 // a bench look busy is the same mistake in the same place. So a bench either
 // derives its count from storage, or it says in a sentence what it is waiting
@@ -28,9 +31,10 @@
 
 import { BookOpen, Grid3x3, Signpost, TriangleAlert, Type } from "lucide-react";
 import { MAPS } from "../../data/mappe.js";
+import { STRANDS } from "../../data/articoli.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { moduleStats } from "../../shared/stats.js";
-import { mapKnownCount } from "../../shared/storage.js";
+import { mapKnownCount, strandKnownCount } from "../../shared/storage.js";
 
 // A map counts as done when every drill on it is known — the same bar
 // mapKnownCount already uses on Le Mappe's own screen, so the hub and the
@@ -41,6 +45,18 @@ function mapsDone(progress) {
     done: MAPS.filter((map) => mapKnownCount(progress, map) === map.drills.length).length,
     total: MAPS.length,
     unit: "maps",
+  };
+}
+
+// A sentence counts once it has been answered right first time — the same
+// "known" bar strandKnownCount uses on Gli Articoli's own screen, so the hub
+// and the module cannot disagree. Sentences rather than strands: three is too
+// coarse a denominator to move, and the item is the unit the learner meets.
+function articlesLanded(progress) {
+  return {
+    done: STRANDS.reduce((sum, strand) => sum + strandKnownCount(progress, strand), 0),
+    total: STRANDS.reduce((sum, strand) => sum + strand.items.length, 0),
+    unit: "sentences",
   };
 }
 
@@ -95,13 +111,13 @@ export const BENCHES = [
     id: "articoli",
     name: "Gli Articoli",
     lang: "it",
-    module: null,
-    route: null,
+    module: "articoli",
+    route: "articoli",
+    accent: "tomato",
     icon: Type,
-    count: null,
+    count: articlesLanded,
     blurb: "The strand that never finishes. Polish has no articles, so the errors survive into advanced proficiency.",
-    waiting:
-      "Not built, and there is no article data in the app to build it from yet. The bench is named here so it isn't forgotten, and it opens when there is something to drill.",
+    waiting: null,
   },
   {
     id: "falsi-amici",

@@ -74,7 +74,15 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Menu" }));
     const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
-    expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories", "Le Mappe"]);
+    expect(items).toEqual([
+      "All modules",
+      "Vocabulary",
+      "Grammar",
+      "Conversations",
+      "Stories",
+      "Le Mappe",
+      "Gli Articoli",
+    ]);
   });
 
   // Both benches inside L'Officina are also switcher entries, and the

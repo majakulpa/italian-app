@@ -52,6 +52,7 @@ src/
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
     mappe.js                     Le Mappe: suffix correspondences, their two roads, their notes, their false friends and their drills
+    articoli.js                  Gli Articoli: the three strands, the rules behind them, and every item's Polish anchor
   modules/
     vocab/VocabModule.jsx              Flashcards + quiz UI (done)
     grammar/GrammarModule.jsx          Lesson (explanation) + drill UI (done)
@@ -60,6 +61,8 @@ src/
     stories/gloss.js                   Splits a paragraph into tappable glossed words
     mappe/MappeModule.jsx              Suffix maps: the card that teaches one, and the typed drill (done)
     mappe/feedback.js                  Judges a typed answer and says *where* it went wrong
+    articoli/ArticoliModule.jsx        The article strands: the card that teaches one, and the three-way gap drill (done)
+    articoli/feedback.js               Judges an article choice and names the dimension it went wrong on
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -162,8 +165,39 @@ categories/dialogues/stories each, and four grammar topics.
 
   Le Mappe deliberately sits outside the Leitner queue; the reasoning is
   beside its `scheduled: false` flag in `src/shared/stats.js`. It is reached
-  from the nav menu, not from the city map, until the L'Officina hub screen
-  lands.
+  from the L'Officina hub, and from the nav menu.
+- **Gli Articoli** — the permanent strand, and L'Officina's third workbench.
+  The one part of Italian where *neither* of the learner's languages helps:
+  Polish has no articles at all, and English has them and drops them in
+  exactly the places Italian keeps them — `Bevo il caffè` is *I drink coffee*.
+  Sequenced the way design screen 12's own footer states it, determinativo →
+  indeterminativo → preposizioni articolate, which is a teaching order rather
+  than an authoring one: a fused preposition is a definite article welded onto
+  a preposition, so there is nothing to fuse until the first strand is yours.
+  Sixteen sentences with a gap in them and three options each, and one of the
+  three can be the zero article, because `Sono medico` and `ho fame` and
+  `abito in centro` are real answers.
+
+  Every item carries a **Polish anchor**, per PLAN's "Polish is a first-class
+  layer". It is per item rather than per rule because the useful thing is
+  never "Polish has no articles" in the abstract — it is that `imienia
+  dziewczyny` is a genitive doing the whole job of `della`, that `klucz` is
+  masculine where `la chiave` is not, and that `Jestem lekarzem` is the one
+  case in the set where Polish beats English outright and the instinct to
+  leave the gap empty is the right one.
+
+  A wrong answer is **located, not solved**, the same as Le Mappe — but three
+  buttons cannot be located the way an infinite answer space can, so a verdict
+  names the *dimension* and never the answer: both words right and Italian
+  joins them, an article where Italian wants none, an empty gap where Italian
+  wants one, the right kind but the wrong shape, or the wrong kind entirely.
+  The rule and the Polish card stay shut until the item does, because naming
+  the rule for an item whose answer is `lo` *is* the answer. Like Le Mappe it
+  sits outside the Leitner queue, and for a different reason — the queue would
+  accept it, and would answer a wrong pick by revealing the right one on the
+  spot, which is the weakest feedback shape available and the exact thing this
+  bench replaces. The reasoning is beside its `scheduled: false` flag in
+  `src/shared/stats.js`.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency

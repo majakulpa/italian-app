@@ -126,6 +126,18 @@ export function mapKnownCount(progress, map) {
   return map.drills.filter((d) => progress.words[mappeKey(map, d)] === "known").length;
 }
 
+// Gli Articoli works like Le Mappe and the grammar drills: right first time
+// is "known", anything that needed the second attempt is "learning". Its own
+// namespace again, so a save written before the articles strand existed simply
+// has no "articoli:" keys in it and loads unchanged.
+export function articoliKey(strand, item) {
+  return `articoli:${strand.id}:${item.id}`;
+}
+
+export function strandKnownCount(progress, strand) {
+  return strand.items.filter((i) => progress.words[articoliKey(strand, i)] === "known").length;
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

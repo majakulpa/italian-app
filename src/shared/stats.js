@@ -11,7 +11,8 @@ import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { MAPS } from "../data/mappe.js";
-import { wordKey, drillKey, conversationKey, storyKey, mappeKey } from "./storage.js";
+import { STRANDS } from "../data/articoli.js";
+import { wordKey, drillKey, conversationKey, storyKey, mappeKey, articoliKey } from "./storage.js";
 
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
@@ -81,6 +82,35 @@ export const MODULE_STATS = [
     // Le Mappe. Revisit when La Piazza learns to ask for typing.
     scheduled: false,
     units: (map) => map.drills.map((d) => ({ key: mappeKey(map, d), item: d, group: map })),
+    doneStatus: "known",
+  },
+  {
+    id: "articoli",
+    // Strands where the other modules put CEFR levels, for the same reason Le
+    // Mappe puts maps there: the article system is not A1 or B2. It is the
+    // first thing a beginner gets wrong and it is still the thing an advanced
+    // Polish speaker gets wrong, which is exactly why PLAN.md calls it the
+    // permanent strand. levelStats() looks a container up by level id, finds
+    // none, and leaves it out of every rung.
+    levels: STRANDS,
+    // Out of the review queue, and — like Le Mappe — a decision rather than
+    // an oversight, though for a different reason. Le Mappe's blocker is the
+    // interaction model: La Piazza is multiple-choice and Le Mappe types. An
+    // article item *is* multiple-choice, so that objection does not apply
+    // here and the queue would accept it as it stands.
+    //
+    // The objection that does apply is the feedback. La Piazza answers a
+    // wrong pick by painting the right option green and revealing it on the
+    // spot — the standard wrong → red cross → answer pattern that PLAN.md
+    // names as the weakest feedback shape available, and the exact pattern
+    // this bench was built to replace. Scheduling article items would take
+    // the app's most carefully located feedback and replay it in the weakest
+    // form available, which is a worse outcome than them not recurring.
+    //
+    // Revisit when La Piazza learns to locate a wrong answer rather than
+    // solve it. That is a change to La Piazza, not to this bench.
+    scheduled: false,
+    units: (strand) => strand.items.map((i) => ({ key: articoliKey(strand, i), item: i, group: strand })),
     doneStatus: "known",
   },
 ];

@@ -74,7 +74,15 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Menu" }));
     const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
-    expect(items).toEqual(["All modules", "Vocabulary", "Grammar", "Conversations", "Stories", "Le Mappe"]);
+    expect(items).toEqual([
+      "All modules",
+      "Vocabulary",
+      "Grammar",
+      "Conversations",
+      "Stories",
+      "Le Mappe",
+      "Gli Articoli",
+    ]);
   });
 
   // Both benches inside L'Officina are also switcher entries, and the
@@ -105,6 +113,23 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Menu" }));
     await user.click(screen.getByRole("menuitem", { name: "Le Mappe" }));
     expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+  });
+
+  // Gli Articoli is the same shape as Le Mappe: a bench inside L'Officina
+  // with a NavMenu entry of its own, so it has the same second route to keep
+  // honest. Without this the module's `onExit` at the App level is never
+  // called by anything, which the coverage gate reports and a learner would
+  // discover by being unable to get out.
+  it("opens Gli Articoli from the switcher and returns to the city", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Gli Articoli" }));
+    expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();

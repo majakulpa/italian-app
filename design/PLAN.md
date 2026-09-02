@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe built |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub and Gli Articoli built |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -56,15 +56,18 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
   `officina` routes to its own hub rather than straight to a module.
 - `src/modules/officina/` — the L'Officina hub (design 07) and its bench roster.
-  Two benches open something (the vocabulary deck, Le Mappe); three state what
-  they are waiting on and show no figure, because the design's numbers for them
-  are drawings rather than measurements.
+  Three benches open something (the vocabulary deck, Le Mappe, Gli Articoli);
+  two state what they are waiting on and show no figure, because the design's
+  numbers for them are drawings rather than measurements.
 - `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
   roads, its notes, its false friends and 5–6 production drills.
+- `src/data/articoli.js` — **3 strands, 10 rules, 16 items**, each with three options,
+  the rule it instances and a Polish anchor of its own.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
-  Le Mappe is in the new one, per the rule in open question 4.
+  Le Mappe, the L'Officina hub and Gli Articoli are in the new one, per the rule
+  in open question 4.
 
 ---
 
@@ -145,8 +148,24 @@ Four workbenches, per screen 07:
   solved.
 - **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
   Still blocked on open question 1.
-- **Gli Articoli** — the permanent strand. Polish has no articles and the errors
-  survive into advanced proficiency, so this never stops appearing.
+- **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
+  the errors survive into advanced proficiency, so this never stops appearing.
+  Sequenced determinativo → indeterminativo → preposizioni articolate, which
+  is design screen 12's own footer and a teaching order rather than an
+  authoring one. Three options an item, one of which can be the zero article,
+  because `Sono medico` and `abito in centro` are real answers. Every item
+  carries its own Polish anchor. A wrong answer names the *dimension* it went
+  wrong on and never the answer — three buttons cannot be located the way an
+  infinite answer space can — and the rule and the Polish card stay shut until
+  the item does.
+
+  It stays out of the Leitner queue, and for a different reason from Le Mappe.
+  Le Mappe's blocker is the interaction model: La Piazza is multiple-choice
+  and Le Mappe types. An article item *is* multiple-choice, so the queue would
+  take it — and would then answer a wrong pick by revealing the right one on
+  the spot, which is the weakest feedback shape available and the exact
+  pattern this bench replaces. Revisit when La Piazza learns to locate rather
+  than solve; that is a change to La Piazza.
 - **Falsi Amici** — the traps collected as you hit them: `colazione` ≠ *kolacja*,
   `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed Le Mappe
   first, because Le Mappe is where most of them get generated.
@@ -160,6 +179,8 @@ Still to do before the chunk closes:
 
 - **Word detail** (design 11), which is the other half of what makes the
   lexicon visible.
+- **La Riserva**, still blocked on open question 1.
+- **Falsi Amici**, still short of anything that records which traps caught you.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,

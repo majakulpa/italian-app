@@ -61,7 +61,7 @@
 // dziewczyny` is a genitive doing the work of `della`), sometimes it is a
 // gender that actively misleads (`klucz` is masculine, `la chiave` is not),
 // and once, usefully, it is Polish agreeing with Italian while English is the
-// one that lies (`Jestem lekarzem` / `Sono medico` / *I am **a** doctor*).
+// one that lies (`Jestem lekarką` / `Sono medico` / *I am **a** doctor*).
 //
 //   anchor.pl       the Polish sentence, marked lang="pl" by the module
 //   anchor.says     what it tells you, in English
@@ -319,9 +319,9 @@ export const STRANDS = [
         rule: "mestiere",
         en: "I'm a doctor.",
         anchor: {
-          pl: "Jestem lekarzem",
+          pl: "Jestem lekarką",
           says:
-            "The one place your two languages disagree and Polish wins. Polish puts lekarz in the instrumental and adds nothing; English insists on a doctor. Italian sides with Polish — trust the instinct that wants to leave the gap empty, and distrust the English one.",
+            "The one place your two languages disagree and Polish wins. Polish puts lekarka in the instrumental and adds nothing; English insists on a doctor. Italian sides with Polish — trust the instinct that wants to leave the gap empty, and distrust the English one.",
         },
       },
       {
@@ -347,7 +347,7 @@ export const STRANDS = [
         rule: "uno-suono",
         en: "I bought a new backpack.",
         anchor: {
-          pl: "Kupiłem nowy plecak",
+          pl: "Kupiłam nowy plecak",
           says:
             "Polish clusters consonants far more freely than Italian does, so nothing in plecak or in zaino suggests the initial z should change the word in front of it. The sound rule is the same one lo follows; the shapes are different.",
         },
@@ -375,7 +375,7 @@ export const STRANDS = [
         rule: "avere-fisso",
         en: "I'm hungry!",
         anchor: {
-          pl: "Jestem głodny",
+          pl: "Jestem głodna",
           says:
             "Polish and English both make hunger an adjective — you *are* hungry. Italian makes it a noun you own, ho fame, and then puts nothing in front of it. Neither language prepares you for the noun, let alone for the empty gap.",
         },

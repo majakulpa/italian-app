@@ -153,6 +153,52 @@ describe("the drill", () => {
     expect(loadProgress().words[articoliKey(determinativo, caffe)]).toBeUndefined();
   });
 
+  // The five located verdicts are the whole point of the strand's feedback,
+  // so each one has to be shown to actually reach the card. feedback.test.js
+  // proves locate() classifies them; these prove the module renders them,
+  // which is a different claim and the one a learner depends on. With the
+  // fusion and missing cases tested above, that is all five.
+  it("names the dimension when the wrong kind of article was chosen", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    await openStrand(user);
+
+    // `Bevo ___ caffè` wants the definite `il`; `un` is an article of the
+    // wrong kind rather than a wrong shape.
+    await user.click(option("un"));
+
+    expect(onCard(/An article does belong here/)).toHaveLength(1);
+    expect(screen.queryByText("Bevo il caffè ogni mattina.")).not.toBeInTheDocument();
+  });
+
+  it("names the dimension when an article was put where Italian wants none", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    // `Sono ___ medico` is the item where Polish beats English: the gap stays
+    // empty, and reaching for `un` is the error English pushes you into.
+    await openStrand(user, STRANDS[1]);
+
+    await user.click(option("un"));
+
+    expect(onCard(/Whether there is one at all is/)).toHaveLength(1);
+  });
+
+  it("names the dimension when the kind is right and only the shape is wrong", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    await openStrand(user);
+
+    // Past the first item to `Ieri ___ studente`, whose three options are all
+    // definite — so `il` against `lo` can only be the sound rule, and saying
+    // "wrong kind" there would be a lie.
+    await user.click(option(caffe.answer));
+    await advance(user);
+
+    await user.click(option("il"));
+
+    expect(onCard(/Definite or indefinite is not what went wrong/)).toHaveLength(1);
+  });
+
   it("gives a second attempt, and books a late right answer as still learning", async () => {
     const user = userEvent.setup();
     render(<ArticoliModule onExit={() => {}} />);

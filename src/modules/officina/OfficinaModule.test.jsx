@@ -161,6 +161,19 @@ describe("opening a bench", () => {
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 
+  // The hub bench is Gli Articoli's front door — the NavMenu entry is the
+  // second way in, not the first — so this is the route that has to work.
+  it("opens Gli Articoli and comes back to the workshop", async () => {
+    const user = userEvent.setup();
+    render(<OfficinaModule onExit={() => {}} />);
+
+    await user.click(card("articoli"));
+    expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
+  });
+
   // The hub stays mounted while a bench is open, so its counts would freeze
   // at whatever they were when the workshop was first opened unless it
   // re-reads storage on the way back. This is the test that catches that.

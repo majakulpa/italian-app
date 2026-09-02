@@ -118,6 +118,23 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
+  // Gli Articoli is the same shape as Le Mappe: a bench inside L'Officina
+  // with a NavMenu entry of its own, so it has the same second route to keep
+  // honest. Without this the module's `onExit` at the App level is never
+  // called by anything, which the coverage gate reports and a learner would
+  // discover by being unable to get out.
+  it("opens Gli Articoli from the switcher and returns to the city", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Gli Articoli" }));
+    expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+  });
+
   it("opens the workshop from L'Officina and returns to the city", async () => {
     const user = userEvent.setup();
     render(<App />);

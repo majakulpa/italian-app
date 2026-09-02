@@ -31,15 +31,16 @@
 
 import { BookOpen, Grid3x3, Signpost, TriangleAlert, Type } from "lucide-react";
 import { MAPS } from "../../data/mappe.js";
-import { STRANDS } from "../../data/articoli.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { moduleStats } from "../../shared/stats.js";
-import { mapKnownCount, strandKnownCount } from "../../shared/storage.js";
+import { mapKnownCount } from "../../shared/storage.js";
 
 // A map counts as done when every drill on it is known — the same bar
 // mapKnownCount already uses on Le Mappe's own screen, so the hub and the
-// module can't disagree. `total` is MAPS.length rather than the design's 8:
-// four maps exist, and the denominator is the number of maps there are.
+// module can't disagree. Not moduleStats: that counts drills, and this bench
+// counts whole maps, which is a fraction stats.js has no way to express.
+// `total` is MAPS.length rather than the design's 8: four maps exist, and the
+// denominator is the number of maps there are.
 function mapsDone(progress) {
   return {
     done: MAPS.filter((map) => mapKnownCount(progress, map) === map.drills.length).length,
@@ -48,16 +49,17 @@ function mapsDone(progress) {
   };
 }
 
-// A sentence counts once it has been answered right first time — the same
-// "known" bar strandKnownCount uses on Gli Articoli's own screen, so the hub
-// and the module cannot disagree. Sentences rather than strands: three is too
-// coarse a denominator to move, and the item is the unit the learner meets.
+// A sentence counts once it has been answered right first time. Straight
+// through moduleStats, like the vocabulary deck below: stats.js already
+// enumerates the articoli units with the same key builder and the same
+// "known" bar the module writes, and it exists precisely so a bench and a
+// module cannot hold two different counts of the same thing. Re-summing
+// strandKnownCount here was a second implementation of one number.
+// Sentences rather than strands: three is too coarse a denominator to move,
+// and the item is the unit the learner meets.
 function articlesLanded(progress) {
-  return {
-    done: STRANDS.reduce((sum, strand) => sum + strandKnownCount(progress, strand), 0),
-    total: STRANDS.reduce((sum, strand) => sum + strand.items.length, 0),
-    unit: "sentences",
-  };
+  const { done, total } = moduleStats(progress, "articoli");
+  return { done, total, unit: "sentences" };
 }
 
 function wordsKnown(progress) {

@@ -144,7 +144,7 @@ export const RULES = {
     forms: ["il", "lo", "l'", "i", "gli"],
     when: "chosen by the sound the next word starts with, not by the noun",
     says:
-      "lo (plural gli) goes before s + consonant, and before z, gn, ps, x and y. l' goes before a vowel, and its plural is gli too. Everything else masculine takes il, plural i. The article is agreeing with the sound that follows it, which is why it changes when an adjective gets in front of the noun: lo studente, but il bravo studente.",
+      "lo (plural gli) goes before s + consonant, and before z, gn, pn, ps, x, and i or y in front of another vowel — lo zaino, lo gnocco, lo pneumatico, lo psicologo, lo iodio, lo yogurt. l' goes before a vowel, and its plural is gli too. Everything else masculine takes il, plural i. The article is agreeing with the sound that follows it, which is why it changes when an adjective gets in front of the noun: lo studente, but il bravo studente.",
   },
   generico: {
     id: "generico",
@@ -179,14 +179,14 @@ export const RULES = {
     forms: ["un", "uno", "una", "un'"],
     when: "by gender first, then by the same sound rule the definite article uses",
     says:
-      "Masculine is un, and uno before s + consonant, z, gn, ps, x, y — the same list as lo. Feminine is una, and un' before a vowel. Note the asymmetry that catches everyone: the feminine elides and takes an apostrophe, the masculine does not. un amico, un'amica.",
+      "Masculine is un, and uno before s + consonant, z, gn, pn, ps, x, and i or y in front of another vowel — the same list as lo. Feminine is una, and un' before a vowel. Note the asymmetry that catches everyone: the feminine elides and takes an apostrophe, the masculine does not. un amico, un'amica.",
   },
   mestiere: {
     id: "mestiere",
     forms: ["essere", "fare"],
-    when: "before a bare profession, nationality or role",
+    when: "before a profession, nationality or role — and the two verbs do not agree",
     says:
-      "Sono medico, sono polacca, faccio l'ingegnere. No article, where English insists on one. Add an adjective and the article comes back — sono un bravo medico — because the phrase has stopped naming a category and started describing a person.",
+      "With essere the noun goes bare: sono medico, sono polacca, where English insists on a doctor. With fare it takes the definite article instead: faccio l'ingegnere, faccio il medico. Same profession, two verbs, two patterns — so learn the pair, not one half of it. And essere's bare noun only stays bare while it is naming a category: add an adjective and the article comes back, sono un bravo medico, because the phrase has started describing a person.",
   },
   "avere-fisso": {
     id: "avere-fisso",
@@ -200,7 +200,7 @@ export const RULES = {
     forms: ["del", "al", "nel", "dal", "sul"],
     when: "whenever di, a, da, in or su meets a definite article",
     says:
-      "The two are written as one word, always: di + il = del, a + il = al, in + il = nel, da + il = dal, su + il = sul, and the same across la, l', i, gli, le (della, alla, nella, dalla, sulla…). There is no version of Italian where they stay apart, so *di la is not a variant, it is a misspelling. con and per never fuse in modern Italian.",
+      "The two are written as one word, always: di + il = del, a + il = al, in + il = nel, da + il = dal, su + il = sul, and the same across la, l', i, gli, le (della, alla, nella, dalla, sulla…). There is no version of Italian where they stay apart, so *di la is not a variant, it is a misspelling. Outside those five: per never fuses at all, and con fuses only optionally, giving col (con + il) and coi (con + i) — both current standard Italian, though con il and con i are equally correct and commoner in writing. The older collo, colla, cogli and colle are obsolete.",
   },
   "in-nudo": {
     id: "in-nudo",
@@ -278,7 +278,7 @@ export const STRANDS = [
         after: "occhiali.",
         options: ["i", "gli", ZERO],
         rule: "suono",
-        en: "I can't find my glasses.",
+        en: "I can't find my glasses any more.",
         anchor: {
           pl: "Nie mogę znaleźć okularów",
           says:

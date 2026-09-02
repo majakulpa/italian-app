@@ -65,10 +65,34 @@ describe("the strand list", () => {
 
   // `giorno 148` is a day counter, and PLAN.md deleted the streak
   // permanently. `71%` is a figure of nothing. Neither may appear.
-  it("shows none of the design's drawn numbers", () => {
+  //
+  // Asserting the absence of the literals `148` and `71%` was worth nothing:
+  // they were never in the source and nothing would ever put them there. What
+  // has to hold is the general rule PLAN.md states — every number on this
+  // screen is measured — so the assertion is that the digits on the screen are
+  // *exactly* the passo numbers and the storage-derived fractions, derived
+  // from STRANDS rather than typed out. Any drawn figure added to the screen
+  // fails this, 148 and 71 among them.
+  it("shows no number it has not measured", () => {
     const { container } = render(<ArticoliModule onExit={() => {}} />);
 
-    expect(container.textContent).not.toMatch(/giorno 148|148|71%/);
+    expect(container.textContent).not.toMatch(/giorno|\bday\b|%/i);
+
+    const cards = screen.getAllByRole("button").filter((b) => /Passo \d\d/.test(b.textContent));
+    expect(cards).toHaveLength(STRANDS.length);
+
+    cards.forEach((card, i) => {
+      const passo = `Passo ${String(i + 1).padStart(2, "0")}`;
+      const fraction = `0 / ${STRANDS[i].items.length} landed`;
+      expect(card.textContent).toContain(passo);
+      expect(card.textContent).toContain(fraction);
+      // Its step number and its storage-derived fraction, and no other digit.
+      expect(card.textContent.replace(passo, "").replace(fraction, "")).not.toMatch(/\d/);
+      card.remove();
+    });
+
+    // Nor anywhere else on the screen.
+    expect(container.textContent).not.toMatch(/\d/);
   });
 
   it("goes back the way it was opened", async () => {

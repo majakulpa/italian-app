@@ -137,15 +137,25 @@ describe("a wrong answer gets located, not solved", () => {
     }
   });
 
-  // The zero article's version of the same rule. "You put an article where
-  // Italian wants none" would be the answer said out loud on a three-option
-  // item where the other two are both articles, so the located sentence
-  // names the dimension and stops.
-  it("never says the gap should be empty while the attempt is still live", () => {
-    const said = announce(judge(medico, "un", 1));
+  // The zero article's half of the test above, and renamed to say so. It was
+  // called "never says the gap should be empty while the attempt is still
+  // live", which it could not fail for: the intrusive sentence *does* convey
+  // that the gap is empty — that is the design, argued in feedback.js's own
+  // header, and with three buttons some elimination is unavoidable. What the
+  // assertion actually checks is narrower and is a real property: the answer
+  // is never *spelled out*. The other four options are words the loop above
+  // can look for; the zero article is a glyph with no token to search, so its
+  // names have to be listed. Any rewording that reaches for one of them —
+  // "Italian wants no article here" — turns this red.
+  const zeroItems = STRANDS.flatMap((s) => s.items.filter((i) => i.answer === ZERO).map((i) => [i.id, i]));
 
-    expect(said).not.toMatch(/no article|none at all|empty/i);
-    expect(said).toContain("Whether there is one at all is.");
+  it.each(zeroItems)("never spells the zero article out on %s while the attempt is still live", (_id, item) => {
+    for (const option of item.options.filter((o) => o !== ZERO)) {
+      const said = announce(judge(item, option, 1));
+
+      expect(said, option).not.toMatch(/no article|none at all|nothing at all|empty|leave it blank/i);
+      expect(said, option).toContain("Whether there is one at all is.");
+    }
   });
 });
 

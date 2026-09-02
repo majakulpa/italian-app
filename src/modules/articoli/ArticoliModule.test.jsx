@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ArticoliModule from "./ArticoliModule.jsx";
 import { announce, judge } from "./feedback.js";
-import { STRANDS, RULES, ZERO } from "../../data/articoli.js";
+import { STRANDS, RULES, ZERO, filled } from "../../data/articoli.js";
 import { loadProgress, saveProgress, articoliKey } from "../../shared/storage.js";
 
 const determinativo = STRANDS[0];
@@ -315,6 +315,45 @@ describe("the end of a run", () => {
     expect(screen.getByText("landed")).toBeInTheDocument();
     expect(screen.getByText("Worth another look")).toBeInTheDocument();
     expect(screen.getByText("Bevo il caffè ogni mattina.")).toBeInTheDocument();
+  });
+
+  // "Landed" was two different words. Storage wrote "known" only for a
+  // first-attempt win, while the summary tile counted any eventual win, so one
+  // second-attempt item made the summary read "5 landed" and the strand card
+  // behind it read "4 / 5 landed" about the same five answers — and the item
+  // that most deserved revisiting was filtered out of "Worth another look",
+  // because that list is the complement of the same flag.
+  //
+  // Both numbers, in one test, on purpose: checking either alone would have
+  // passed on the broken code.
+  it("counts a second-attempt win the same way on the summary and on the strand card", async () => {
+    const user = userEvent.setup();
+    render(<ArticoliModule onExit={() => {}} />);
+    await openStrand(user);
+
+    // Item one missed once and then won back; every other item right first time.
+    await user.click(option(caffe.options.find((o) => o !== caffe.answer)));
+    await user.click(option(caffe.answer));
+    await advance(user);
+    for (const item of determinativo.items.slice(1)) {
+      await user.click(option(item.answer));
+      await advance(user);
+    }
+
+    const total = determinativo.items.length;
+    const tile = (label) => screen.getByText(label).previousElementSibling;
+
+    expect(tile("landed")).toHaveTextContent(String(total - 1));
+    expect(tile("took a second look")).toHaveTextContent("1");
+    // The won-back item is on the revisit list rather than filtered off it.
+    expect(screen.getByText("Worth another look")).toBeInTheDocument();
+    expect(screen.getByText(filled(caffe))).toBeInTheDocument();
+
+    // The same five answers, counted by storage on the screen behind it.
+    await user.click(screen.getByRole("button", { name: /Back to the strands/ }));
+    expect(screen.getByRole("button", { name: new RegExp(determinativo.name) })).toHaveAccessibleName(
+      expect.stringContaining(`${total - 1} / ${total} landed`),
+    );
   });
 
   it("leaves the revisit list out when nothing was missed", async () => {

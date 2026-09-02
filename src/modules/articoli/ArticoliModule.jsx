@@ -396,8 +396,16 @@ function Drill({ strand, onBack, onDone, onGrade }) {
       // Right first time is "known"; anything that needed a second look, or
       // ran out of looks, is "learning" — the same bar Le Mappe and the
       // grammar drill use, so the three cards mean the same thing.
-      onGrade(articoliKey(strand, item), next.correct && attempt === 1 ? "known" : "learning");
-      setResults((r) => [...r, { item, landed: next.correct }]);
+      //
+      // One expression, used twice, and that is the whole point. It was two:
+      // storage asked for right-first-time and the summary asked only for
+      // right-eventually, so a second-attempt win made the summary say "5
+      // landed" and the strand list say "4 / 5 landed" about the same run —
+      // and dropped the one item most worth revisiting out of "Worth another
+      // look". `landed` is now the single definition of the word.
+      const landed = next.correct && attempt === 1;
+      onGrade(articoliKey(strand, item), landed ? "known" : "learning");
+      setResults((r) => [...r, { item, landed }]);
     } else {
       setAttempt(attempt + 1);
     }
@@ -493,6 +501,9 @@ function Drill({ strand, onBack, onDone, onGrade }) {
 
 // ── The end of a run ─────────────────────────────────────────────────────
 
+// `landed` means one thing in this app — answered right first time — and it is
+// decided once, in the drill, so the number on this screen and the number on
+// the strand card behind it are the same number read two ways.
 function Summary({ strand, results, onBack, onAgain }) {
   const landed = results.filter((r) => r.landed);
   const slipped = results.filter((r) => !r.landed);
@@ -513,7 +524,9 @@ function Summary({ strand, results, onBack, onAgain }) {
         </div>
         <div style={{ ...citySurface("lemon"), padding: "14px 16px", flex: 1 }}>
           <p style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 600, margin: 0 }}>{slipped.length}</p>
-          <Eyebrow style={{ opacity: 0.9 }}>revealed</Eyebrow>
+          {/* Not "revealed": an item won back on the second attempt was never
+              revealed, and it belongs on this tile all the same. */}
+          <Eyebrow style={{ opacity: 0.9 }}>took a second look</Eyebrow>
         </div>
       </div>
 

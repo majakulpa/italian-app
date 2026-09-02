@@ -5,7 +5,7 @@ import { STRANDS, RULES, ZERO, filled } from "../../data/articoli.js";
 import { loadProgress, saveProgress, markWord, articoliKey, strandKnownCount } from "../../shared/storage.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
-import { judge, announce, ATTEMPTS } from "./feedback.js";
+import { judge, announce, LOCATED, ATTEMPTS } from "./feedback.js";
 
 // Gli Articoli — L'Officina's third workbench, and design screen 12.
 //
@@ -307,6 +307,13 @@ function StrandCard({ strand, onBack, onPractise }) {
 // goes to the live region is `announce()` in feedback.js — the two say the
 // same things, and the module test checks a screen reader isn't told less
 // than the screen shows.
+//
+// The located sentence is read straight out of feedback.js's LOCATED rather
+// than restated here. It used to be restated, in five sibling paragraphs, and
+// the fusion one had already drifted a comma away from its spoken twin. It is
+// the one part of the verdict with no Italian and no Polish in it, so it can
+// be a plain string; the paragraph below it, which mixes an Italian sentence
+// into English prose, still has to be markup for WCAG 3.1.2.
 function Verdict({ verdict }) {
   const accent = verdict.correct ? "pistachio" : verdict.kind === "fusion" ? "lemon" : "tomato";
 
@@ -318,28 +325,7 @@ function Verdict({ verdict }) {
       </Eyebrow>
 
       <div style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.55, display: "grid", gap: 6, marginTop: 8 }}>
-        {verdict.kind === "fusion" && (
-          <p style={{ margin: 0 }}>
-            Both of those words are right. Italian writes a preposition and its article joined rather than side by side.
-          </p>
-        )}
-        {verdict.kind === "intrusive" && (
-          <p style={{ margin: 0 }}>Which article to use is not the question here. Whether there is one at all is.</p>
-        )}
-        {verdict.kind === "missing" && (
-          <p style={{ margin: 0 }}>
-            Italian does not leave this gap empty, even where Polish and English both would. Which article is the question.
-          </p>
-        )}
-        {verdict.kind === "definiteness" && (
-          <p style={{ margin: 0 }}>An article does belong here. Which kind of one is what missed.</p>
-        )}
-        {verdict.kind === "form" && (
-          <p style={{ margin: 0 }}>
-            Definite or indefinite is not what went wrong — that part is right. The shape is: Italian picks it by gender, and
-            by the sound the next word starts with.
-          </p>
-        )}
+        {!verdict.correct && <p style={{ margin: 0 }}>{LOCATED[verdict.kind]}</p>}
 
         {verdict.sentence && (
           <p style={{ margin: 0 }}>

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ArticoliModule from "./ArticoliModule.jsx";
-import { announce, judge } from "./feedback.js";
+import { announce, judge, LOCATED } from "./feedback.js";
 import { STRANDS, RULES, ZERO, filled } from "../../data/articoli.js";
 import { loadProgress, saveProgress, articoliKey } from "../../shared/storage.js";
 
@@ -275,6 +275,43 @@ describe("the drill", () => {
 
     await user.click(screen.getByRole("button", { name: /Gli Articoli/ }));
     expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
+  });
+
+  // The header of Verdict claims the card and the live region "say the same
+  // things", and until now nothing held it to that for the located sentences
+  // specifically — the prose lived in two places and the fusion copy had
+  // already drifted a comma apart. Each of the five now has to reach the card
+  // *and* the live region as the one string in feedback.js, so a reworded
+  // verdict cannot be reworded in only one of the three places.
+  const routes = [
+    { kind: "definiteness", strand: STRANDS[0], skip: 0, pick: "un" },
+    { kind: "missing", strand: STRANDS[0], skip: 0, pick: ZERO },
+    { kind: "form", strand: STRANDS[0], skip: 1, pick: "il" },
+    { kind: "intrusive", strand: STRANDS[1], skip: 0, pick: "un" },
+    { kind: "fusion", strand: STRANDS[2], skip: 0, pick: "in il" },
+  ];
+
+  it.each(routes)("shows and speaks the same $kind sentence feedback.js defines", async ({ strand, skip, pick }) => {
+    const user = userEvent.setup();
+    const { container } = render(<ArticoliModule onExit={() => {}} />);
+    await openStrand(user, strand);
+
+    for (const item of strand.items.slice(0, skip)) {
+      await user.click(option(item.answer));
+      await advance(user);
+    }
+    const said = LOCATED[judge(strand.items[skip], pick, 1).kind];
+
+    await user.click(option(pick));
+
+    expect(onCard(said)).toHaveLength(1);
+    expect(container.querySelector('[role="status"]')).toHaveTextContent(said);
+  });
+
+  // Every one of the five, so a sixth kind added to LOCATED without a route
+  // above fails here rather than going untested.
+  it("has a route to every located verdict there is", () => {
+    expect(routes.map((r) => r.kind).sort()).toEqual(Object.keys(LOCATED).sort());
   });
 
   // A screen reader gets no colour and no cards, so the live region has to

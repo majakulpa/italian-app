@@ -86,16 +86,27 @@ export function judge(item, picked, attempt) {
 // The five located sentences, and the one thing none of them may contain is
 // the answer. Each names a dimension and leaves the learner to work out which
 // of the three buttons that rules out.
-const LOCATED = {
-  fusion:
-    "Not quite. Both of those words are right, and Italian writes a preposition and its article joined rather than side by side.",
-  intrusive: "Not quite. Which article to use is not the question here. Whether there is one at all is.",
+//
+// Exported because the module renders these very strings inside the verdict
+// card — they are the one part of the feedback that is pure English, with no
+// Italian form and no Polish sentence in it, so the WCAG 3.1.2 argument at
+// the top of this file (a string can only claim one language) does not apply
+// and there is no reason to keep a second copy of the prose in JSX. There was
+// a second copy, and it had already drifted: the card said "right. Italian"
+// where this said "right, and Italian".
+export const LOCATED = {
+  fusion: "Both of those words are right. Italian writes a preposition and its article joined rather than side by side.",
+  intrusive: "Which article to use is not the question here. Whether there is one at all is.",
   missing:
-    "Not quite. Italian does not leave this gap empty, even where Polish and English both would. Which article is the question.",
-  definiteness: "Not quite. An article does belong here. Which kind of one is what missed.",
+    "Italian does not leave this gap empty, even where Polish and English both would. Which article is the question.",
+  definiteness: "An article does belong here. Which kind of one is what missed.",
   form:
-    "Not quite. Definite or indefinite is not what went wrong — that part is right. The shape is: Italian picks it by gender, and by the sound the next word starts with.",
+    "Definite or indefinite is not what went wrong — that part is right. The shape is: Italian picks it by gender, and by the sound the next word starts with.",
 };
+
+// The card carries the same "not there yet" in its heading and its AnswerMark,
+// so the lead only belongs in the spoken twin.
+const LEAD = "Not quite.";
 
 // The same verdict as plain sentences, for the live region. A screen reader
 // gets no colour and no cards, so everything the sighted learner reads off
@@ -107,7 +118,7 @@ export function announce(verdict) {
   if (verdict.correct) {
     parts.push(`Correct. Italian writes it: ${verdict.sentence} — ${verdict.en}.`);
   } else {
-    parts.push(LOCATED[verdict.kind]);
+    parts.push(`${LEAD} ${LOCATED[verdict.kind]}`);
     parts.push(verdict.answer ? `The answer is ${verdict.answer}. ${verdict.sentence} — ${verdict.en}.` : "Try once more.");
   }
 

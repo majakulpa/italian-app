@@ -54,13 +54,26 @@ const SANS = "'Inter', sans-serif";
 // WORD_STATES' own, so a fifth state added there shows up here rather than
 // silently vanishing from the legend.
 const STATE_PAINT = {
-  unseen: { fill: TOKENS.paperDeep, label: "not started" },
+  unseen: { fill: TOKENS.controlLine, label: "not started" },
   learning: { fill: TOKENS.viola, label: "in corso" },
   known: { fill: TOKENS.limoncello, label: "nota" },
   solid: { fill: TOKENS.malachite, label: "solida" },
 };
 
-const EMPTY_FILL = "transparent";
+// A rank with no word behind it has to *recede*, and the first version of this
+// got it exactly backwards: it drew the empty ranks as a hollow square with a
+// hairline and the real ones as a dark fill, so at 7px the 1,700 words nobody
+// has written down read brighter than the 300 that exist. Both states are
+// solid fills now and no borders.
+//
+// `unseen` is painted with controlLine rather than line, and the reason is a
+// contrast one rather than a taste one. This grid is a graphical object you
+// have to be able to read to understand the screen, so WCAG 1.4.11's 3:1
+// applies to the difference between a rank that exists and one that does not.
+// `line` is a decorative hairline and manages 1.20:1 against paperDeep in the
+// light theme — the distinction was there in the DOM and invisible on the
+// screen. controlLine is the token that already promises 3:1 on every surface.
+const EMPTY_FILL = TOKENS.paperDeep;
 
 function Eyebrow({ children, style }) {
   return (
@@ -125,7 +138,6 @@ function Grid({ states, seeded }) {
         data-state={has ? state : "empty"}
         style={{
           background: has ? STATE_PAINT[state].fill : EMPTY_FILL,
-          border: has ? "none" : `1px solid ${TOKENS.line}`,
           borderRadius: 1,
           aspectRatio: "1",
         }}
@@ -164,7 +176,7 @@ function Legend({ counts, empty }) {
       <li style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: SANS, fontSize: 13 }}>
         <span
           aria-hidden="true"
-          style={{ width: 10, height: 10, borderRadius: 2, border: `1px solid ${TOKENS.line}`, flex: "none" }}
+          style={{ width: 10, height: 10, borderRadius: 2, background: EMPTY_FILL, flex: "none" }}
         />
         not written down yet
         <b>{empty}</b>

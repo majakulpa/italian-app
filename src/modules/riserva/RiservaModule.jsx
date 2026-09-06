@@ -161,24 +161,67 @@ function Grid({ states, seeded }) {
   );
 }
 
+// A legend swatch has to clear two different bars, and the first version of
+// this only cleared one. In the grid, `unseen` and `empty` sit next to each
+// other, so what matters is the contrast *between* them — that is the 3:1 the
+// controlLine fix bought. Down here each swatch sits alone on the page, and
+// the bar is contrast against that ground: measured in the browser, `in corso`
+// came out at 2.24 and `not written down yet` at 1.16, which is a colour you
+// cannot see at all.
+//
+// So every swatch carries a hairline ring that clears 3:1 on its own. The fill
+// still carries the mapping back to the grid; the ring guarantees the shape is
+// perceivable whatever the fill does. The label beside it is what actually
+// names the state — colour is never the only channel here — so the ring only
+// has to make the swatch visible, not tell two of them apart.
+function Swatch({ fill }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 12,
+        height: 12,
+        borderRadius: 3,
+        background: fill,
+        border: `1px solid ${TOKENS.controlLine}`,
+        flex: "none",
+      }}
+    />
+  );
+}
+
+// `color` is explicit, and that is the whole point of it being here. Nothing
+// up this tree sets one — the screen frame paints a background and no text
+// colour — so a row without this inherits the browser default, which is black.
+// Black is 18.6:1 on the light ground and 1.27:1 on the dark one, so the
+// legend simply vanished in the dark theme while every arithmetic check
+// passed: the tokens were fine, there was just no token being used.
+//
+// jsdom cannot catch this. It computes no cascade for inherited colour, so the
+// axe pass sees nothing wrong and the suite stays green. It was found by
+// measuring the rendered page in a browser, which is the only place this class
+// of bug is visible at all.
+const LEGEND_ROW = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontFamily: SANS,
+  fontSize: 13,
+  color: TOKENS.ink,
+};
+
 function Legend({ counts, empty }) {
   return (
     <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
       {WORD_STATES.map((state) => (
-        <li key={state} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: SANS, fontSize: 13 }}>
-          <span
-            aria-hidden="true"
-            style={{ width: 10, height: 10, borderRadius: 2, background: STATE_PAINT[state].fill, flex: "none" }}
-          />
+        <li key={state} style={{ ...LEGEND_ROW }}>
+          <Swatch fill={STATE_PAINT[state].fill} />
           <span lang="it">{STATE_PAINT[state].label}</span>
           <b>{counts[state]}</b>
         </li>
       ))}
-      <li style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: SANS, fontSize: 13 }}>
-        <span
-          aria-hidden="true"
-          style={{ width: 10, height: 10, borderRadius: 2, background: EMPTY_FILL, flex: "none" }}
-        />
+      <li style={{ ...LEGEND_ROW }}>
+        <Swatch fill={EMPTY_FILL} />
         not written down yet
         <b>{empty}</b>
       </li>

@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub and Gli Articoli built |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub, Gli Articoli and Falsi Amici built |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -166,9 +166,17 @@ Four workbenches, per screen 07:
   the spot, which is the weakest feedback shape available and the exact
   pattern this bench replaces. Revisit when La Piazza learns to locate rather
   than solve; that is a change to La Piazza.
-- **Falsi Amici** — the traps collected as you hit them: `colazione` ≠ *kolacja*,
-  `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed Le Mappe
-  first, because Le Mappe is where most of them get generated.
+- **Falsi Amici** — ✅ built. The traps collected as you hit them: `colazione` ≠
+  *kolacja*, `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed
+  Le Mappe first, because Le Mappe is where most of them get generated — and
+  Le Mappe's `trap` verdict is now the write that records a catch, so walking
+  into one in either place is the same event. The collection draws from two
+  sources: the `traps[]` each map already declares, reused rather than copied,
+  and the pairs no suffix rule generates, which Latin handed to both languages
+  and the two took in different directions. Only a real Italian word with a
+  slid meaning is collected — Le Mappe's other three trap drills bait with
+  `citità`, `musico` and `psichiatrista`, which are the rule overreaching onto
+  non-words, a different lesson.
 
 The hub screen (design 07) is built ([#12](https://github.com/majakulpa/italian-app/pull/12)).
 `officina` routes to it, Le Mappe is reached from the map rather than only
@@ -178,9 +186,12 @@ the district used to route straight there, so it needed a door of its own.
 Still to do before the chunk closes:
 
 - **Word detail** (design 11), which is the other half of what makes the
-  lexicon visible.
+  lexicon visible. Blocked in practice behind La Riserva, which is its front
+  door.
 - **La Riserva**, still blocked on open question 1.
-- **Falsi Amici**, still short of anything that records which traps caught you.
+
+Both of those wait on the same decision, so open question 1 is now the only
+thing standing between L'Officina and finished.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,

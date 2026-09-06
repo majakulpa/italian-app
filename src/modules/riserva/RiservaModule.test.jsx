@@ -43,6 +43,7 @@ const open = () => render(<RiservaModule onExit={() => {}} exitLabel="L'Officina
 // toHaveAccessibleName, in the tests that are actually about the name.
 const square = (container, rank) => container.querySelector(`#riserva-posto-${rank}`);
 const squares = (container) => [...container.querySelectorAll("button")].filter((b) => b.textContent.startsWith("posto "));
+const back = () => document.querySelector("#riserva-back");
 
 beforeEach(() => {
   localStorage.clear();
@@ -69,7 +70,10 @@ describe("the reservoir", () => {
     let left = false;
     render(<RiservaModule onExit={() => (left = true)} exitLabel="L'Officina" />);
 
-    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    // The name is checked on this one element rather than resolved across 300
+    // squares to find it — see the id's comment in RiservaModule.jsx.
+    expect(back()).toHaveAccessibleName(/L'Officina/);
+    await user.click(back());
     expect(left).toBe(true);
   });
 
@@ -236,7 +240,7 @@ describe("opening a word", () => {
     await user.click(square(container, 252));
     expect(screen.getByRole("heading", { name: "la madre" })).toHaveAttribute("lang", "it");
 
-    await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+    await user.click(back());
     expect(screen.getByRole("heading", { name: "La Riserva" })).toBeInTheDocument();
   });
 
@@ -278,7 +282,7 @@ describe("where focus goes", () => {
     await user.click(square(container, 252));
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "la madre" }));
 
-    await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+    await user.click(back());
     expect(document.activeElement).toBe(square(container, 252));
   });
 
@@ -291,7 +295,7 @@ describe("where focus goes", () => {
 
     for (let visit = 0; visit < 2; visit += 1) {
       await user.click(square(container, 252));
-      await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+      await user.click(back());
       expect(document.activeElement, `visit ${visit}`).toBe(square(container, 252));
     }
   });

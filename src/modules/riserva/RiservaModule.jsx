@@ -165,9 +165,15 @@ function Pill({ children, lang, style }) {
   );
 }
 
+// The id is for the tests, and it is the same trick the squares use: a name
+// query resolves an accessible name for all 300 buttons before it can filter,
+// which is tens of seconds under coverage instrumentation. One id costs
+// nothing and lets a test address this control directly, then check its name
+// on that one element rather than on every button to find it.
 function BackLink({ label, onClick }) {
   return (
     <button
+      id="riserva-back"
       onClick={onClick}
       style={{
         border: "none",

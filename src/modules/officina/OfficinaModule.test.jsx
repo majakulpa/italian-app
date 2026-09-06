@@ -223,7 +223,10 @@ describe("opening a bench", () => {
     await user.click(card("riserva"));
     expect(screen.getByRole("heading", { name: "La Riserva" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    // By id, not by name: La Riserva puts 300 squares on the screen and a
+    // name query would resolve an accessible name for every one of them
+    // before it could filter. The other benches are small enough not to care.
+    await user.click(document.querySelector("#riserva-back"));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 

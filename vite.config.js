@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -29,6 +30,20 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
+    // Agent worktrees live at .claude/worktrees/<name>, and each one is a
+    // full checkout: its own src/, its own *.test.jsx, its own node_modules.
+    // Git ignores a registered worktree automatically, so `git status` stays
+    // clean and nothing warns you — but vitest's default discovery walked
+    // straight into them, collected every branch's copy of the suite, and ran
+    // them against this checkout's node_modules. The visible symptom was
+    // `npm test` reporting 178 files and 488 failures on a tree where the
+    // app's own 47 files were green, on main as much as on a branch.
+    //
+    // CLAUDE.md requires a green `npm test` before any change is called done,
+    // so a discovery bug that makes that command meaningless is worth a line
+    // of config. configDefaults.exclude is spread rather than replaced —
+    // writing a bare array here silently drops node_modules and dist.
+    exclude: [...configDefaults.exclude, "**/.claude/**"],
     setupFiles: ["./src/test/setup.js"],
     globals: true,
     // Vitest's 5s default is measured against a single render; several tests

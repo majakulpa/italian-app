@@ -14,7 +14,7 @@ import { judge, announce, LOCATED, ATTEMPTS } from "./feedback.js";
 // proficiency — so this is the one bench that never graduates.
 //
 // Built in the La Città design system, like Le Mappe and the hub. PLAN.md's
-// open question 4 is the seam between that and the four older module
+// open question 3 is the seam between that and the four older module
 // interiors, and its answer is that a screen migrates when it is built, never
 // in a blanket pass.
 //

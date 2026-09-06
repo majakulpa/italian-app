@@ -10,6 +10,7 @@ import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
+import RiservaModule from "./modules/riserva/RiservaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
 import { expectNoViolations } from "./test/a11y.js";
 import { LEVELS } from "./data/vocab.js";
@@ -19,6 +20,7 @@ import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
 import { STRANDS, ZERO } from "./data/articoli.js";
 import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
+import { FONDAMENTALE } from "./data/fondamentale.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
 
@@ -263,6 +265,60 @@ describe("L'Officina", () => {
       const card = screen.getByRole("button", { name: new RegExp(bench.name) });
       card.focus();
       expect(document.activeElement, bench.id).toBe(card);
+    }
+  });
+});
+
+describe("La Riserva", () => {
+  const riserva = () => render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
+  // "la stazione" is the one lexicon entry both trace sources reach, so its
+  // detail is the one with the most markup on it.
+  const square = (rank) => screen.getByRole("button", { name: new RegExp(`^posto ${rank}:`) });
+
+  // 300 real buttons on one screen, each named by visually-hidden content
+  // rather than an aria-label so the Italian headword can carry lang="it".
+  // That is a lot of accessible names to get wrong at once, which is exactly
+  // why the grid is scanned rather than trusted.
+  it("has an accessible grid, with squares in every word state", async () => {
+    const word = greetings.words.find((w) => w.it === "sì");
+    saveProgress({
+      words: { [wordKey(a1Vocab, greetings, word)]: "known" },
+      schedule: { [wordKey(a1Vocab, greetings, word)]: { box: 3, due: "2020-01-01" } },
+    });
+
+    const { container } = riserva();
+    await expectNoViolations(container);
+  });
+
+  // Two states of the detail, not one: a word with traces and a schedule
+  // entry under it, and a word with neither — which is most of the list, and
+  // a different bit of markup.
+  it("has an accessible word detail, with traces and without", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { container } = riserva();
+
+    await user.click(square(290));
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+    await user.click(square(1));
+    await expectNoViolations(container);
+  });
+
+  // The unwritten ranks inside a part-written fascia are decoration: there is
+  // no word behind them, so they are aria-hidden and must never be reachable.
+  // The written ones are the opposite — every one of them is a real control.
+  it("keeps every written square focusable and every placeholder out of reach", () => {
+    const { container } = riserva();
+
+    expect(screen.getAllByRole("button", { name: /^posto \d+:/ })).toHaveLength(FONDAMENTALE.length);
+    for (const rank of [1, 200, 300]) {
+      square(rank).focus();
+      expect(document.activeElement, String(rank)).toBe(square(rank));
+    }
+    for (const node of container.querySelectorAll('[aria-hidden="true"][style*="dashed"]')) {
+      expect(node.tagName).toBe("SPAN");
+      expect(node).not.toHaveAttribute("tabindex");
     }
   });
 });
@@ -538,6 +594,24 @@ describe("Italian text is marked as Italian", () => {
     // The English explanation beside it is not Polish, and must not claim to be.
     expect(screen.getByText(item.anchor.says).closest('[lang="pl"]')).toBeNull();
     expect(italianAncestor(screen.getByText(item.anchor.says))).toBeNull();
+  });
+
+  // Four languages meet on the word detail: an English page, an Italian
+  // headword, a Polish gloss and an Italian story title. Three of the four
+  // can be marked wrong, so all three are checked, and the English gloss is
+  // checked for not claiming to be any of them.
+  it("marks the headword, the Polish gloss and the story title in La Riserva", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
+    await user.click(screen.getByRole("button", { name: /^posto 290:/ }));
+
+    const entry = FONDAMENTALE.find((e) => e.rank === 290);
+    expect(screen.getByRole("heading", { name: entry.it })).toHaveAttribute("lang", "it");
+    expect(screen.getByText(entry.pl).closest("[lang]")).toHaveAttribute("lang", "pl");
+    // A story title is Italian; a vocabulary category name ("Travel") is not.
+    expect(italianAncestor(screen.getByText("Un giorno a Roma"))).not.toBeNull();
+    expect(italianAncestor(screen.getByText("Travel"))).toBeNull();
+    expect(italianAncestor(screen.getByText(entry.en))).toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

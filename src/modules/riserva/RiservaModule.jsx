@@ -16,7 +16,8 @@ import { wordTraces } from "./traces.js";
 // complete — the same shape as the hub itself, and as the review session.
 //
 // ── The quantity this screen shows, and the one it must not ─────────────
-// PLAN.md's open question 1 is settled and this screen is where the ruling
+// PLAN.md settles which quantity this screen shows, under "La Riserva shows
+// counts and per-band quantities", and this screen is where that ruling
 // lands. Every quantity here has *words* as its denominator: how many of the
 // 2,000 sit in each state, and per fascia, what those 200 are worth in
 // coverage points and how much of that the learner holds. The
@@ -321,7 +322,7 @@ function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel }) {
           De Mauro's {count(FONDAMENTALE_TARGET)} in frequency order, so the top-left corner is worth far more per square
           than the bottom-right. Tap a square for the word.
         </p>
-        {/* PLAN.md's open question 3, stated on the screen it is about. This
+        {/* PLAN.md's open question 2, stated on the screen it is about. This
             app does not hide its own ceilings — see the "ceiling, stated
             because it is low" note in shared/coverage.js. */}
         <p style={{ fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>

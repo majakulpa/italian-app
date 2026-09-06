@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub and Gli Articoli built |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub, Gli Articoli, La Riserva and the word detail built |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -52,13 +52,17 @@ layer](#polish-is-a-first-class-layer).
 
 - `src/data/fondamentale.js` — **300 of a target 2,000** entries, rank order, EN + PL glosses, articles on opaque nouns.
 - `src/shared/wordState.js` — `unseen → learning → known → solid`, derived from the Leitner box, never stored.
-- `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `lexiconStates()`, `rankWeight()`.
+- `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `lexiconStates()`, `lexiconEvidence()`,
+  `lexiconUnits()`, `lemmaKey()`, `heldWords()`, `rankWeight()`.
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
   `officina` routes to its own hub rather than straight to a module.
 - `src/modules/officina/` — the L'Officina hub (design 07) and its bench roster.
-  Three benches open something (the vocabulary deck, Le Mappe, Gli Articoli);
-  two state what they are waiting on and show no figure, because the design's
-  numbers for them are drawings rather than measurements.
+  Four benches open something (the vocabulary deck, Le Mappe, La Riserva, Gli
+  Articoli); Falsi Amici states what it is waiting on and shows no figure,
+  because the design's number for it is a drawing rather than a measurement.
+- `src/modules/riserva/` — La Riserva (design 10) and the word detail (design 11),
+  a route inside the hub rather than a MODULES entry. `traces.js` is "where you
+  met it", from the vocabulary deck and the story glosses.
 - `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
   roads, its notes, its false friends and 5–6 production drills.
 - `src/data/articoli.js` — **3 strands, 10 rules, 16 items**, each with three options,
@@ -66,8 +70,8 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
-  Le Mappe, the L'Officina hub and Gli Articoli are in the new one, per the rule
-  in open question 4.
+  Le Mappe, the L'Officina hub, Gli Articoli and La Riserva are in the new one,
+  per the rule in open question 3.
 
 ---
 
@@ -100,6 +104,21 @@ invented to make the map look busier is exactly the guesswork the sweep avoided.
 **`met` is not a word state.** It was designed, then removed: nothing in the app
 writes it. It comes back the day a glossing surface produces it.
 
+**La Riserva shows counts and per-band quantities, never one headline
+percentage.** The frequency-weighted coverage figure stays where it already is,
+on the city map and the dashboard, because there it is labelled as a share of
+running *text* and that is honestly what it is. Inside the Riserva every
+quantity has **words** as its denominator: how many of the 2,000 sit in each
+state, and per fascia, what those 200 are worth in coverage points and how much
+of that the learner holds. The failure this avoids is real — the top 100 words
+alone are worth about 55% of running Italian, so a beginner who has learned the
+function words would read "55%" as *I understand half of Italian*. A percentage
+out of 200 words cannot be misread that way. `coverage.js` already computes all
+three quantities and its `tally()` comment says which answers which question:
+`weightPct` is what a fascia is worth, `bandPct` is how much of it you have, and
+`pct` — the share of all running text — is the one that must not appear on that
+screen.
+
 **Generation is proven, and it is the mechanism.** Naturally-written Italian needs
 ~3,000 lemmas to clear 95% coverage; text written *against* the learner's lexicon
 clears it at 600. That gap is why the serial is possible at all.
@@ -108,25 +127,18 @@ clears it at 600. That gap is why the serial is possible at all.
 
 ## Open questions
 
-**1. Coverage is honest about text and misleading about ability.** Applied
-straight, the weighting puts a day-one learner near **50%**, because function
-words dominate. Arithmetically right, and a terrible thing to show a beginner —
-it also undercuts the "2,000 words buys 86%" story the design rests on. Likely
-resolution: the map shows a different quantity from the one the Riserva shows.
-*Needs a decision before L'Officina's Riserva screen.*
-
-**2. "Solid" means surviving 7 days, not 21.** `BOX_DAYS = [0,1,3,7,21]`, so
+**1. "Solid" means surviving 7 days, not 21.** `BOX_DAYS = [0,1,3,7,21]`, so
 reaching box 5 means surviving the 7-day gap; surviving 21 days means answering
 correctly *while in* box 5, which the scheduler can't distinguish. The wording is
 fixed. Whether 7 days is the right bar for "solid" is not — coverage and the
 Cinema gate both lean on it. A real 21-day bar needs a sixth box in `srs.js`.
 
-**3. The lexicon is 300 of 2,000.** Realistic coverage ceiling today is ~1.6%.
+**2. The lexicon is 300 of 2,000.** Realistic coverage ceiling today is ~1.6%.
 Hand-authoring 1,700 more accurate entries with Polish glosses is the real
 bottleneck in this whole plan, and it is a content problem, not an engineering
 one. Decide whether to grind through it or source De Mauro's list directly.
 
-**4. There is a visual seam.** The city uses the new design system; the four
+**3. There is a visual seam.** The city uses the new design system; the four
 module interiors still use the old postcard styling. It closes as each district
 is built out. Nobody should "fix" it with a blanket restyle — that would be a
 large, untestable diff for no behaviour change.
@@ -146,8 +158,21 @@ Four workbenches, per screen 07:
   with it, and the false friends the rule creates. The drill is production —
   the app's first typed exercise — and a wrong answer is located rather than
   solved.
-- **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
-  Still blocked on open question 1.
+- **La Riserva** — ✅ built, with the word detail behind it (designs 10 and 11).
+  The reservoir as ten *fasce* of 200, each square a word and each colour a
+  word state, with the word's rank, both glosses, its Leitner box, when it
+  comes back and where you met it one tap behind it. The quantity question is
+  settled above: counts and per-fascia figures, never a headline percentage.
+
+  Three things in the design are deliberately not built, each with the reason
+  beside it in `RiservaModule.jsx`. All 2,000 squares: eight of the ten fasce
+  are empty at 300 entries, and 1,700 placeholder nodes — 1,700 tab stops, if
+  they were focusable — say nothing a sentence doesn't say better, so an empty
+  fascia is a sentence and a part-written one draws inert hairlines. "Studia la
+  fascia 3": the deck is organised by level and category, and nothing can turn
+  a rank range into a session. The IPA and the part of speech: the data has
+  neither, and deriving them from the spelling would be a guess printed as a
+  fact.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
   the errors survive into advanced proficiency, so this never stops appearing.
   Sequenced determinativo → indeterminativo → preposizioni articolate, which
@@ -177,9 +202,13 @@ the district used to route straight there, so it needed a door of its own.
 
 Still to do before the chunk closes:
 
-- **Word detail** (design 11), which is the other half of what makes the
-  lexicon visible.
-- **La Riserva**, still blocked on open question 1.
+- **The Polish card on the word detail** (design 11's pink card, the one that
+  fires where Polish and Italian carve meaning differently — *chiedere* covers
+  both `pytać` and `prosić o`). It needs an optional per-entry note field on
+  `src/data/fondamentale.js` that does not exist yet, so it was scoped with La
+  Riserva and dropped: a card no entry can fill is the dead `met` state all
+  over again, a branch the app advertises and nothing can reach. It lands the
+  day the data does.
 - **Falsi Amici**, still short of anything that records which traps caught you.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong

@@ -68,7 +68,7 @@ describe("the reservoir", () => {
     expect(left).toBe(true);
   });
 
-  // PLAN.md open question 3, on the screen it is about. The app does not hide
+  // PLAN.md open question 2, on the screen it is about. The app does not hide
   // its own ceilings, and "300 of 2,000" is the biggest one it has.
   it("says how much of the 2,000 is written", () => {
     open();

@@ -63,6 +63,8 @@ src/
     mappe/feedback.js                  Judges a typed answer and says *where* it went wrong
     articoli/ArticoliModule.jsx        The article strands: the card that teaches one, and the three-way gap drill (done)
     articoli/feedback.js               Judges an article choice and names the dimension it went wrong on
+    riserva/RiservaModule.jsx          La Riserva: the 2,000-word grid and the word detail behind a square (done)
+    riserva/traces.js                  "Where you met it": the deck sentence and the story gloss, for one word
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -207,8 +209,11 @@ categories/dialogues/stories each, and four grammar topics.
   point — counted flat, memorising the back half of the list would claim half
   of Italian; weighted, it claims about a tenth, which is the truth. A word
   counts once it is `known` or `solid`, meaning Leitner box 3 or above.
-  `coverageBands` splits the reservoir into ten bands of 200 for the screen
-  that will draw it.
+  `coverageBands` splits the reservoir into ten bands of 200 for La Riserva to
+  draw, `lexiconEvidence` carries the storage key a rank's state came from so
+  the word detail can read the Leitner box behind it, and `heldWords` is the
+  one definition of "words you know" the bench badge and the Riserva header
+  both count with.
 
   The figure is capped low by the content that ships, which is worth knowing
   before reading anything into it: coverage learns that a word is known only
@@ -217,6 +222,42 @@ categories/dialogues/stories each, and four grammar topics.
   headline reads **1.6%** and **20 / 2000 solid** — that is the ceiling, and
   `coverage.test.js` pins it so it cannot drift or flatline unnoticed. Raising
   it means seeding more of the lexicon or widening what feeds the bridge.
+- **La Riserva** — the reservoir made visible, and L'Officina's fourth
+  workbench. Ten *fasce* of 200 in frequency order, each square a word and
+  each colour a word state, with `essere` in the top-left corner. Tapping a
+  square opens the word: its rank, both glosses, the Leitner box its state
+  came from, when it comes back, and where you met it.
+
+  The quantity it shows is a decision rather than a detail. Every figure on
+  this screen has **words** as its denominator — how many of the 2,000 sit in
+  each state, what a *fascia* of 200 is worth in coverage points, how much of
+  that *fascia* you hold. The frequency-weighted percentage stays on the map
+  and the dashboard, where it is labelled as a share of running text and is
+  honestly that: applied to a beginner it reads near 50%, because the function
+  words dominate, and "50%" next to a word grid says *I understand half of
+  Italian*. A percentage out of 200 words cannot be misread that way.
+
+  Three things design screens 10 and 11 draw are deliberately absent, each
+  with its reason beside it in `RiservaModule.jsx`. All 2,000 squares: eight
+  of the ten *fasce* are empty at 300 entries, and 1,700 placeholder nodes —
+  1,700 tab stops, if they were focusable — say nothing that one sentence
+  doesn't say better, so an empty *fascia* states what it will be worth and a
+  part-written one draws inert hairlines for the ranks not yet written. A
+  "study this *fascia*" button: the deck is organised by level and category
+  and nothing can turn a rank range into a session. The IPA and the part of
+  speech: `src/data/fondamentale.js` has neither, and deriving them from the
+  spelling would be a guess printed as a fact.
+
+  "Where you met it" is `riserva/traces.js`, and it shows only what the app
+  can prove: the vocabulary deck's example sentence for that lemma, and any
+  story that glossed it — marked with whether you have answered the card and
+  whether you have finished the story. Matching is by written form, because
+  there are no lemmas and no parts of speech in the data, so the noun `porta`
+  picks up the fairy tale's gloss of the verb *porta*. Rather than hide that,
+  every story trace carries the story's own gloss verbatim, so a mismatched
+  sense is visible instead of asserted. Most of the 300 have no trace at all
+  and say so in a sentence — the list runs ahead of the lessons, which is the
+  ceiling the Coverage section above describes.
 - **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
   (boxes 3–4) or `solid` (the top box, reached by answering right at the end of
   box 4's 7-day interval). All four are derived from the Leitner box in

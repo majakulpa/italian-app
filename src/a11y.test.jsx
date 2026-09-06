@@ -9,6 +9,7 @@ import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
+import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
 import { expectNoViolations } from "./test/a11y.js";
@@ -18,7 +19,8 @@ import { STORY_LEVELS } from "./data/stories.js";
 import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
 import { STRANDS, ZERO } from "./data/articoli.js";
-import { saveProgress, wordKey, drillKey } from "./shared/storage.js";
+import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
+import { saveProgress, wordKey, drillKey, trapCaughtKey } from "./shared/storage.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
 
@@ -45,6 +47,7 @@ const presentAre = a1Grammar.topics.find((t) => t.id === "present-are");
 const a1Story = STORY_LEVELS.find((l) => l.id === "A1").stories[0];
 const zione = MAPS.find((m) => m.id === "zione");
 const determinativo = STRANDS[0];
+const mapSet = TRAP_SETS.find((s) => s.id === "mappe");
 
 beforeEach(() => {
   localStorage.clear();
@@ -410,6 +413,67 @@ describe("Gli Articoli", () => {
   });
 });
 
+describe("Falsi Amici", () => {
+  const openDrill = async (user) =>
+    user.click(screen.getByRole("button", { name: new RegExp(`Practise these ${mapSet.traps.length}`) }));
+  const type = async (user, text) => {
+    await user.type(screen.getByLabelText(/Write it in Italian/), text);
+    await user.click(screen.getByRole("button", { name: /^(Check|Next|See how it went)/ }));
+  };
+
+  // Two states of the collection, not one. A fresh account is every card in
+  // its neutral shape; a seeded one has a caught card, which is a different
+  // surface with an extra badge in it — and the caught card is the state
+  // this bench exists to produce.
+  it("has an accessible collection on a fresh account", async () => {
+    const { container } = render(<FalsiAmiciModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible collection with traps already marked as caught", async () => {
+    saveProgress({ words: { [trapCaughtKey(FALSI_AMICI[0])]: "learning" } });
+    const { container } = render(<FalsiAmiciModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  // Three states of the drill, the same three Le Mappe has: an unanswered
+  // typed field, a wrong answer mid-item (the field goes aria-invalid and a
+  // located verdict appears under it) and a settled one (the field turns
+  // read-only). The middle one is the state this module exists for, and here
+  // it is the trap verdict specifically.
+  it("has an accessible drill, empty, mid-trap and settled", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<FalsiAmiciModule onExit={() => {}} />);
+    await openDrill(user);
+    await expectNoViolations(container);
+
+    await type(user, mapSet.traps[0].bait);
+    await expectNoViolations(container);
+
+    await type(user, mapSet.traps[0].bait);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible summary at the end of a run", async () => {
+    // `delay: null` for the same reason Le Mappe's summary scan uses it:
+    // this scan types whole words for a whole set, which at the default
+    // inter-keystroke delay is hundreds of async ticks — it fits in the 30s
+    // above uninstrumented and does not fit under coverage.
+    const user = userEvent.setup({ delay: null });
+    const { container } = render(<FalsiAmiciModule onExit={() => {}} />);
+    await openDrill(user);
+
+    for (const [i, trap] of mapSet.traps.entries()) {
+      // Walk into the first one on purpose, so the summary is scanned with
+      // its "these ones caught you" list rendered rather than empty.
+      await type(user, i === 0 ? trap.bait : trap.say.it);
+      if (i === 0) await type(user, trap.bait);
+      await user.click(screen.getByRole("button", { name: /^(Next|See how it went)/ }));
+    }
+    await expectNoViolations(container);
+  });
+});
+
 describe("the review session", () => {
   it("has an accessible mixed session and summary", async () => {
     const word = greetings.words[0];
@@ -538,6 +602,23 @@ describe("Italian text is marked as Italian", () => {
     // The English explanation beside it is not Polish, and must not claim to be.
     expect(screen.getByText(item.anchor.says).closest('[lang="pl"]')).toBeNull();
     expect(italianAncestor(screen.getByText(item.anchor.says))).toBeNull();
+  });
+
+  // The hardest case in the app for language marking: an Italian word, a
+  // Polish or English lookalike and English prose in one sentence, fourteen
+  // times over on one screen.
+  it("marks the Italian word, the Polish lookalike and neither of the English ones in Falsi Amici", () => {
+    render(<FalsiAmiciModule onExit={() => {}} />);
+
+    const divano = FALSI_AMICI.find((t) => t.id === "divano");
+    expect(italianAncestor(screen.getAllByText(divano.it)[0])).not.toBeNull();
+    expect(screen.getAllByText(divano.lookalike)[0].closest("[lang]")).toHaveAttribute("lang", "pl");
+
+    // An English lookalike takes the document's own language, and so does
+    // the prose explaining the pair.
+    const parenti = FALSI_AMICI.find((t) => t.id === "parenti");
+    expect(screen.getAllByText(parenti.lookalike)[0].closest("[lang]")).toBeNull();
+    expect(italianAncestor(screen.getByText(divano.note))).toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

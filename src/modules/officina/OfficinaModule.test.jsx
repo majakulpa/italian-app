@@ -5,7 +5,8 @@ import OfficinaModule from "./OfficinaModule.jsx";
 import { BENCHES } from "./benches.js";
 import { MAPS } from "../../data/mappe.js";
 import { LEVELS } from "../../data/vocab.js";
-import { saveProgress, mappeKey, wordKey } from "../../shared/storage.js";
+import { FALSI_AMICI } from "../../data/falsiAmici.js";
+import { saveProgress, mappeKey, wordKey, trapKey, trapCaughtKey } from "../../shared/storage.js";
 
 const zione = MAPS.find((m) => m.id === "zione");
 const bench = (id) => BENCHES.find((b) => b.id === id);
@@ -82,6 +83,26 @@ describe("the figures on the benches", () => {
   // 71% ↑" and Falsi Amici "12 presi". None of the three has a data source,
   // so none of them may show a count of any shape.
   //
+  // `12 presi` is the one figure in the mockup that was the right quantity —
+  // taken, not available — and this is the bench that finally measures it.
+  it("counts the traps that have caught the learner, out of all of them", () => {
+    saveProgress({ words: { [trapCaughtKey(FALSI_AMICI[0])]: "learning" } });
+    render(<OfficinaModule onExit={() => {}} />);
+
+    expect(card("falsi-amici")).toHaveAccessibleName(expect.stringContaining(`1 / ${FALSI_AMICI.length} caught`));
+  });
+
+  // The opposite fact about the same list. Drilling a false friend is
+  // progress and it belongs in moduleStats; a bench that counted it here
+  // would be reporting on the drilling when the thing worth knowing is which
+  // traps have had you.
+  it("does not count a drilled trap as one that caught the learner", () => {
+    saveProgress({ words: { [trapKey(FALSI_AMICI[0])]: "known" } });
+    render(<OfficinaModule onExit={() => {}} />);
+
+    expect(card("falsi-amici")).toHaveAccessibleName(expect.stringContaining(`0 / ${FALSI_AMICI.length} caught`));
+  });
+
   // Keyed on `module` rather than on `route`: "has nothing to count" is the
   // claim, and a bench that grew a route while still counting nothing would
   // walk straight past a check written against openness.
@@ -169,6 +190,20 @@ describe("opening a bench", () => {
 
     await user.click(card("articoli"));
     expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
+  });
+
+  // Falsi Amici's fourth front door, and the one that matters: this bench is
+  // the only route into it from the map, since the district opens the hub
+  // rather than a module.
+  it("opens Falsi Amici and comes back to the workshop", async () => {
+    const user = userEvent.setup();
+    render(<OfficinaModule onExit={() => {}} />);
+
+    await user.click(card("falsi-amici"));
+    expect(screen.getByRole("heading", { name: "Falsi Amici" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();

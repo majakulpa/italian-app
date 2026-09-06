@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MappeModule from "./MappeModule.jsx";
 import { MAPS } from "../../data/mappe.js";
-import { loadProgress, saveProgress, mappeKey } from "../../shared/storage.js";
+import { loadProgress, saveProgress, mappeKey, trapCaughtKey } from "../../shared/storage.js";
+import { trapByWord } from "../../data/falsiAmici.js";
 
 const zione = MAPS.find((m) => m.id === "zione");
 const drill = (id) => zione.drills.find((d) => d.id === id);
@@ -238,6 +239,65 @@ describe("what the drill records", () => {
     await answer(user, "nonsense");
 
     expect(loadProgress().words[mappeKey(zione, drill("rivoluzione"))]).toBe("learning");
+  });
+});
+
+// The join between this module and the Falsi Amici bench. Le Mappe has drawn
+// a card for a trap verdict since the day it shipped and written nothing
+// down; this is that write, and it is the reason the bench has a figure.
+describe("walking into a trap the collection knows about", () => {
+  const toTheTrapItem = async (user) => {
+    await openDrill(user);
+    for (const item of zione.drills.slice(0, -1)) {
+      await answer(user, item.it);
+      await user.click(check());
+    }
+  };
+
+  it("records the false friend as one that has caught you", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<MappeModule onExit={() => {}} />);
+    await toTheTrapItem(user);
+
+    const colazione = trapByWord("colazione");
+    expect(loadProgress().words[trapCaughtKey(colazione)]).toBeUndefined();
+
+    await answer(user, "colazione");
+    expect(loadProgress().words[trapCaughtKey(colazione)]).toBe("learning");
+  });
+
+  // A wrong answer that is not the map's own output is not a false friend
+  // walked into, and must leave the collection alone.
+  it("records nothing when the wrong answer is merely wrong", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<MappeModule onExit={() => {}} />);
+    await toTheTrapItem(user);
+
+    await answer(user, "zuppa");
+    const caught = Object.keys(loadProgress().words).filter((k) => k.startsWith("falsi-caught:"));
+    expect(caught).toEqual([]);
+  });
+
+  // Three of the four maps bait with `citità`, `musico` and `psichiatrista`
+  // — the rule overreaching onto something that is not a word, which is a
+  // different lesson from a real Italian word meaning the wrong thing. The
+  // bench is a list of false friends and must not collect those.
+  it("collects nothing for a trap whose bait is not a word in either language", async () => {
+    const ita = MAPS.find((m) => m.id === "ita");
+    const user = userEvent.setup({ delay: null });
+    render(<MappeModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /-ity/ }));
+    await user.click(screen.getByRole("button", { name: /Practise the rule/ }));
+    for (const item of ita.drills.slice(0, -1)) {
+      await answer(user, item.it);
+      await user.click(check());
+    }
+
+    await answer(user, "citità");
+    expect(visible(/is exactly what the rule gives you/)).toBeInTheDocument();
+
+    const caught = Object.keys(loadProgress().words).filter((k) => k.startsWith("falsi-caught:"));
+    expect(caught).toEqual([]);
   });
 });
 

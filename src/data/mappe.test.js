@@ -143,6 +143,15 @@ describe("traps", () => {
     expect(map.traps.length).toBeGreaterThan(0);
   });
 
+  // The id is what data/falsiAmici.js refers to a trap by, and what the
+  // storage key for "this one caught me" is built off. Two maps agreeing on
+  // one would silently merge two false friends into one record.
+  it("gives every trap across every map an id of its own", () => {
+    const ids = MAPS.flatMap((map) => map.traps.map((trap) => trap.id));
+    expect(ids.every((id) => id && id.trim() === id)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it.each(eachMap)("%s keeps each trap distinct from the word it looks like", (_id, map) => {
     for (const trap of map.traps) {
       expect(trap.it).not.toBe(trap.lookalike);

@@ -53,6 +53,7 @@ src/
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
     mappe.js                     Le Mappe: suffix correspondences, their two roads, their notes, their false friends and their drills
     articoli.js                  Gli Articoli: the three strands, the rules behind them, and every item's Polish anchor
+    falsiAmici.js                Falsi Amici: the pairs no suffix rule generates, and the map traps it reuses rather than copies
   modules/
     vocab/VocabModule.jsx              Flashcards + quiz UI (done)
     grammar/GrammarModule.jsx          Lesson (explanation) + drill UI (done)
@@ -63,6 +64,8 @@ src/
     mappe/feedback.js                  Judges a typed answer and says *where* it went wrong
     articoli/ArticoliModule.jsx        The article strands: the card that teaches one, and the three-way gap drill (done)
     articoli/feedback.js               Judges an article choice and names the dimension it went wrong on
+    falsiAmici/FalsiAmiciModule.jsx    The collection, and the drill that produces the Italian the lookalike is not (done)
+    falsiAmici/feedback.js             Judges a typed answer and tells a near-miss from walking into the trap
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -182,7 +185,7 @@ categories/dialogues/stories each, and four grammar topics.
   layer". It is per item rather than per rule because the useful thing is
   never "Polish has no articles" in the abstract — it is that `imienia
   dziewczyny` is a genitive doing the whole job of `della`, that `klucz` is
-  masculine where `la chiave` is not, and that `Jestem lekarzem` is the one
+  masculine where `la chiave` is not, and that `Jestem lekarką` is the one
   case in the set where Polish beats English outright and the instinct to
   leave the gap empty is the right one.
 
@@ -198,6 +201,33 @@ categories/dialogues/stories each, and four grammar topics.
   spot, which is the weakest feedback shape available and the exact thing this
   bench replaces. The reasoning is beside its `scheduled: false` flag in
   `src/shared/stats.js`.
+
+- **Falsi Amici** — L'Officina's fourth workbench, and the one that fills up
+  rather than being finished. A false friend is a real Italian word whose
+  lookalike in Polish or English means something else, and the collection has
+  two sources: the traps each map in `src/data/mappe.js` already declares —
+  reused, never copied, so `colazione` cannot drift into meaning two things in
+  two files — and the pairs no suffix rule can generate, where Latin handed the
+  same word to both languages and the two took it in different directions.
+  `firma` is a signature and a Polish *firma* is a company; `droga` is a drug
+  and a Polish *droga* is a road; `divano` is a sofa and a Polish *dywan* is a
+  carpet.
+
+  What was missing until now was not the words but the **memory**: Le Mappe has
+  always drawn its traps on the card and always produced a distinct `trap`
+  verdict when you typed one, and then forgotten it. That verdict is now a
+  write, so walking into `colazione` in a mapping drill and typing it on this
+  bench are the same event through the same key. Only a real word with a slid
+  meaning is collected — Le Mappe's other three trap drills bait with `citità`,
+  `musico` and `psichiatrista`, which are the rule overreaching onto things
+  that are not words, and that is a different lesson.
+
+  Storage keeps two facts per trap and not one, in separate namespaces: the
+  drill's own grade, like every other module's, and whether it has ever caught
+  you. The bench counts the second — the design's card reads `12 presi`,
+  *taken*, not solved — and the caught mark is never cleared, because getting
+  the word right afterwards is progress but it does not un-happen the catch,
+  and a collection that quietly empties itself is not one.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency

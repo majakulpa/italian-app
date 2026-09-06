@@ -138,6 +138,48 @@ export function strandKnownCount(progress, strand) {
   return strand.items.filter((i) => progress.words[articoliKey(strand, i)] === "known").length;
 }
 
+// Falsi Amici keeps two different facts about one trap, and `words` maps a
+// key to one string, so it gets two namespaces rather than one.
+//
+//   falsi:<id>         the drill's own grade, exactly like every other
+//                      module's: right first time is "known", anything that
+//                      needed the second attempt is "learning". This is the
+//                      one stats.js enumerates, because "you can produce the
+//                      right word for this pair" is what finishing a trap
+//                      means.
+//   falsi-caught:<id>  you walked into it. Written the moment the false
+//                      friend is typed — in this bench's drill *and* in Le
+//                      Mappe, whose trap verdict is the same event — and
+//                      never written by anything else.
+//
+// Two facts and not one, because they answer different questions and the
+// bench asks the second: the design's card reads `12 presi`, taken, not
+// solved. The caught mark is deliberately never cleared. Getting the word
+// right afterwards is progress and it shows up in the first key; it does not
+// un-happen the catch, because the collection is a record of what has caught
+// you and a record that quietly empties itself is not one.
+//
+// It is also deliberately one bit rather than a tally. A second hit writes
+// the same value over the same key and nothing changes: the bench's question
+// is which traps have caught you, which is set membership, and a count of
+// hits would mean widening `words` from a string map — a migration of every
+// existing save — to store a number no screen shows.
+export function trapKey(trap) {
+  return `falsi:${trap.id}`;
+}
+
+export function trapCaughtKey(trap) {
+  return `falsi-caught:${trap.id}`;
+}
+
+export function isTrapCaught(progress, trap) {
+  return progress.words[trapCaughtKey(trap)] === "learning";
+}
+
+export function trapsCaughtCount(progress, traps) {
+  return traps.filter((trap) => isTrapCaught(progress, trap)).length;
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

@@ -125,10 +125,16 @@ describe("a bench that is not open yet", () => {
     }
   });
 
-  it("names the decision La Riserva is blocked on, not just that it is blocked", () => {
+  // The quantity question is settled (PLAN.md), so this card must no longer
+  // claim to be waiting on a decision — an unbuilt screen and a blocked one
+  // are different things, and saying the wrong one misdescribes the plan to
+  // the only person reading it.
+  it("says La Riserva is unbuilt, not that it is waiting on a decision", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
-    expect(card("riserva")).toHaveAccessibleName(/which quantity it shows/);
+    const name = card("riserva").accessibleName ?? card("riserva").textContent;
+    expect(name).toMatch(/no longer waiting on a decision/);
+    expect(name).not.toMatch(/which quantity it shows|Waiting on one decision/);
   });
 
   // Same rule as a shut district on the map: aria-disabled, never `disabled`,

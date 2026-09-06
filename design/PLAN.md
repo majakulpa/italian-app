@@ -89,6 +89,45 @@ threshold in the design that came out of an experiment rather than judgement: at
 90.1% — roughly one unknown word in ten, which is decoding, not reading. At 600
 it is 97.2%. See [`../research/gen-experiment/`](../research/gen-experiment/).
 
+**Coverage is never shown as a percentage of ability, and La Riserva shows no
+percentage at all.** This was open question 1, and the arithmetic was never the
+problem — it is right and it stays exactly as it is. The problem is that a share
+of running text reads like a share of the language, and the two diverge most
+violently at the beginning. The real curve, computed from `rankWeight()`:
+
+| words known | coverage | unknown words per 100 |
+|---|---|---|
+| 10 | 30.8% | 69 |
+| 100 | 54.5% | 45 |
+| 600 | 73.3% | 27 |
+| 2,000 | 86.0% | 14 |
+
+A learner with 100 words has "54.5% coverage" and cannot read a menu. Both
+halves of that sentence are true, and only the second one is about her. Note
+also that the full 2,000 still leaves 14 unknown words in every 100 — well under
+the 95–98% a text needs before it can be read rather than decoded. Coverage
+flatters at every point on the curve, and worst at the start.
+
+So, three rules:
+
+- **La Riserva shows counts and worth, never a percentage.** The grid, `N / 2,000`
+  by state, and what each *fascia* is worth in coverage points — which is what
+  the design already draws ("queste 200 da sole valgono 4,3 punti"). Its headline
+  figure is `834`, a count, not a percent. A progress bar over the whole 2,000
+  would be the exact lie this decision exists to prevent.
+- **The map keeps the percentage**, because share-of-running-text is a real and
+  useful quantity, but it is always labelled as that, always paired with the word
+  count, and never called complete, done, or progress.
+- **Where a single honest number is wanted, it is the inverse**: unknown words
+  per 100. It is the same fact, it tracks reading difficulty rather than flattering
+  it, and it degrades in the right direction — 45 at a hundred words, 14 at two
+  thousand.
+
+This is also the number that makes the serial's case rather than undercutting it.
+Naturally-written Italian leaves 14 words per 100 unknown even at the full 2,000;
+text written *against* the learner's lexicon leaves under 3 at 600, which is the
+whole reason Il Cinema is possible. The gap between those two is the product.
+
 **Locks must state their condition.** Never a bare padlock. A locked district
 carries a live counter and a sentence saying what opens it, and stays focusable
 rather than dropping out of the tab order.
@@ -108,25 +147,18 @@ clears it at 600. That gap is why the serial is possible at all.
 
 ## Open questions
 
-**1. Coverage is honest about text and misleading about ability.** Applied
-straight, the weighting puts a day-one learner near **50%**, because function
-words dominate. Arithmetically right, and a terrible thing to show a beginner —
-it also undercuts the "2,000 words buys 86%" story the design rests on. Likely
-resolution: the map shows a different quantity from the one the Riserva shows.
-*Needs a decision before L'Officina's Riserva screen.*
-
-**2. "Solid" means surviving 7 days, not 21.** `BOX_DAYS = [0,1,3,7,21]`, so
+**1. "Solid" means surviving 7 days, not 21.** `BOX_DAYS = [0,1,3,7,21]`, so
 reaching box 5 means surviving the 7-day gap; surviving 21 days means answering
 correctly *while in* box 5, which the scheduler can't distinguish. The wording is
 fixed. Whether 7 days is the right bar for "solid" is not — coverage and the
 Cinema gate both lean on it. A real 21-day bar needs a sixth box in `srs.js`.
 
-**3. The lexicon is 300 of 2,000.** Realistic coverage ceiling today is ~1.6%.
+**2. The lexicon is 300 of 2,000.** Realistic coverage ceiling today is ~1.6%.
 Hand-authoring 1,700 more accurate entries with Polish glosses is the real
 bottleneck in this whole plan, and it is a content problem, not an engineering
 one. Decide whether to grind through it or source De Mauro's list directly.
 
-**4. There is a visual seam.** The city uses the new design system; the four
+**3. There is a visual seam.** The city uses the new design system; the four
 module interiors still use the old postcard styling. It closes as each district
 is built out. Nobody should "fix" it with a blanket restyle — that would be a
 large, untestable diff for no behaviour change.
@@ -147,7 +179,7 @@ Four workbenches, per screen 07:
   the app's first typed exercise — and a wrong answer is located rather than
   solved.
 - **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
-  Still blocked on open question 1.
+  Unblocked: it shows counts and per-band worth, no percentage.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
   the errors survive into advanced proficiency, so this never stops appearing.
   Sequenced determinativo → indeterminativo → preposizioni articolate, which
@@ -188,10 +220,10 @@ Still to do before the chunk closes:
 - **Word detail** (design 11), which is the other half of what makes the
   lexicon visible. Blocked in practice behind La Riserva, which is its front
   door.
-- **La Riserva**, still blocked on open question 1.
+- **La Riserva**, now unblocked — counts and per-band worth, no percentage.
 
-Both of those wait on the same decision, so open question 1 is now the only
-thing standing between L'Officina and finished.
+Neither is blocked any more: the quantity question above is settled, so what
+remains is build work rather than a decision.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,

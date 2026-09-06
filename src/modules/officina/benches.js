@@ -8,8 +8,11 @@
 // ── Why the mockup's numbers are not in this file ───────────────────────
 // The design's cards read `834 / 2000`, `4 / 8`, `giorno 148`, `71% ↑` and
 // `12 presi`. Every one of those is a drawing, not a measurement: nothing
-// records which traps you have walked into, and the Riserva's own quantity is
-// still an open question (PLAN.md, open question 1). Gli Articoli now has
+// records which traps you have walked into. The Riserva's own quantity is now
+// settled (PLAN.md, "Coverage is never shown as a percentage of ability"):
+// counts and per-band worth, never a percentage — so `834 / 2000` is the one
+// mockup figure here that was right all along, and it becomes real the day the
+// grid is built. Gli Articoli now has
 // data behind it and so has a figure — but not that figure: `giorno 148` is a
 // day counter, which is a streak wearing a different label, and PLAN.md
 // deleted the streak permanently. What its badge counts is sentences answered
@@ -128,7 +131,7 @@ export const BENCHES = [
     count: null,
     blurb: `The ${FONDAMENTALE_TARGET.toLocaleString("en-GB")} words of De Mauro in frequency order, each one coloured by how well you know it.`,
     waiting:
-      "Waiting on one decision: which quantity it shows. Frequency-weighted coverage puts a day-one learner near 50%, because function words dominate — arithmetically right, and a useless thing to hand a beginner. Nothing goes on this bench until that is settled.",
+      "Not built yet, but no longer waiting on a decision: it shows how many of the 2,000 you hold and what each band of 200 is worth, never a percentage — a share of running text reads like a share of the language, and at a hundred words those are 54% and unreadable respectively. The grid is build work now.",
   },
   {
     id: "articoli",

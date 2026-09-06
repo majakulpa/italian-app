@@ -33,7 +33,10 @@
 //               the honest exceptions. Written out rather than left implicit:
 //               "-zione is feminine" is worth more than another six pairs.
 //   traps[]     a real Italian word this map produces, whose lookalike in
-//               Polish or English means something else.
+//               Polish or English means something else. `id` is what
+//               data/falsiAmici.js refers to one by: the Falsi Amici bench
+//               collects these rather than restating them, and a storage key
+//               built off the spelling would move the day a gloss is fixed.
 //   drills[]    production items. `extras` are sub-patterns the drill answer
 //               needs that the map itself never taught — Latin's ct → tt, a
 //               doubled consonant — so a correct answer can name them back.
@@ -87,6 +90,7 @@ export const MAPS = [
     ],
     traps: [
       {
+        id: "colazione",
         it: "colazione",
         means: "breakfast",
         lookalike: "kolacja",
@@ -169,6 +173,7 @@ export const MAPS = [
     ],
     traps: [
       {
+        id: "attualita",
         it: "l'attualità",
         means: "current affairs — what is going on right now",
         lookalike: "actuality",
@@ -249,6 +254,7 @@ export const MAPS = [
     ],
     traps: [
       {
+        id: "patetico",
         it: "patetico",
         means: "pitiful, or moving to the point of tears",
         lookalike: "patetyczny",
@@ -257,6 +263,7 @@ export const MAPS = [
         note: "The map is right about the shape and wrong about the sense. For a Polish patetyczny speech, Italian says solenne or ampolloso.",
       },
       {
+        id: "simpatico",
         it: "simpatico",
         means: "likeable, good company",
         lookalike: "sympathetic",
@@ -350,6 +357,7 @@ export const MAPS = [
     ],
     traps: [
       {
+        id: "autista",
         it: "autista",
         means: "a driver — the person at the wheel",
         lookalike: "autysta",

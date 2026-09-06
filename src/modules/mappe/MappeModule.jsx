@@ -2,7 +2,8 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Signpost, TriangleAlert } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { MAPS, LANG_LABELS } from "../../data/mappe.js";
-import { loadProgress, saveProgress, markWord, mappeKey, mapKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, markWord, mappeKey, mapKnownCount, trapCaughtKey } from "../../shared/storage.js";
+import { trapByWord } from "../../data/falsiAmici.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
 import { judge, announce, drillSuffix, ATTEMPTS } from "./feedback.js";
@@ -433,6 +434,24 @@ function Drill({ map, onBack, onDone, onGrade }) {
 
     const next = judge(map, drill, input, attempt);
     setVerdict(next);
+
+    // A trap verdict means the learner wrote the map's own output on an item
+    // where the map is wrong, and until now that was drawn on a card and
+    // forgotten. Where the word is one of the false friends the app collects,
+    // it is written down: the same event, through the same key, as typing it
+    // on the Falsi Amici bench itself.
+    //
+    // `trapByWord` returns null far more often than not, and that is the
+    // honest answer rather than a gap. Three of this module's four trap
+    // drills bait with `citità`, `musico` and `psichiatrista` — the rule
+    // overreaching onto something that is not a word, which is a different
+    // lesson from a real Italian word meaning the wrong thing. Only
+    // `colazione` is both, and only `colazione` is collected.
+    if (next.kind === "trap") {
+      const caught = trapByWord(drill.trap.instead);
+      if (caught) onGrade(trapCaughtKey(caught), "learning");
+    }
+
     if (next.correct || next.last) {
       // Right first time is "known"; anything that needed a second look, or
       // ran out of looks, is "learning" — the same bar the grammar drill

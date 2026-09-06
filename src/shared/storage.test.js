@@ -15,6 +15,10 @@ import {
   saveThemeMode,
   mappeKey,
   mapKnownCount,
+  trapKey,
+  trapCaughtKey,
+  isTrapCaught,
+  trapsCaughtCount,
   PROGRESS_VERSION,
 } from "./storage.js";
 
@@ -268,6 +272,61 @@ describe("mappeKey / mapKnownCount", () => {
     saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
     expect(mapKnownCount(loadProgress(), map)).toBe(0);
     // and the older progress survives the load untouched
+    expect(loadProgress().words["A1:greetings:ciao"]).toBe("known");
+  });
+});
+
+// Falsi Amici is the one module that keeps two facts about the same unit, so
+// these are the tests that hold the two apart. Getting a trap right must not
+// make the record of it having caught you disappear, and being caught by one
+// must not read as progress.
+describe("trapKey / trapCaughtKey", () => {
+  const trap = { id: "divano" };
+
+  it("namespaces the two facts about one trap under two different keys", () => {
+    expect(trapKey(trap)).toBe("falsi:divano");
+    expect(trapCaughtKey(trap)).toBe("falsi-caught:divano");
+    expect(trapKey(trap)).not.toBe(trapCaughtKey(trap));
+  });
+
+  it("counts a trap as caught only once the caught key says so", () => {
+    expect(isTrapCaught({ words: {} }, trap)).toBe(false);
+    expect(isTrapCaught({ words: { [trapCaughtKey(trap)]: "learning" } }, trap)).toBe(true);
+  });
+
+  // The bench asks which traps have had you, not how the drilling is going.
+  // A drill grade under `falsi:` must never be read as a catch, or the
+  // collection would mark every trap the learner has merely practised.
+  it("does not read a drill grade as a catch", () => {
+    expect(isTrapCaught({ words: { [trapKey(trap)]: "known" } }, trap)).toBe(false);
+    expect(isTrapCaught({ words: { [trapKey(trap)]: "learning" } }, trap)).toBe(false);
+  });
+
+  // The design's card reads `12 presi` — taken. Producing the right word
+  // afterwards is progress and lives in the other key; it does not un-happen
+  // the catch, and a record that quietly empties itself is not a record.
+  it("keeps a trap caught once it is caught, whatever the drill grade beside it", () => {
+    const progress = {
+      words: { [trapCaughtKey(trap)]: "learning", [trapKey(trap)]: "known" },
+    };
+    expect(isTrapCaught(progress, trap)).toBe(true);
+  });
+
+  it("counts the caught ones out of a collection", () => {
+    const traps = [{ id: "divano" }, { id: "droga" }, { id: "panna" }];
+    const progress = {
+      words: {
+        [trapCaughtKey(traps[0])]: "learning",
+        [trapCaughtKey(traps[2])]: "learning",
+        [trapKey(traps[1])]: "known",
+      },
+    };
+    expect(trapsCaughtCount(progress, traps)).toBe(2);
+  });
+
+  it("reads a save written before the bench existed as nothing caught", () => {
+    saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
+    expect(trapsCaughtCount(loadProgress(), [trap])).toBe(0);
     expect(loadProgress().words["A1:greetings:ciao"]).toBe("known");
   });
 });

@@ -121,7 +121,7 @@ describe("the district roster", () => {
   it("gives every module a front door on the map, whether or not it owns a district", () => {
     const fromMap = [
       ...DISTRICTS.filter((d) => d.module && d.route === d.module).map((d) => d.module),
-      ...BENCHES.filter((b) => b.route).map((b) => b.route),
+      ...BENCHES.filter((b) => b.route && b.module).map((b) => b.route),
     ];
 
     expect([...new Set(fromMap)].sort()).toEqual(MODULE_STATS.map((m) => m.id).sort());
@@ -132,7 +132,7 @@ describe("the district roster", () => {
   // a card that does nothing when pressed.
   it("opens a real module from every bench that says it opens one", () => {
     const ids = MODULES.map((m) => m.id);
-    for (const bench of BENCHES.filter((b) => b.route)) {
+    for (const bench of BENCHES.filter((b) => b.module)) {
       expect(ids, bench.id).toContain(bench.route);
       expect(bench.module, bench.id).toBe(bench.route);
     }
@@ -140,12 +140,35 @@ describe("the district roster", () => {
 
   // `module` without `route` is not a legal bench shape, and the reason is
   // the one above: a bench that counts a module's progress but cannot open it
-  // is a card that reports on a door nobody can walk through. Stated outright
-  // rather than left implied, because the version of this file that only
-  // implied it read a `module` as a front door and was wrong.
-  it("never lets a bench claim a module it cannot open, or open one it doesn't claim", () => {
-    for (const bench of BENCHES) {
-      expect(Boolean(bench.module), bench.id).toBe(Boolean(bench.route));
+  // is a card that reports on a door nobody can walk through.
+  //
+  // The converse used to hold too — a route implied a module — and La Riserva
+  // is the first bench for which it does not. It opens a screen that reads the
+  // progress other benches wrote and keeps none of its own, the way
+  // ReviewModule is a route rather than a MODULES entry. The rule is therefore
+  // that a routed bench either names a module it opens, or says outright that
+  // it is a view; what stays illegal is claiming a module without a door, and
+  // opening something while silently claiming to be a module.
+  it("never lets a bench claim a module it cannot open", () => {
+    for (const bench of BENCHES.filter((b) => b.module)) {
+      expect(bench.route, bench.id).toBe(bench.module);
+    }
+  });
+
+  it("makes every routed bench either a module or an admitted view", () => {
+    for (const bench of BENCHES.filter((b) => b.route)) {
+      expect(Boolean(bench.module) !== Boolean(bench.view), bench.id).toBe(true);
+    }
+  });
+
+  // A view counts nothing of its own, so it must not carry a MODULE_STATS id
+  // by the back door — that is what would let it drift back into claiming
+  // progress it does not write.
+  it("keeps a view out of the module registry", () => {
+    const ids = MODULE_STATS.map((m) => m.id);
+    for (const bench of BENCHES.filter((b) => b.view)) {
+      expect(ids, bench.id).not.toContain(bench.route);
+      expect(bench.module, bench.id).toBeNull();
     }
   });
 

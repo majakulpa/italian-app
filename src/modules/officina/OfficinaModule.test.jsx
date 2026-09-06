@@ -6,6 +6,7 @@ import { BENCHES } from "./benches.js";
 import { MAPS } from "../../data/mappe.js";
 import { LEVELS } from "../../data/vocab.js";
 import { FALSI_AMICI } from "../../data/falsiAmici.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { saveProgress, mappeKey, wordKey, trapKey, trapCaughtKey } from "../../shared/storage.js";
 
 const zione = MAPS.find((m) => m.id === "zione");
@@ -103,13 +104,32 @@ describe("the figures on the benches", () => {
     expect(card("falsi-amici")).toHaveAccessibleName(expect.stringContaining(`0 / ${FALSI_AMICI.length} caught`));
   });
 
-  // Keyed on `module` rather than on `route`: "has nothing to count" is the
-  // claim, and a bench that grew a route while still counting nothing would
-  // walk straight past a check written against openness.
+  // La Riserva keeps no progress of its own — it reads what the vocabulary
+  // deck wrote, through the same lexiconStates() the screen itself uses, so
+  // the bench and the grid cannot disagree.
+  it("counts La Riserva through the lexicon, not through a module of its own", () => {
+    const level = LEVELS.find((l) => l.id === "A1");
+    const lemmas = new Set(FONDAMENTALE.map((e) => e.it));
+    const category = level.categories.find((c) => c.words.some((w) => lemmas.has(w.it)));
+    const word = category.words.find((w) => lemmas.has(w.it));
+
+    saveProgress({ words: { [wordKey(level, category, word)]: "known" } });
+    render(<OfficinaModule onExit={() => {}} />);
+
+    expect(card("riserva")).toHaveAccessibleName(
+      expect.stringContaining(`1 / ${FONDAMENTALE_TARGET} words`),
+    );
+    expect(bench("riserva").module).toBeNull();
+  });
+
+  // Keyed on `count` rather than on `module` or `route`: "has nothing to
+  // count" is the claim being made, and La Riserva is the bench that proved
+  // the other two are different questions — it is a view with no module of
+  // its own and a real, storage-derived figure.
   it("puts no counter at all on a bench with nothing behind it", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
-    for (const b of BENCHES.filter((x) => !x.module)) {
+    for (const b of BENCHES.filter((x) => !x.count)) {
       expect(card(b.id).textContent, b.id).not.toMatch(/\d+\s*\/\s*\d+/);
       expect(card(b.id).textContent, b.id).not.toMatch(/834|giorno 148|71%|12 presi/);
     }
@@ -117,24 +137,21 @@ describe("the figures on the benches", () => {
 });
 
 describe("a bench that is not open yet", () => {
+  // La Riserva was the last shut bench, so these rules currently have no
+  // subject. They are kept, and pinned to that fact: the loops below would
+  // pass vacuously on their own, so each states outright how many benches it
+  // expects to be examining. The day a fifth bench arrives shut, they fail
+  // until it carries the copy and the semantics a shut bench owes.
+  it("has no shut bench left on this hub", () => {
+    expect(BENCHES.filter((b) => !b.route).map((b) => b.id)).toEqual([]);
+  });
+
   it("says what it is waiting on rather than showing a bare padlock", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
     for (const b of BENCHES.filter((x) => !x.route)) {
       expect(card(b.id), b.id).toHaveAccessibleName(expect.stringContaining(b.waiting));
     }
-  });
-
-  // The quantity question is settled (PLAN.md), so this card must no longer
-  // claim to be waiting on a decision — an unbuilt screen and a blocked one
-  // are different things, and saying the wrong one misdescribes the plan to
-  // the only person reading it.
-  it("says La Riserva is unbuilt, not that it is waiting on a decision", () => {
-    render(<OfficinaModule onExit={() => {}} />);
-
-    const name = card("riserva").accessibleName ?? card("riserva").textContent;
-    expect(name).toMatch(/no longer waiting on a decision/);
-    expect(name).not.toMatch(/which quantity it shows|Waiting on one decision/);
   });
 
   // Same rule as a shut district on the map: aria-disabled, never `disabled`,
@@ -153,13 +170,6 @@ describe("a bench that is not open yet", () => {
     }
   });
 
-  it("does nothing when pressed", async () => {
-    const user = userEvent.setup();
-    render(<OfficinaModule onExit={() => {}} />);
-
-    await user.click(card("riserva"));
-    expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
-  });
 });
 
 describe("opening a bench", () => {
@@ -210,6 +220,19 @@ describe("opening a bench", () => {
 
     await user.click(card("falsi-amici"));
     expect(screen.getByRole("heading", { name: "Falsi Amici" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
+  });
+
+  // La Riserva is a view rather than a module, so the hub bench is its only
+  // front door — there is no NavMenu entry behind it as a second way in.
+  it("opens La Riserva and comes back to the workshop", async () => {
+    const user = userEvent.setup();
+    render(<OfficinaModule onExit={() => {}} />);
+
+    await user.click(card("riserva"));
+    expect(screen.getByRole("heading", { name: "La Riserva" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();

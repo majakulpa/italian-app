@@ -1,11 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { coverage, coverageBands, lexiconStates, rankWeight, LEXICON_COVERAGE, BAND_SIZE } from "./coverage.js";
+import {
+  coverage,
+  coverageBands,
+  lexiconStates,
+  lexiconEvidence,
+  lexiconUnits,
+  lemmaKey,
+  rankWeight,
+  LEXICON_COVERAGE,
+  BAND_SIZE,
+} from "./coverage.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../data/fondamentale.js";
 import { LEVELS } from "../data/vocab.js";
 import { wordKey, markWord } from "./storage.js";
 import { reviewItem } from "./srs.js";
 import { MAX_BOX } from "./srs.js";
 import { MODULE_STATS } from "./stats.js";
+import { wordState } from "./wordState.js";
 
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
@@ -139,6 +150,84 @@ describe("lexiconStates", () => {
   it("ignores vocab words the lexicon doesn't hold", () => {
     const states = lexiconStates(study(EMPTY, keyFor("buongiorno"), MAX_BOX));
     expect(states.size).toBe(0);
+  });
+});
+
+// The half of the bridge La Riserva's word detail needs and the coverage
+// arithmetic doesn't: which *key* a rank's state came from. Without it the
+// detail screen would have to normalise lemmas a second time to find its way
+// back to the schedule entry, which is two implementations of "the same
+// word" waiting to disagree.
+describe("lexiconEvidence", () => {
+  it("carries the storage key the state was derived from, not just the state", () => {
+    const key = keyFor("madre");
+    const found = lexiconEvidence(study(EMPTY, key, MAX_BOX)).get(rankOf("la madre"));
+
+    expect(found.state).toBe("solid");
+    expect(found.key).toBe(key);
+    expect(found.unit.item.it).toBe("madre");
+    expect(found.unit.level.id).toBe("A1");
+  });
+
+  // The contract that lets this be layered on lexiconStates rather than
+  // computed beside it: same ranks, same states, every time. Two
+  // implementations of the fold would drift here first.
+  it("agrees with lexiconStates on every rank", () => {
+    const progress = study(study(EMPTY, keyFor("madre"), MAX_BOX), keyFor("treno"), 2);
+    const states = lexiconStates(progress);
+    const evidence = lexiconEvidence(progress);
+
+    expect(states.size).toBe(evidence.size);
+    for (const [rank, found] of evidence) expect(states.get(rank), String(rank)).toBe(found.state);
+  });
+
+  // The invariant the word detail leans on: the key it is handed is a key
+  // that really is in that state, so the Leitner box it reads back can't
+  // contradict the state printed above it. Checked across a blob with words
+  // in three different states rather than on one lucky rank.
+  it("hands back a key that is itself in the state it reports", () => {
+    const progress = study(study(study(EMPTY, keyFor("madre"), MAX_BOX), keyFor("padre"), 3), keyFor("treno"), 1);
+    const evidence = lexiconEvidence(progress);
+
+    expect(new Set([...evidence.values()].map((f) => f.state))).toEqual(new Set(["solid", "known", "learning"]));
+    for (const found of evidence.values()) {
+      expect(wordState(progress, found.key), String(found.rank)).toBe(found.state);
+    }
+  });
+});
+
+describe("lexiconUnits", () => {
+  it("names the deck a lexicon rank is taught in", () => {
+    const [unit] = lexiconUnits(rankOf("la stazione"));
+
+    expect(unit.item.it).toBe("stazione");
+    expect(unit.level.id).toBe("A2");
+    expect(unit.group.id).toBe("travel");
+  });
+
+  // The other 1,980 ranks. Most of the list is ahead of the lessons, and a
+  // caller asking about one of them gets an empty list rather than a throw.
+  it("is empty for a rank no deck teaches", () => {
+    expect(lexiconUnits(1)).toEqual([]);
+    expect(lexiconUnits(FONDAMENTALE_TARGET)).toEqual([]);
+  });
+});
+
+describe("lemmaKey", () => {
+  // The one definition of "the same word" the app has. Exported so nothing
+  // has to write a second one; pinned here so the second one can't be
+  // written by accident either.
+  it("strips the article convention, the case and the trailing punctuation", () => {
+    expect(lemmaKey("la chiave")).toBe("chiave");
+    expect(lemmaKey("l'amore")).toBe("amore");
+    expect(lemmaKey("Come stai?")).toBe("come stai");
+    expect(lemmaKey("  I soldi ")).toBe("soldi");
+  });
+
+  // Not a stemmer, and this is the limit callers have to design around: it
+  // compares written forms, so an inflected form is a different word.
+  it("does not touch inflection", () => {
+    expect(lemmaKey("arriva")).not.toBe(lemmaKey("arrivare"));
   });
 });
 

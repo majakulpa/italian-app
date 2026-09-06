@@ -96,7 +96,12 @@ const SEEDED = new Set(FONDAMENTALE.map((e) => e.rank));
 // The lexicon indexed by a comparable form, so a word the vocab module stores
 // as "chiave" finds the entry stored as "la chiave". Leading articles go,
 // case goes, trailing punctuation goes.
-function normalise(italian) {
+//
+// Exported because it is the only definition of "the same word" this app has,
+// and a second copy of it somewhere else would drift the first time an
+// article convention changed. La Riserva's word detail matches a lemma
+// against the story glosses with it (modules/riserva/traces.js).
+export function lemmaKey(italian) {
   return italian
     .trim()
     .toLowerCase()
@@ -104,39 +109,85 @@ function normalise(italian) {
     .replace(/[?!.,;:]+$/, "");
 }
 
-const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [normalise(entry.it), entry]));
+const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
 
-// rank -> state, for every lexicon word the app has any evidence about.
+// rank -> the vocabulary units whose lemma normalises onto it.
 //
-// The evidence is the vocabulary module: its 120 words are the only place the
-// app currently learns that a *word* is known, so coverage bridges from there
-// by matching Italian strings. It goes through MODULE_STATS rather than
-// walking the data itself, for the same reason stats.js does — the key
-// builders have to be the ones the modules wrote with, or the number drifts.
+// This is the bridge, and it is the only one: the vocabulary module's 120
+// words are the only place the app currently learns that a *word* is known,
+// so coverage crosses over by matching Italian strings. It goes through
+// MODULE_STATS rather than walking the data itself, for the same reason
+// stats.js does — the key builders have to be the ones the modules wrote
+// with, or the number drifts.
 //
-// When La Riserva lands in a later phase the lexicon gets keys of its own and
-// this bridge becomes one more source rather than the only one. The seam is
-// deliberately this one function.
-export function lexiconStates(progress) {
-  const states = new Map();
+// Built once at load rather than per call. It depends on the data files
+// alone, never on progress, so recomputing it per render would be 120 string
+// normalisations to arrive at the same map.
+//
+// When stories get a word-level write the bridge grows a second source and
+// this becomes one of two. The seam is deliberately this one table.
+const UNITS_BY_RANK = (() => {
+  const byRank = new Map();
   const vocab = MODULE_STATS.find((mod) => mod.id === "vocab");
 
   for (const level of vocab.levels) {
     for (const unit of vocab.units(level)) {
-      const entry = BY_LEMMA.get(normalise(unit.item.it));
+      const entry = BY_LEMMA.get(lemmaKey(unit.item.it));
       if (!entry) continue;
+      // `level` is not in what MODULE_STATS.units yields, and the word detail
+      // needs it to say which deck a sentence came from — srs.js folds it in
+      // the same way and for the same reason.
+      byRank.set(entry.rank, [...(byRank.get(entry.rank) ?? []), { ...unit, level }]);
+    }
+  }
 
+  return byRank;
+})();
+
+// Every vocabulary unit sitting behind one lexicon rank, in deck order. Empty
+// for the ranks no deck reaches, which is most of them.
+export function lexiconUnits(rank) {
+  return UNITS_BY_RANK.get(rank) ?? [];
+}
+
+// rank -> state, for every lexicon word the app has any evidence about.
+export function lexiconStates(progress) {
+  const states = new Map();
+
+  for (const [rank, units] of UNITS_BY_RANK) {
+    for (const unit of units) {
       // A lemma can sit in more than one level or category, so fold the two
       // together rather than letting whichever deck comes last decide. A rank
       // with nothing but "unseen" behind it stays out of the map entirely —
       // most of the vocabulary module is outside the base 2,000, and an entry
       // saying "no evidence" is not evidence.
-      const state = strongest(states.get(entry.rank), wordState(progress, unit.key));
-      if (state !== "unseen") states.set(entry.rank, state);
+      const state = strongest(states.get(rank), wordState(progress, unit.key));
+      if (state !== "unseen") states.set(rank, state);
     }
   }
 
   return states;
+}
+
+// rank -> { rank, state, key, unit }: the same verdict lexiconStates reaches,
+// plus the storage key it was reached from, so a screen that shows the state
+// can also show the Leitner box and the due date behind it without deciding
+// for itself which key that was.
+//
+// Layered on top of lexiconStates rather than folded into it. The fold that
+// picks a state when a lemma sits in two decks is subtle enough to want one
+// implementation, and this way the key is chosen to *match* the state that
+// fold produced — a rank read as "solid" cannot end up carrying the key of
+// the deck that has it at box 1.
+export function lexiconEvidence(progress) {
+  const evidence = new Map();
+
+  for (const [rank, state] of lexiconStates(progress)) {
+    const unit = lexiconUnits(rank).find((candidate) => wordState(progress, candidate.key) === state);
+    evidence.set(rank, { rank, state, key: unit.key, unit });
+  }
+
+  return evidence;
 }
 
 // One slice of the reservoir: how much of running text ranks `from`..`to` are

@@ -67,6 +67,7 @@ src/
     falsiAmici/FalsiAmiciModule.jsx    The collection, and the drill that produces the Italian the lookalike is not (done)
     falsiAmici/feedback.js             Judges a typed answer and tells a near-miss from walking into the trap
     riserva/RiservaModule.jsx          The 2,000 as a grid in frequency order, and what each band of 200 is worth (done)
+    riserva/WordDetail.jsx             One word: both glosses, where Polish splits it, and where it sits in the scheduler
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon

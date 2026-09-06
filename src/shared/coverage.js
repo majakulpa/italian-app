@@ -117,8 +117,8 @@ const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [normalise(entry.it), entry
 // When La Riserva lands in a later phase the lexicon gets keys of its own and
 // this bridge becomes one more source rather than the only one. The seam is
 // deliberately this one function.
-export function lexiconStates(progress) {
-  const states = new Map();
+export function lexiconEvidence(progress) {
+  const found = new Map();
   const vocab = MODULE_STATS.find((mod) => mod.id === "vocab");
 
   for (const level of vocab.levels) {
@@ -131,12 +131,25 @@ export function lexiconStates(progress) {
       // with nothing but "unseen" behind it stays out of the map entirely —
       // most of the vocabulary module is outside the base 2,000, and an entry
       // saying "no evidence" is not evidence.
-      const state = strongest(states.get(entry.rank), wordState(progress, unit.key));
-      if (state !== "unseen") states.set(entry.rank, state);
+      const prior = found.get(entry.rank);
+      const state = strongest(prior?.state, wordState(progress, unit.key));
+      // The key travels with the state because it is the only route back to
+      // the scheduler: the box and the next review date live under the vocab
+      // key, and a rank on its own cannot find them. It has to be the key
+      // whose state actually won, or the detail screen would show one word's
+      // state above another word's due date.
+      if (state !== "unseen" && state !== prior?.state) found.set(entry.rank, { state, key: unit.key });
     }
   }
 
-  return states;
+  return found;
+}
+
+// Just the states, which is what coverage arithmetic wants. Derived from the
+// walk above rather than repeating it — the bridge from the vocabulary deck
+// is deliberately one function, and two copies of it would drift.
+export function lexiconStates(progress) {
+  return new Map([...lexiconEvidence(progress)].map(([rank, { state }]) => [rank, state]));
 }
 
 // One slice of the reservoir: how much of running text ranks `from`..`to` are

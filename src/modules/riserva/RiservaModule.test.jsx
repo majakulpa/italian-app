@@ -96,12 +96,12 @@ describe("La Riserva", () => {
 
     await user.click(first);
     expect(first).toHaveAttribute("aria-expanded", "true");
-    // The band's own list, in rank order — asserted against the data rather
-    // than a literal, so a reordered lexicon fails here instead of drifting.
-    const opening = FONDAMENTALE.slice(0, 3)
-      .map((e) => e.it)
-      .join(" · ");
-    expect(screen.getByText(new RegExp(`^${opening}`))).toBeInTheDocument();
+    // The band's own list, in rank order, each word its own control — that is
+    // word detail's way in. Asserted against the data rather than a literal,
+    // so a reordered lexicon fails here instead of drifting.
+    for (const e of FONDAMENTALE.slice(0, 3)) {
+      expect(screen.getByRole("button", { name: e.it }), e.it).toBeInTheDocument();
+    }
 
     await user.click(first);
     expect(first).toHaveAttribute("aria-expanded", "false");

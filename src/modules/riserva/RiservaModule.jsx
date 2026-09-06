@@ -190,17 +190,37 @@ function Swatch({ fill }) {
   );
 }
 
+// `color` is explicit, and that is the whole point of it being here. Nothing
+// up this tree sets one — the screen frame paints a background and no text
+// colour — so a row without this inherits the browser default, which is black.
+// Black is 18.6:1 on the light ground and 1.27:1 on the dark one, so the
+// legend simply vanished in the dark theme while every arithmetic check
+// passed: the tokens were fine, there was just no token being used.
+//
+// jsdom cannot catch this. It computes no cascade for inherited colour, so the
+// axe pass sees nothing wrong and the suite stays green. It was found by
+// measuring the rendered page in a browser, which is the only place this class
+// of bug is visible at all.
+const LEGEND_ROW = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontFamily: SANS,
+  fontSize: 13,
+  color: TOKENS.ink,
+};
+
 function Legend({ counts, empty }) {
   return (
     <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
       {WORD_STATES.map((state) => (
-        <li key={state} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: SANS, fontSize: 13 }}>
+        <li key={state} style={{ ...LEGEND_ROW }}>
           <Swatch fill={STATE_PAINT[state].fill} />
           <span lang="it">{STATE_PAINT[state].label}</span>
           <b>{counts[state]}</b>
         </li>
       ))}
-      <li style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: SANS, fontSize: 13 }}>
+      <li style={{ ...LEGEND_ROW }}>
         <Swatch fill={EMPTY_FILL} />
         not written down yet
         <b>{empty}</b>

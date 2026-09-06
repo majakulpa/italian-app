@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { TOKENS, CITY_RULES, citySurface } from "../../shared/theme.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import { boxInterval, MAX_BOX } from "../../shared/srs.js";
+import { wordTraces } from "./traces.js";
 
 // Word detail — design screen 11, and the last screen in L'Officina.
 //
@@ -25,12 +26,17 @@ import { boxInterval, MAX_BOX } from "../../shared/srs.js";
 // version of that line: the browser says it aloud instead of the app claiming
 // to know how it is written down.
 //
-// `Dove l'hai incontrata`, with two sentences from Il Cinema and Il Bar, is
-// the best idea on the screen and the one thing nothing in this app can
-// answer. Reading a story writes no word-level record — wordState.js says so
-// at length, and it is why the `met` state was deleted rather than kept as
-// decoration. So the section states what it is waiting on, in the same voice a
-// shut bench uses, rather than showing two invented sentences.
+// `Dove l'hai incontrata` lists `Ep. 7` and `Il Bar`, and both of those are
+// drawings — a serial that does not exist and a scene from chunk 6. The first
+// version of this screen concluded from that that nothing could fill the
+// section, and said so. That was too strong, and traces.js is the correction:
+// the vocabulary deck proves the app put a lemma in front of you in an example
+// sentence, and the story glosses prove it opened one under your finger. Those
+// are real encounters, and they are the two the app can actually prove.
+//
+// What stays true is the narrower claim: reading a story writes no word
+// *status* (wordState.js, and why `met` was deleted), so a story trace can
+// only say whether the story was finished, never that the word was learned.
 //
 // ── The Polish card, which the data already knew ────────────────────────
 // The design's pink card has `chiedere` covering both *pytać* and *prosić o*,
@@ -135,7 +141,8 @@ function Schedule({ box }) {
   );
 }
 
-export default function WordDetail({ entry, state, box, onBack }) {
+export default function WordDetail({ entry, state, box, progress, onBack }) {
+  const traces = wordTraces(progress, entry);
   const pl = senses(entry.pl);
   const en = senses(entry.en);
   const divides = pl.length > 1;
@@ -218,16 +225,44 @@ export default function WordDetail({ entry, state, box, onBack }) {
           </Card>
         )}
 
-        {/* The design's best section, and the one nothing can fill in. */}
         <Card>
           <Eyebrow style={{ opacity: 0.85, color: TOKENS.inkSoft }} lang="it">
             Dove l'hai incontrata
           </Eyebrow>
-          <p style={{ margin: 0, fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: TOKENS.inkSoft }}>
-            Waiting on something that remembers where you met a word. Reading a story writes no word-level record today —
-            only that the story is done — so the sentences that would go here do not exist yet. It fills itself in the day
-            a glossing surface starts writing them down.
-          </p>
+          {traces.length > 0 ? (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+              {traces.map((trace, i) => (
+                <li key={i} style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.5 }}>
+                  <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                    <Eyebrow style={{ color: TOKENS.inkSoft }}>
+                      {trace.kind === "deck" ? "deck" : "story"} · {trace.level.id}
+                    </Eyebrow>
+                    <span style={{ color: TOKENS.inkSoft }}>{trace.where}</span>
+                    {trace.done && <span style={{ color: TOKENS.inkSoft }}>· done</span>}
+                  </span>
+                  {trace.kind === "deck" ? (
+                    <>
+                      <span lang="it" style={{ display: "block", fontStyle: "italic" }}>
+                        {trace.it}
+                      </span>
+                      <span style={{ display: "block", color: TOKENS.inkSoft }}>{trace.en}</span>
+                    </>
+                  ) : (
+                    // The gloss the story itself gave, verbatim. Matching is by
+                    // written form, so a homograph can land here under the
+                    // wrong sense — printing the story's own words makes that
+                    // visible instead of asserting it. See traces.js.
+                    <span style={{ display: "block", color: TOKENS.inkSoft }}>glossed there as “{trace.meaning}”</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: TOKENS.inkSoft }}>
+              Nowhere yet. The app can prove two kinds of encounter — a word the vocabulary deck teaches, and a word a
+              story glossed under your finger — and this one is in neither. Most of the lexicon is, for now.
+            </p>
+          )}
         </Card>
       </div>
     </>

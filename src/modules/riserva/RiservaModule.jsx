@@ -285,6 +285,7 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
           entry={word}
           state={found?.state ?? "unseen"}
           box={progress.schedule[found?.key]?.box ?? null}
+          progress={progress}
           onBack={() => setWord(null)}
         />
       </Screen>

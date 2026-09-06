@@ -96,7 +96,7 @@ const SEEDED = new Set(FONDAMENTALE.map((e) => e.rank));
 // The lexicon indexed by a comparable form, so a word the vocab module stores
 // as "chiave" finds the entry stored as "la chiave". Leading articles go,
 // case goes, trailing punctuation goes.
-function normalise(italian) {
+export function lemmaKey(italian) {
   return italian
     .trim()
     .toLowerCase()
@@ -104,7 +104,31 @@ function normalise(italian) {
     .replace(/[?!.,;:]+$/, "");
 }
 
-const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [normalise(entry.it), entry]));
+const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
+
+// rank -> the vocabulary units whose lemma normalises onto it, built once.
+// The bridge is walked in one place and read from three: the states below,
+// the detail screen's box, and the traces under "dove l'hai incontrata".
+// Walking it per word opened would be the same answer computed again.
+const UNITS_BY_RANK = (() => {
+  const byRank = new Map();
+  const vocab = MODULE_STATS.find((mod) => mod.id === "vocab");
+
+  for (const level of vocab.levels) {
+    for (const unit of vocab.units(level)) {
+      const entry = BY_LEMMA.get(lemmaKey(unit.item.it));
+      if (entry) byRank.set(entry.rank, [...(byRank.get(entry.rank) ?? []), { ...unit, level }]);
+    }
+  }
+
+  return byRank;
+})();
+
+// Every vocabulary unit that reaches one lexicon rank. Empty for the ranks
+// the deck never covers, which is most of them.
+export function lexiconUnits(rank) {
+  return UNITS_BY_RANK.get(rank) ?? [];
+}
 
 // rank -> state, for every lexicon word the app has any evidence about.
 //
@@ -119,26 +143,22 @@ const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [normalise(entry.it), entry
 // deliberately this one function.
 export function lexiconEvidence(progress) {
   const found = new Map();
-  const vocab = MODULE_STATS.find((mod) => mod.id === "vocab");
 
-  for (const level of vocab.levels) {
-    for (const unit of vocab.units(level)) {
-      const entry = BY_LEMMA.get(normalise(unit.item.it));
-      if (!entry) continue;
-
+  for (const [rank, units] of UNITS_BY_RANK) {
+    for (const unit of units) {
       // A lemma can sit in more than one level or category, so fold the two
       // together rather than letting whichever deck comes last decide. A rank
       // with nothing but "unseen" behind it stays out of the map entirely —
       // most of the vocabulary module is outside the base 2,000, and an entry
       // saying "no evidence" is not evidence.
-      const prior = found.get(entry.rank);
+      const prior = found.get(rank);
       const state = strongest(prior?.state, wordState(progress, unit.key));
       // The key travels with the state because it is the only route back to
       // the scheduler: the box and the next review date live under the vocab
       // key, and a rank on its own cannot find them. It has to be the key
       // whose state actually won, or the detail screen would show one word's
       // state above another word's due date.
-      if (state !== "unseen" && state !== prior?.state) found.set(entry.rank, { state, key: unit.key });
+      if (state !== "unseen" && state !== prior?.state) found.set(rank, { state, key: unit.key });
     }
   }
 

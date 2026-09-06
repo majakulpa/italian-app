@@ -227,9 +227,16 @@ same reason — nothing behind them:
   stress mark per word teaches a wrong word. The speak button is the honest
   version: the browser says it aloud rather than the app claiming to know how
   it is transcribed.
-- **"Dove l'hai incontrata"**, the best idea on the screen. Nothing records
-  where a word was met — reading a story writes no word-level record, which is
-  why `met` was deleted — so the section states what it is waiting on.
+- ~~**"Dove l'hai incontrata"**~~ — this one turned out to be buildable, and
+  the first version of the screen was wrong to say otherwise. `Ep. 7` and
+  `Il Bar` are drawings, but two real encounters are provable: the vocabulary
+  deck put the lemma in front of you in an example sentence, and a story
+  glossed it under your finger. `modules/riserva/traces.js` reads both.
+  What stays true is the narrower claim — reading a story writes no word
+  *status*, so a story trace says only that the story was finished.
+  Matching is by written form, so a homograph can land under the wrong sense
+  (`porta` the door against `porta` from *portare*); the trace carries the
+  story's own gloss verbatim so the mismatch is visible rather than asserted.
 - **Why Polish splits a word.** The pink card fires off data the lexicon
   already had: 87 of the first 300 entries carry more than one Polish sense.
   What it will not do is say *which* reason, because `pytać · prosić o` is two

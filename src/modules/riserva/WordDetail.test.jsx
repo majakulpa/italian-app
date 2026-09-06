@@ -6,8 +6,10 @@ import { senses } from "./WordDetail.jsx";
 import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, boxInterval } from "../../shared/srs.js";
-import { saveProgress } from "../../shared/storage.js";
+import { saveProgress, storyKey } from "../../shared/storage.js";
+import { wordTraces } from "./traces.js";
 import * as speech from "../../shared/speech.js";
+import { STORY_LEVELS } from "../../data/stories.js";
 
 const divides = FONDAMENTALE.find((e) => e.pl.includes(" · "));
 const single = FONDAMENTALE.find((e) => !e.pl.includes(" · "));
@@ -150,14 +152,69 @@ describe("word detail", () => {
     expect(screen.queryByText(/Box \s*\d/)).not.toBeInTheDocument();
   });
 
-  // The design fills this with two sentences from episodes that do not exist,
-  // and nothing in the app records where a word was met.
-  it("states what the encounters list is waiting on instead of inventing one", async () => {
+  // The design fills this with `Ep. 7` and `Il Bar`, both of which are
+  // drawings. What the app can prove is the deck's example sentence and the
+  // story glosses — see traces.js — so a word the deck teaches lists it, and
+  // a word neither source reaches says so rather than inventing one.
+  it("lists a real encounter for a word the deck teaches", async () => {
     const user = userEvent.setup();
+    const { entry } = bridged();
+
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, entry);
+
+    expect(screen.getByText(/dove l'hai incontrata/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Nowhere yet/)).not.toBeInTheDocument();
+    // Never the design's invented ones.
+    expect(screen.queryByText(/Ep\. 7|Il Bar/)).not.toBeInTheDocument();
+  });
+
+  // The second source, and the one whose claim is narrower: reading a story
+  // writes no word status, so a story trace can only say the story was
+  // finished. It carries the gloss the story itself gave, verbatim, because
+  // matching is by written form and a homograph can land under the wrong
+  // sense — printing the story's own words makes that visible.
+  it("lists a story that glossed the word, in the story's own words", async () => {
+    const user = userEvent.setup();
+    const empty = { words: {}, schedule: {}, stories: {} };
+    const entry = FONDAMENTALE.find((e) => wordTraces(empty, e).some((t) => t.kind === "story"));
+    const trace = wordTraces(empty, entry).find((t) => t.kind === "story");
+
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, entry);
+
+    expect(screen.getByText(new RegExp(trace.where))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`glossed there as .${trace.meaning}`))).toBeInTheDocument();
+  });
+
+  it("marks an encounter you have finished", async () => {
+    const user = userEvent.setup();
+    const empty = { words: {}, schedule: {}, stories: {} };
+    const entry = FONDAMENTALE.find((e) => wordTraces(empty, e).some((t) => t.kind === "story"));
+    const { story, level } = (() => {
+      for (const lvl of STORY_LEVELS)
+        for (const st of lvl.stories)
+          if (st.title === wordTraces(empty, entry).find((t) => t.kind === "story").where) return { story: st, level: lvl };
+      throw new Error("story not found");
+    })();
+
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, entry);
+    expect(screen.queryByText("· done")).not.toBeInTheDocument();
+
+    saveProgress({ words: { [storyKey(level, story)]: "done" } });
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, entry);
+    expect(screen.getAllByText("· done").length).toBeGreaterThan(0);
+  });
+
+  it("says so plainly for a word neither source reaches", async () => {
+    const user = userEvent.setup();
+    // Rank 1 is `essere`, which the vocabulary deck does not teach.
     render(<RiservaModule onExit={() => {}} />);
     await openWord(user, FONDAMENTALE[0]);
 
-    expect(screen.getByText(/Waiting on something that remembers where you met a word/)).toBeInTheDocument();
+    expect(screen.getByText(/Nowhere yet/)).toBeInTheDocument();
   });
 
   it("goes back to the grid", async () => {

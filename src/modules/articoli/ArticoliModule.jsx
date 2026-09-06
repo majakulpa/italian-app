@@ -13,7 +13,7 @@ import { judge, announce, LOCATED, ATTEMPTS } from "./feedback.js";
 // them exactly where Italian keeps them, and the errors survive into advanced
 // proficiency — so this is the one bench that never graduates.
 //
-// Built in the La Città design system, like Le Mappe and the hub. PLAN.md's
+// Built in the La Città design system, like La Mappatura and the hub. PLAN.md's
 // open question 4 is the seam between that and the four older module
 // interiors, and its answer is that a screen migrates when it is built, never
 // in a blanket pass.
@@ -128,7 +128,7 @@ function Screen({ children }) {
 }
 
 // The Polish anchor, in the design's own pink. Pink means Polish everywhere in
-// L'Officina — it is the Polish road in Le Mappe and the Polish card here —
+// L'Officina — it is the Polish road in La Mappatura and the Polish card here —
 // which is why no strand is allowed to paint itself `bubble`.
 function PolishAnchor({ anchor }) {
   return (
@@ -380,7 +380,7 @@ function Drill({ strand, onBack, onDone, onGrade }) {
     setTried([...tried, option]);
     if (next.correct || next.last) {
       // Right first time is "known"; anything that needed a second look, or
-      // ran out of looks, is "learning" — the same bar Le Mappe and the
+      // ran out of looks, is "learning" — the same bar La Mappatura and the
       // grammar drill use, so the three cards mean the same thing.
       //
       // One expression, used twice, and that is the whole point. It was two:
@@ -546,7 +546,7 @@ function Summary({ strand, results, onBack, onAgain }) {
 // Two ways in, so two things `onExit` can mean: L'Officina's hub opens this as
 // a child of itself and comes back to the workshop, and the NavMenu opens it
 // at the top level and comes back to the city. `exitLabel` is how the back
-// link says which of the two it is about to do. Same shape as Le Mappe.
+// link says which of the two it is about to do. Same shape as La Mappatura.
 export default function ArticoliModule({ onExit, exitLabel = "All modules" }) {
   const [progress, setProgress] = useState(loadProgress);
   const [session, setSession] = useState(null);

@@ -272,7 +272,7 @@ describe("L'Officina", () => {
   });
 });
 
-describe("Le Mappe", () => {
+describe("La Mappatura", () => {
   const openMap = async (user) => user.click(screen.getByRole("button", { name: /-cja/ }));
   const openDrill = async (user) => {
     await openMap(user);
@@ -409,7 +409,7 @@ describe("Gli Articoli", () => {
   });
 
   it("has an accessible summary at the end of a run", async () => {
-    // `delay: null` for the same reason Le Mappe's summary scan uses it: this
+    // `delay: null` for the same reason La Mappatura's summary scan uses it: this
     // is the only scan here that clicks through a whole strand — five items,
     // six answers once the deliberate miss is counted — and at the default
     // inter-event delay that is hundreds of async ticks, which fits in the
@@ -469,7 +469,7 @@ describe("Falsi Amici", () => {
     await expectNoViolations(container);
   });
 
-  // Three states of the drill, the same three Le Mappe has: an unanswered
+  // Three states of the drill, the same three La Mappatura has: an unanswered
   // typed field, a wrong answer mid-item (the field goes aria-invalid and a
   // located verdict appears under it) and a settled one (the field turns
   // read-only). The middle one is the state this module exists for, and here
@@ -488,7 +488,7 @@ describe("Falsi Amici", () => {
   });
 
   it("has an accessible summary at the end of a run", async () => {
-    // `delay: null` for the same reason Le Mappe's summary scan uses it:
+    // `delay: null` for the same reason La Mappatura's summary scan uses it:
     // this scan types whole words for a whole set, which at the default
     // inter-keystroke delay is hundreds of async ticks — it fits in the 30s
     // above uninstrumented and does not fit under coverage.
@@ -587,10 +587,10 @@ describe("Italian text is marked as Italian", () => {
     expect(italianAncestor(screen.getByText(dialogue.steps[0].options[0].it))).not.toBeNull();
   });
 
-  // Le Mappe is the first screen in the app with three languages on it at
+  // La Mappatura is the first screen in the app with three languages on it at
   // once, so it is the first place the marking can be wrong in two
   // directions rather than one.
-  it("marks Polish as Polish and Italian as Italian in Le Mappe", async () => {
+  it("marks Polish as Polish and Italian as Italian in La Mappatura", async () => {
     const user = userEvent.setup();
     render(<MappeModule onExit={() => {}} />);
     await user.click(screen.getByRole("button", { name: /-cja/ }));

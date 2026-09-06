@@ -231,7 +231,7 @@ describe("what walking into a trap records", () => {
   });
 
   // Right first time is "known", anything that needed a second look is
-  // "learning" — the same bar Le Mappe, Gli Articoli and the grammar drill
+  // "learning" — the same bar La Mappatura, Gli Articoli and the grammar drill
   // use, so the four cards mean the same thing.
   it("grades a revealed answer as still being learned", async () => {
     const user = userEvent.setup();

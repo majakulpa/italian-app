@@ -1,4 +1,4 @@
-// Le Mappe — suffix correspondences, taught as rules rather than word lists.
+// La Mappatura — suffix correspondences, taught as rules rather than word lists.
 //
 // A map is one ending that maps predictably from a language the learner
 // already has into Italian. `-cja → -zione` is not four words, it is every

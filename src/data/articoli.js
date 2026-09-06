@@ -22,7 +22,7 @@
 //                   English one, because the interface is English.
 //   accent          a CITY_ACCENTS key. Not `bubble`: pink is reserved on
 //                   this screen for the Polish anchor card, the way it is the
-//                   Polish road in Le Mappe.
+//                   Polish road in La Mappatura.
 //   teaches[]       rule ids from RULES below, in the order the card shows
 //                   them.
 //   items[]         the drills.
@@ -135,7 +135,7 @@ export const ARTICLE_FORMS = {
 // `forms` is the Italian the rule is about — usually the articles themselves,
 // and for the two rules that are about *not* having an article, the verb or
 // the phrase that swallows it. `when` and `says` are English. They are
-// separate fields rather than one sentence for the same reason Le Mappe
+// separate fields rather than one sentence for the same reason La Mappatura
 // splits its rule headline: one string can only claim one language, and `lo`
 // inside an English paragraph still has to be marked lang="it" (WCAG 3.1.2).
 export const RULES = {

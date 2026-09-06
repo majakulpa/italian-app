@@ -99,7 +99,7 @@ describe("the district roster", () => {
   //
   // This test used to carry a BEHIND_THE_MENU exception list holding "mappe",
   // because the `officina` district still routed straight to `vocab` and the
-  // NavMenu was Le Mappe's only front door. The hub screen closed that, so
+  // NavMenu was La Mappatura's only front door. The hub screen closed that, so
   // the list is gone — but a hub means a module can now be reached one door
   // in rather than straight off a district, and that broke an implication the
   // check had been leaning on since it was written.

@@ -9,6 +9,7 @@ import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
+import RiservaModule from "./modules/riserva/RiservaModule.jsx";
 import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
@@ -328,6 +329,26 @@ describe("Le Mappe", () => {
       if (i === 0) await type(user, "nonsense");
       await user.click(screen.getByRole("button", { name: /^(Next|See how it went)/ }));
     }
+    await expectNoViolations(container);
+  });
+});
+
+describe("La Riserva", () => {
+  // Two thousand cells, and axe has opinions about all of them. The grid is
+  // aria-hidden by design — it is a picture whose facts are given as text —
+  // so what this checks is that hiding it did not also hide the ten fasce
+  // that are the screen's real controls, and that an expanded band is
+  // announced rather than silently appearing.
+  it("has an accessible grid and band list", async () => {
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("stays accessible with a fascia open", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
     await expectNoViolations(container);
   });
 });

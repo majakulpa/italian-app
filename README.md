@@ -66,6 +66,7 @@ src/
     articoli/feedback.js               Judges an article choice and names the dimension it went wrong on
     falsiAmici/FalsiAmiciModule.jsx    The collection, and the drill that produces the Italian the lookalike is not (done)
     falsiAmici/feedback.js             Judges a typed answer and tells a near-miss from walking into the trap
+    riserva/RiservaModule.jsx          The 2,000 as a grid in frequency order, and what each band of 200 is worth (done)
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -201,6 +202,29 @@ categories/dialogues/stories each, and four grammar topics.
   spot, which is the weakest feedback shape available and the exact thing this
   bench replaces. The reasoning is beside its `scheduled: false` flag in
   `src/shared/stats.js`.
+
+- **La Riserva** — the reservoir made physical, and L'Officina's last open
+  bench. One cell per word of the base vocabulary in frequency order, with
+  `essere` in the top-left corner, coloured by how well each is known. The
+  order is what makes it worth drawing: the corner is worth hundreds of times
+  more running text than the far end, so the gradient that forms is the shape
+  of progress rather than a bar filling up. Underneath, the ten *fasce* of 200,
+  each saying what it is worth in coverage points — the first band alone
+  carries more of a page than the last five together.
+
+  **It shows no percentage**, and that is a decision rather than an omission.
+  A share of running text reads like a share of the language and the two
+  diverge worst where a beginner is standing: a learner with a hundred words
+  has 54.5% coverage and cannot read a menu. Both are true and only the second
+  is about her. The percentage stays on the city map, labelled as what it is.
+
+  It also distinguishes a rank with **no word written down yet** from one the
+  learner has not met — a claim about the file against a claim about her — so
+  the lexicon being 300 of a 2,000 target is visible on the grid instead of
+  reading as 1,700 words she failed to learn. And the grid is a picture, not
+  two thousand buttons: it is `aria-hidden` with its facts given as text, and
+  the ten bands are the real controls, because two thousand focusable cells is
+  a trap rather than a tab order.
 
 - **Falsi Amici** — L'Officina's fourth workbench, and the one that fills up
   rather than being finished. A false friend is a real Italian word whose

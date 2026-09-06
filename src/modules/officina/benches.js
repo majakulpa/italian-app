@@ -39,6 +39,7 @@ import { BookOpen, Grid3x3, Signpost, TriangleAlert, Type } from "lucide-react";
 import { MAPS } from "../../data/mappe.js";
 import { FALSI_AMICI } from "../../data/falsiAmici.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
+import { lexiconStates } from "../../shared/coverage.js";
 import { moduleStats } from "../../shared/stats.js";
 import { mapKnownCount, trapsCaughtCount } from "../../shared/storage.js";
 
@@ -86,13 +87,29 @@ function trapsCaught(progress) {
   return { done: trapsCaughtCount(progress, FALSI_AMICI), total: FALSI_AMICI.length, unit: "caught" };
 }
 
+// What the Riserva itself draws: ranks the learner holds at learning or
+// better, out of the whole 2,000. Read through lexiconStates so the bench and
+// the screen cannot disagree — the same rule as counting Gli Articoli through
+// moduleStats.
+function lexiconHeld(progress) {
+  const states = lexiconStates(progress);
+  return { done: [...states.values()].filter((s) => s !== "unseen").length, total: FONDAMENTALE_TARGET, unit: "words" };
+}
+
 function wordsKnown(progress) {
   const { done, total } = moduleStats(progress, "vocab");
   return { done, total, unit: "words" };
 }
 
-// `route` is the module id this bench opens, or null for one that doesn't
-// open yet. `module` is its id in MODULE_STATS, which districts.test.js uses
+// `route` is what this bench opens, or null for one that doesn't open yet.
+// Usually that is a module id. La Riserva is the exception and the reason
+// `view` exists: it opens a screen that *reads* progress the other benches
+// wrote and keeps none of its own, exactly as ReviewModule is "a route, not a
+// MODULES entry". Giving it a MODULE_STATS entry to satisfy the old
+// route-implies-module rule would have meant inventing keys nothing writes —
+// the same mistake as the `met` word state, which was designed, counted,
+// tested, and impossible for any learner to have. So a bench either names a
+// module it opens, or is marked `view: true` and names neither. `module` is its id in MODULE_STATS, which districts.test.js uses
 // to check nothing the app ships has lost its front door. `waiting` is the
 // sentence a shut bench states instead of a count — never a bare padlock,
 // per PLAN.md.
@@ -126,12 +143,15 @@ export const BENCHES = [
     name: "La Riserva",
     lang: "it",
     module: null,
-    route: null,
+    route: "riserva",
+    view: true,
+    // The last free hue in the city palette. `bubble` is the other one and is
+    // not available: pink means Polish everywhere in L'Officina.
+    accent: "pistachio",
     icon: Grid3x3,
-    count: null,
+    count: lexiconHeld,
     blurb: `The ${FONDAMENTALE_TARGET.toLocaleString("en-GB")} words of De Mauro in frequency order, each one coloured by how well you know it.`,
-    waiting:
-      "Not built yet, but no longer waiting on a decision: it shows how many of the 2,000 you hold and what each band of 200 is worth, never a percentage — a share of running text reads like a share of the language, and at a hundred words those are 54% and unreadable respectively. The grid is build work now.",
+    waiting: null,
   },
   {
     id: "articoli",

@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — Le Mappe, the hub, Gli Articoli and Falsi Amici built |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — only word detail left |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -218,12 +218,18 @@ the district used to route straight there, so it needed a door of its own.
 Still to do before the chunk closes:
 
 - **Word detail** (design 11), which is the other half of what makes the
-  lexicon visible. Blocked in practice behind La Riserva, which is its front
-  door.
-- **La Riserva**, now unblocked — counts and per-band worth, no percentage.
+  lexicon visible.
 
-Neither is blocked any more: the quantity question above is settled, so what
-remains is build work rather than a decision.
+La Riserva is built: the 2,000 as a grid in frequency order, coloured by state,
+with the ten *fasce* underneath saying what each is worth. No percentage on it,
+per the settled decision. It draws a rank with no word behind it differently
+from one the learner has not met — the first is a fact about the file, the
+second about her, and the lexicon being 300 of 2,000 is visible rather than
+implied.
+
+Word detail is the last screen in this chunk, and its open question is now the
+way in rather than the quantity: the grid is deliberately not two thousand
+buttons, so pressing a cell is not the answer.
 
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,

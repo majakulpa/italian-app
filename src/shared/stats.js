@@ -64,11 +64,11 @@ export const MODULE_STATS = [
   {
     id: "mappe",
     // `levels` is really "the containers this module enumerates units from".
-    // For the other four that is the CEFR ladder; Le Mappe has no ladder,
+    // For the other four that is the CEFR ladder; La Mappatura has no ladder,
     // because a suffix correspondence isn't A1 or B2 — `-cja → -zione` is
     // worth the same on day one as in year two. So its containers are the
     // maps themselves. levelStats() looks a container up by level id, finds
-    // none, and leaves Le Mappe out of every rung, which is the right answer
+    // none, and leaves La Mappatura out of every rung, which is the right answer
     // rather than a gap.
     levels: MAPS,
     // Not in the review queue, and this is a decision rather than an
@@ -80,7 +80,7 @@ export const MODULE_STATS = [
     // surface: putting a typed production item into it would either turn
     // "produce first" back into recognition, or need a second interaction
     // model inside ReviewModule, which is a change to La Piazza and not to
-    // Le Mappe. Revisit when La Piazza learns to ask for typing.
+    // La Mappatura. Revisit when La Piazza learns to ask for typing.
     scheduled: false,
     units: (map) => map.drills.map((d) => ({ key: mappeKey(map, d), item: d, group: map })),
     doneStatus: "known",
@@ -94,9 +94,9 @@ export const MODULE_STATS = [
     // permanent strand. levelStats() looks a container up by level id, finds
     // none, and leaves it out of every rung.
     levels: STRANDS,
-    // Out of the review queue, and — like Le Mappe — a decision rather than
-    // an oversight, though for a different reason. Le Mappe's blocker is the
-    // interaction model: La Piazza is multiple-choice and Le Mappe types. An
+    // Out of the review queue, and — like La Mappatura — a decision rather than
+    // an oversight, though for a different reason. La Mappatura's blocker is the
+    // interaction model: La Piazza is multiple-choice and La Mappatura types. An
     // article item *is* multiple-choice, so that objection does not apply
     // here and the queue would accept it as it stands.
     //
@@ -118,13 +118,13 @@ export const MODULE_STATS = [
     id: "falsi-amici",
     // The two sets the collection is drawn from — the traps the maps
     // generate, and the ones no rule reaches — where the other modules put
-    // CEFR levels, for the same reason Le Mappe puts maps there. A false
+    // CEFR levels, for the same reason La Mappatura puts maps there. A false
     // friend has no level: `divano` is not B1 vocabulary, it is a mistake
     // waiting on day one and still waiting in year three. levelStats() looks
     // a container up by level id, finds none, and leaves this out of every
     // rung.
     levels: TRAP_SETS,
-    // Not in the review queue, and the blocker is Le Mappe's exactly: this
+    // Not in the review queue, and the blocker is La Mappatura's exactly: this
     // is a typed production item and La Piazza is multiple-choice, so
     // scheduling it would either turn "produce first" back into recognition
     // or need a second interaction model inside ReviewModule. Revisit when
@@ -155,7 +155,7 @@ function countLevel(progress, mod, level) {
 // fraction. Pooled, vocabulary's 120 words would be over half of the app's
 // units and finishing a whole story would barely move the bar — averaging
 // makes each of the four levelled modules worth a quarter of the figure.
-// Le Mappe is not one of them: it declares no CEFR level, so it contributes
+// La Mappatura is not one of them: it declares no CEFR level, so it contributes
 // to no rung and doesn't dilute the four that do.
 function averagePct(tallies) {
   if (tallies.length === 0) return 0;

@@ -8,7 +8,7 @@ import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
 import { judge, announce, drillSuffix, ATTEMPTS } from "./feedback.js";
 
-// Le Mappe — the first of L'Officina's workbenches, and the app's first
+// La Mappatura — the first of L'Officina's workbenches, and the app's first
 // production exercise: every other mode picks from options, this one asks you
 // to write the Italian.
 //
@@ -168,7 +168,7 @@ function MappeHome({ progress, onOpen, onExit, exitLabel }) {
           <span lang="it">L&rsquo;Officina</span>
         </Eyebrow>
         <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.05 }}>
-          Le Mappe
+          La Mappatura
         </h1>
         <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.inkSoft, margin: "10px 0 0", lineHeight: 1.55 }}>
           One ending, learned once, and a few hundred words arrive behind it. Each map is a rule — and the traps that rule
@@ -239,7 +239,7 @@ function MappeHome({ progress, onOpen, onExit, exitLabel }) {
 function MappaBar({ map, onBack }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-      <BackLink label="Le Mappe" onClick={onBack} />
+      <BackLink label="La Mappatura" onClick={onBack} />
       <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: TOKENS.inkSoft, margin: 0 }}>
         <span lang="it">Mappa</span> <span lang="it">{map.name}</span>
       </p>
@@ -610,7 +610,7 @@ export default function MappeModule({ onExit, exitLabel = "All modules" }) {
     saveProgress(progress);
   }, [progress]);
 
-  // markWord rather than reviewItem: Le Mappe is deliberately outside the
+  // markWord rather than reviewItem: La Mappatura is deliberately outside the
   // Leitner queue. The reasoning is written down beside `scheduled: false`
   // in shared/stats.js, because that flag is where anyone would look for it.
   const onGrade = (key, status) => setProgress((p) => markWord(p, key, status));

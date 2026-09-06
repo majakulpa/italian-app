@@ -6,6 +6,7 @@ import {
   lexiconEvidence,
   lexiconUnits,
   lemmaKey,
+  heldWords,
   rankWeight,
   LEXICON_COVERAGE,
   BAND_SIZE,
@@ -193,6 +194,24 @@ describe("lexiconEvidence", () => {
     for (const found of evidence.values()) {
       expect(wordState(progress, found.key), String(found.rank)).toBe(found.state);
     }
+  });
+});
+
+describe("heldWords", () => {
+  // The same bar the fraction is built from, and the reason it is a function
+  // rather than an addition at three call sites.
+  it("counts known and solid, and not learning or unseen", () => {
+    expect(heldWords({ unseen: 1900, learning: 50, known: 30, solid: 20 })).toBe(50);
+  });
+
+  it("agrees with the fraction about which words are covered", () => {
+    const learning = coverage(study(EMPTY, keyFor("madre"), 1));
+    const known = coverage(study(EMPTY, keyFor("madre"), 2));
+
+    expect(heldWords(learning.counts)).toBe(0);
+    expect(learning.fraction).toBe(0);
+    expect(heldWords(known.counts)).toBe(1);
+    expect(known.fraction).toBeGreaterThan(0);
   });
 });
 

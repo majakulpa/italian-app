@@ -72,6 +72,16 @@ export const BAND_SIZE = 200;
 
 const COVERED = new Set(["known", "solid"]);
 
+// How many words a tally's `counts` holds at the bar the fraction is built
+// from — known or better, never `learning`. Exported because "words you
+// know" is now shown in three places (the L'Officina bench badge, the
+// Riserva header, a fascia) and a second addition somewhere would be a
+// second definition of the bar: the design's own screens disagree by exactly
+// this rule, 834 words touched against the 715 the percentage is made of.
+export function heldWords(counts) {
+  return WORD_STATES.filter((state) => COVERED.has(state)).reduce((sum, state) => sum + counts[state], 0);
+}
+
 function harmonic(n) {
   let sum = 0;
   for (let r = 1; r <= n; r += 1) sum += 1 / r;

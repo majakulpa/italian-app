@@ -1,19 +1,21 @@
 // L'Officina's workbenches, as data.
 //
 // design/02-la-citta.html screen 07 draws four benches — La Riserva, Le
-// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Two of
-// those four have something behind them today, so two of them carry a figure
-// here.
+// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Three of
+// those four have something behind them today, so three of them carry a
+// figure here.
 //
 // ── Why the mockup's numbers are not in this file ───────────────────────
 // The design's cards read `834 / 2000`, `4 / 8`, `giorno 148`, `71% ↑` and
-// `12 presi`. Every one of those is a drawing, not a measurement: nothing
-// records which traps you have walked into, and the Riserva's own quantity is
-// still an open question (PLAN.md, open question 1). Gli Articoli now has
-// data behind it and so has a figure — but not that figure: `giorno 148` is a
-// day counter, which is a streak wearing a different label, and PLAN.md
-// deleted the streak permanently. What its badge counts is sentences answered
-// right first time, read back out of storage. PLAN.md's "only gate on numbers you have measured" is the rule that
+// `12 presi`. Every one of those was a drawing rather than a measurement, and
+// the ones that now carry a figure carry a different one. Gli Articoli's
+// `giorno 148` is a day counter, which is a streak wearing a different label,
+// and PLAN.md deleted the streak permanently — what its badge counts is
+// sentences answered right first time, read back out of storage. La Riserva's
+// `834 / 2000` is every word touched at all, including the ones still in
+// Leitner boxes 1–2; what its badge counts is the known-or-better subset, for
+// the reason beside wordsHeld() below. Nothing records which traps you have
+// walked into, so Falsi Amici still counts nothing. PLAN.md's "only gate on numbers you have measured" is the rule that
 // kept four invented padlocks off the city map, and a figure invented to make
 // a bench look busy is the same mistake in the same place. So a bench either
 // derives its count from storage, or it says in a sentence what it is waiting
@@ -32,6 +34,7 @@
 import { BookOpen, Grid3x3, Signpost, TriangleAlert, Type } from "lucide-react";
 import { MAPS } from "../../data/mappe.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
+import { coverage, heldWords } from "../../shared/coverage.js";
 import { moduleStats } from "../../shared/stats.js";
 import { mapKnownCount } from "../../shared/storage.js";
 
@@ -67,9 +70,28 @@ function wordsKnown(progress) {
   return { done, total, unit: "words" };
 }
 
-// `route` is the module id this bench opens, or null for one that doesn't
-// open yet. `module` is its id in MODULE_STATS, which districts.test.js uses
-// to check nothing the app ships has lost its front door. `waiting` is the
+// Straight out of the coverage tally, through the same heldWords() the
+// Riserva header uses, so the bench and the room behind it cannot hold two
+// ideas of "words you know".
+//
+// Known or better — Leitner box 3 and up — rather than the design's "every
+// word touched". Screen 01 and screen 10 of the design disagree with each
+// other by exactly this rule: 834 is every word met at all and 715 is the
+// known-or-better subset the coverage percentage is made of. This badge sits
+// one tap from that percentage, so counting the touched ones would put a
+// bigger number next to a figure made of a smaller population and invite the
+// reader to reconcile them. Boxes 1–2 are same-day and next-day recall, which
+// is not yet a word you know.
+function wordsHeld(progress) {
+  return { done: heldWords(coverage(progress).counts), total: FONDAMENTALE_TARGET, unit: "words" };
+}
+
+// `route` is what this bench opens, or null for one that doesn't open yet:
+// usually a module id, but La Riserva is a screen the hub renders itself,
+// with no content to complete and no MODULE_STATS row — the same shape as
+// the hub. `module` is its id in MODULE_STATS, which districts.test.js uses
+// to check nothing the app ships has lost its front door, so a bench that
+// opens no module leaves it null and contributes no door. `waiting` is the
 // sentence a shut bench states instead of a count — never a bare padlock,
 // per PLAN.md.
 export const BENCHES = [
@@ -102,12 +124,12 @@ export const BENCHES = [
     name: "La Riserva",
     lang: "it",
     module: null,
-    route: null,
+    route: "riserva",
+    accent: "grape",
     icon: Grid3x3,
-    count: null,
+    count: wordsHeld,
     blurb: `The ${FONDAMENTALE_TARGET.toLocaleString("en-GB")} words of De Mauro in frequency order, each one coloured by how well you know it.`,
-    waiting:
-      "Waiting on one decision: which quantity it shows. Frequency-weighted coverage puts a day-one learner near 50%, because function words dominate — arithmetically right, and a useless thing to hand a beginner. Nothing goes on this bench until that is settled.",
+    waiting: null,
   },
   {
     id: "articoli",

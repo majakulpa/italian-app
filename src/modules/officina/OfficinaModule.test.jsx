@@ -6,12 +6,25 @@ import { BENCHES } from "./benches.js";
 import { MAPS } from "../../data/mappe.js";
 import { LEVELS } from "../../data/vocab.js";
 import { saveProgress, mappeKey, wordKey } from "../../shared/storage.js";
+import { reviewItem } from "../../shared/srs.js";
 
 const zione = MAPS.find((m) => m.id === "zione");
 const bench = (id) => BENCHES.find((b) => b.id === id);
 const card = (id) => screen.getByRole("button", { name: new RegExp(bench(id).name) });
 
 const TOTAL_WORDS = LEVELS.flatMap((l) => l.categories).flatMap((c) => c.words).length;
+
+// A word graded right `times` times running, through the module's own write
+// path, so the blob is one a real learner could own.
+function studied(italian, times) {
+  const level = LEVELS.find((l) => l.categories.some((c) => c.words.some((w) => w.it === italian)));
+  const category = level.categories.find((c) => c.words.some((w) => w.it === italian));
+  const key = wordKey(level, category, category.words.find((w) => w.it === italian));
+
+  let progress = { version: 2, words: {}, schedule: {} };
+  for (let i = 0; i < times; i += 1) progress = reviewItem(progress, key, true, "2026-09-06");
+  return progress;
+}
 
 // Every drill on one map known — which is what makes that map count as done
 // on the hub, and the only way the maps figure can move at all.
@@ -78,18 +91,46 @@ describe("the figures on the benches", () => {
     expect(card("mappe")).toHaveAccessibleName(expect.stringContaining(`1 / ${MAPS.length} maps`));
   });
 
-  // The mockup's La Riserva reads "834 / 2000", Gli Articoli "giorno 148 …
-  // 71% ↑" and Falsi Amici "12 presi". None of the three has a data source,
-  // so none of them may show a count of any shape.
-  //
-  // Keyed on `module` rather than on `route`: "has nothing to count" is the
-  // claim, and a bench that grew a route while still counting nothing would
-  // walk straight past a check written against openness.
+  // La Riserva counts words known or better out of the whole 2,000, through
+  // the same heldWords() its own header uses — so the door and the room can't
+  // disagree. Not the design's "834 / 2000", which is every word touched at
+  // all: that population is larger than the one the coverage percentage is
+  // made of, and this badge sits one tap from that percentage.
+  it("counts La Riserva at the same bar the coverage figure is made of", () => {
+    const fresh = render(<OfficinaModule onExit={() => {}} />);
+    expect(card("riserva")).toHaveAccessibleName(expect.stringContaining("0 / 2000 words"));
+    fresh.unmount();
+
+    // Two answers right puts the word in box 3, which is where a word starts
+    // counting. One answer — box 2 — must not move this badge.
+    saveProgress(studied("madre", 1));
+    const { unmount } = render(<OfficinaModule onExit={() => {}} />);
+    expect(card("riserva")).toHaveAccessibleName(expect.stringContaining("0 / 2000 words"));
+    unmount();
+
+    saveProgress(studied("madre", 2));
+    render(<OfficinaModule onExit={() => {}} />);
+    expect(card("riserva")).toHaveAccessibleName(expect.stringContaining("1 / 2000 words"));
+  });
+
+  // The mockup's Falsi Amici reads "12 presi" and nothing records which traps
+  // caught you, so it may show no count of any shape. Keyed on `count`
+  // rather than on `route`: "has nothing to count" is the claim, and a bench
+  // that grew a route while still counting nothing would walk straight past a
+  // check written against openness.
   it("puts no counter at all on a bench with nothing behind it", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
-    for (const b of BENCHES.filter((x) => !x.module)) {
+    for (const b of BENCHES.filter((x) => !x.count)) {
       expect(card(b.id).textContent, b.id).not.toMatch(/\d+\s*\/\s*\d+/);
+    }
+  });
+
+  // None of the five may quote a figure off the drawing, counting or not.
+  it("quotes none of the mockup's invented figures", () => {
+    render(<OfficinaModule onExit={() => {}} />);
+
+    for (const b of BENCHES) {
       expect(card(b.id).textContent, b.id).not.toMatch(/834|giorno 148|71%|12 presi/);
     }
   });
@@ -102,12 +143,6 @@ describe("a bench that is not open yet", () => {
     for (const b of BENCHES.filter((x) => !x.route)) {
       expect(card(b.id), b.id).toHaveAccessibleName(expect.stringContaining(b.waiting));
     }
-  });
-
-  it("names the decision La Riserva is blocked on, not just that it is blocked", () => {
-    render(<OfficinaModule onExit={() => {}} />);
-
-    expect(card("riserva")).toHaveAccessibleName(/which quantity it shows/);
   });
 
   // Same rule as a shut district on the map: aria-disabled, never `disabled`,
@@ -130,7 +165,7 @@ describe("a bench that is not open yet", () => {
     const user = userEvent.setup();
     render(<OfficinaModule onExit={() => {}} />);
 
-    await user.click(card("riserva"));
+    await user.click(card("falsi-amici"));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 });
@@ -156,6 +191,20 @@ describe("opening a bench", () => {
 
     await user.click(card("mappe"));
     expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /L'Officina/ }));
+    expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
+  });
+
+  // La Riserva is the one bench that opens a screen the hub renders itself
+  // rather than a MODULES entry, so it is the route most likely to be wired
+  // wrong — and the only way in, since it has no NavMenu entry either.
+  it("opens La Riserva and comes back to the workshop", async () => {
+    const user = userEvent.setup();
+    render(<OfficinaModule onExit={() => {}} />);
+
+    await user.click(card("riserva"));
+    expect(screen.getByRole("heading", { name: "La Riserva" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();

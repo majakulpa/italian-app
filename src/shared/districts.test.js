@@ -115,37 +115,49 @@ describe("the district roster", () => {
   //
   // So a door is only a door when something opens it: a district contributes
   // its module when its route reaches that module directly, a bench
-  // contributes what its route opens, and a district pointing at a hub
+  // contributes the module it opens, and a district pointing at a hub
   // contributes nothing on its own. What the hub reaches is its benches' job
   // to say.
+  //
+  // La Riserva is where route and module come apart the other way round. It
+  // has a route, because the hub renders it; it has no module, because it has
+  // no content, nothing to complete and no MODULE_STATS row — the same shape
+  // as the hub itself and as the review session. So it contributes no front
+  // door, for the same reason the hub doesn't: there is no module behind it
+  // to give one to. Hence `b.module` rather than `b.route` below — reading
+  // the route as a module id would put "riserva" in a list of module ids and
+  // fail this on a screen that owes nothing.
   it("gives every module a front door on the map, whether or not it owns a district", () => {
     const fromMap = [
       ...DISTRICTS.filter((d) => d.module && d.route === d.module).map((d) => d.module),
-      ...BENCHES.filter((b) => b.route).map((b) => b.route),
+      ...BENCHES.filter((b) => b.module).map((b) => b.module),
     ];
 
     expect([...new Set(fromMap)].sort()).toEqual(MODULE_STATS.map((m) => m.id).sort());
   });
 
   // The other half of that: a bench that claims a module has to name one
-  // that exists, and it has to open it. A `route` pointing nowhere would be
-  // a card that does nothing when pressed.
+  // that exists, and its route has to be the way to it. A `module` the route
+  // doesn't reach is a card reporting on a door nobody can walk through —
+  // stated outright rather than left implied, because the version of this
+  // file that only implied it read a `module` as a front door and was wrong.
   it("opens a real module from every bench that says it opens one", () => {
     const ids = MODULES.map((m) => m.id);
-    for (const bench of BENCHES.filter((b) => b.route)) {
-      expect(ids, bench.id).toContain(bench.route);
-      expect(bench.module, bench.id).toBe(bench.route);
+    for (const bench of BENCHES.filter((b) => b.module)) {
+      expect(ids, bench.id).toContain(bench.module);
+      expect(bench.route, bench.id).toBe(bench.module);
     }
   });
 
-  // `module` without `route` is not a legal bench shape, and the reason is
-  // the one above: a bench that counts a module's progress but cannot open it
-  // is a card that reports on a door nobody can walk through. Stated outright
-  // rather than left implied, because the version of this file that only
-  // implied it read a `module` as a front door and was wrong.
-  it("never lets a bench claim a module it cannot open, or open one it doesn't claim", () => {
-    for (const bench of BENCHES) {
-      expect(Boolean(bench.module), bench.id).toBe(Boolean(bench.route));
+  // The loophole the change above opens, closed. A bench may now route
+  // somewhere that is not a module — but only to a screen the hub owns. If
+  // one ever routed at a *real* module without claiming it, that module would
+  // vanish from the reachability set above while still being reachable, and
+  // the check would have quietly stopped meaning anything.
+  it("keeps a bench that opens no module clear of the modules registry", () => {
+    const ids = MODULES.map((m) => m.id);
+    for (const bench of BENCHES.filter((b) => b.route && !b.module)) {
+      expect(ids, bench.id).not.toContain(bench.route);
     }
   });
 

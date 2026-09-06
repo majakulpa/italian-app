@@ -6,6 +6,7 @@ import { districtById } from "../../shared/districts.js";
 import VocabModule from "../vocab/VocabModule.jsx";
 import MappeModule from "../mappe/MappeModule.jsx";
 import ArticoliModule from "../articoli/ArticoliModule.jsx";
+import RiservaModule from "../riserva/RiservaModule.jsx";
 import { BENCHES } from "./benches.js";
 
 // L'Officina — the word workshop, and the front door on the district that
@@ -17,10 +18,10 @@ import { BENCHES } from "./benches.js";
 // session, and for the same reason.
 //
 // The benches it draws, and the ruling on which of them carry a figure, are
-// in benches.js. The short version: two benches have something behind them
-// and show a count derived from storage; three don't, and say in a sentence
-// what they are waiting on. Nothing on this screen is a number the app has
-// not measured.
+// in benches.js. The short version: four benches have something behind them
+// and show a count derived from storage; one doesn't, and says in a sentence
+// what it is waiting on. Nothing on this screen is a number the app has not
+// measured.
 //
 // ── Why the workbenches render in here rather than through App ──────────
 // A bench opens its module as a child of this component, so leaving the
@@ -253,6 +254,10 @@ export default function OfficinaModule({ onExit }) {
   if (open === "vocab") return <VocabModule onExit={back} exitLabel={EXIT_LABEL} />;
   if (open === "mappe") return <MappeModule onExit={back} exitLabel={EXIT_LABEL} />;
   if (open === "articoli") return <ArticoliModule onExit={back} exitLabel={EXIT_LABEL} />;
+  // La Riserva is the one bench that is not a MODULES entry — it has no
+  // content and nothing to complete — so the hub renders it directly rather
+  // than routing through App, the same as it does for the four that are.
+  if (open === "riserva") return <RiservaModule onExit={back} exitLabel={EXIT_LABEL} />;
 
   return <OfficinaHome progress={progress} onOpen={setOpen} onExit={onExit} />;
 }

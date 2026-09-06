@@ -1,9 +1,9 @@
 // L'Officina's workbenches, as data.
 //
 // design/02-la-citta.html screen 07 draws four benches — La Riserva, Le
-// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Two of
-// those four have something behind them today, so two of them carry a figure
-// here.
+// Mappe, Gli Articoli, Falsi Amici — each with a live figure on it. Three of
+// those four have something behind them today, so three of them carry a
+// figure here.
 //
 // ── Why the mockup's numbers are not in this file ───────────────────────
 // The design's cards read `834 / 2000`, `4 / 8`, `giorno 148`, `71% ↑` and
@@ -13,7 +13,10 @@
 // data behind it and so has a figure — but not that figure: `giorno 148` is a
 // day counter, which is a streak wearing a different label, and PLAN.md
 // deleted the streak permanently. What its badge counts is sentences answered
-// right first time, read back out of storage. PLAN.md's "only gate on numbers you have measured" is the rule that
+// right first time, read back out of storage. Falsi Amici now has a figure
+// too, and `12 presi` turns out to have been the one honest number in the
+// mockup — it is the right *quantity*, taken rather than available, just not
+// the right value. PLAN.md's "only gate on numbers you have measured" is the rule that
 // kept four invented padlocks off the city map, and a figure invented to make
 // a bench look busy is the same mistake in the same place. So a bench either
 // derives its count from storage, or it says in a sentence what it is waiting
@@ -31,9 +34,10 @@
 
 import { BookOpen, Grid3x3, Signpost, TriangleAlert, Type } from "lucide-react";
 import { MAPS } from "../../data/mappe.js";
+import { FALSI_AMICI } from "../../data/falsiAmici.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { moduleStats } from "../../shared/stats.js";
-import { mapKnownCount } from "../../shared/storage.js";
+import { mapKnownCount, trapsCaughtCount } from "../../shared/storage.js";
 
 // A map counts as done when every drill on it is known — the same bar
 // mapKnownCount already uses on Le Mappe's own screen, so the hub and the
@@ -60,6 +64,23 @@ function mapsDone(progress) {
 function articlesLanded(progress) {
   const { done, total } = moduleStats(progress, "articoli");
   return { done, total, unit: "sentences" };
+}
+
+// The one bench whose figure is not progress. `12 presi` on the design's card
+// is *taken*, and taken is what this counts: how many of the false friends
+// the app knows about have actually caught the learner, read straight out of
+// the caught key in storage.js. Not moduleStats, and the difference is the
+// point — moduleStats counts the ones she can now produce the right word for,
+// which is the opposite fact about the same list. A bench that showed that
+// number would be a false-friends card reporting on how well the drilling is
+// going, when the thing worth knowing is which traps have had you.
+//
+// The denominator is every trap in the collection rather than only the ones
+// met, so the bench reads "3 of 14" from the first day: the uncaught ones are
+// on that screen to be read before they get the chance, which is the whole
+// argument for having the list at all.
+function trapsCaught(progress) {
+  return { done: trapsCaughtCount(progress, FALSI_AMICI), total: FALSI_AMICI.length, unit: "caught" };
 }
 
 function wordsKnown(progress) {
@@ -125,12 +146,13 @@ export const BENCHES = [
     id: "falsi-amici",
     name: "Falsi Amici",
     lang: "it",
-    module: null,
-    route: null,
+    module: "falsi-amici",
+    route: "falsi-amici",
+    accent: "grape",
     icon: TriangleAlert,
-    count: null,
-    blurb: "The traps a rule creates, collected as you walk into them.",
-    waiting:
-      "Not built. Every map already names its own traps on its card; what does not exist is anything that remembers which ones caught you. That is what this bench is short of.",
+    count: trapsCaught,
+    blurb:
+      "The traps a rule creates, and the ones no rule reaches — collected as you walk into them, and readable before you do.",
+    waiting: null,
   },
 ];

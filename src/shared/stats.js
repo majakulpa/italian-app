@@ -12,7 +12,8 @@ import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { MAPS } from "../data/mappe.js";
 import { STRANDS } from "../data/articoli.js";
-import { wordKey, drillKey, conversationKey, storyKey, mappeKey, articoliKey } from "./storage.js";
+import { TRAP_SETS } from "../data/falsiAmici.js";
+import { wordKey, drillKey, conversationKey, storyKey, mappeKey, articoliKey, trapKey } from "./storage.js";
 
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
@@ -111,6 +112,31 @@ export const MODULE_STATS = [
     // solve it. That is a change to La Piazza, not to this bench.
     scheduled: false,
     units: (strand) => strand.items.map((i) => ({ key: articoliKey(strand, i), item: i, group: strand })),
+    doneStatus: "known",
+  },
+  {
+    id: "falsi-amici",
+    // The two sets the collection is drawn from — the traps the maps
+    // generate, and the ones no rule reaches — where the other modules put
+    // CEFR levels, for the same reason Le Mappe puts maps there. A false
+    // friend has no level: `divano` is not B1 vocabulary, it is a mistake
+    // waiting on day one and still waiting in year three. levelStats() looks
+    // a container up by level id, finds none, and leaves this out of every
+    // rung.
+    levels: TRAP_SETS,
+    // Not in the review queue, and the blocker is Le Mappe's exactly: this
+    // is a typed production item and La Piazza is multiple-choice, so
+    // scheduling it would either turn "produce first" back into recognition
+    // or need a second interaction model inside ReviewModule. Revisit when
+    // La Piazza learns to ask for typing.
+    scheduled: false,
+    // The *dodge* key, never the caught one. What it means to be finished
+    // with a false friend is that you can produce the right word for the
+    // pair; how many have caught you is a different question, it is the one
+    // the bench in L'Officina asks, and counting catches as progress would
+    // have the dashboard congratulate the learner for walking into things.
+    // storage.js holds both keys and says why there are two.
+    units: (set) => set.traps.map((trap) => ({ key: trapKey(trap), item: trap, group: set })),
     doneStatus: "known",
   },
 ];

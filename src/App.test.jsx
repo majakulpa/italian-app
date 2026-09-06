@@ -82,10 +82,11 @@ describe("App", () => {
       "Stories",
       "Le Mappe",
       "Gli Articoli",
+      "Falsi Amici",
     ]);
   });
 
-  // Both benches inside L'Officina are also switcher entries, and the
+  // The benches inside L'Officina are also switcher entries, and the
   // switcher opens them at the top level rather than inside the workshop. So
   // each of them has two routes into it that exit to different places, and
   // this is the pair of tests that keeps the second one working — before the
@@ -130,6 +131,22 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Menu" }));
     await user.click(screen.getByRole("menuitem", { name: "Gli Articoli" }));
     expect(screen.getByRole("heading", { name: "Gli Articoli" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+  });
+
+  // Falsi Amici is the fourth bench with a switcher entry, and the same
+  // second route to keep honest — without this, `onExit` at the App level is
+  // reachable only through the hub, which the coverage gate reports and a
+  // learner would discover by being unable to get out.
+  it("opens Falsi Amici from the switcher and returns to the city", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Falsi Amici" }));
+    expect(screen.getByRole("heading", { name: "Falsi Amici" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();

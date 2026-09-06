@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BookOpen, MessageCircle, GraduationCap, ScrollText, Signpost, Type } from "lucide-react";
+import { BookOpen, MessageCircle, GraduationCap, ScrollText, Signpost, TriangleAlert, Type } from "lucide-react";
 import { TOKENS, FONTS_IMPORT, THEME_STYLE, CITY_STYLE } from "./shared/theme.js";
 import ThemeToggle from "./shared/ThemeToggle.jsx";
 import NavMenu from "./shared/NavMenu.jsx";
@@ -11,6 +11,7 @@ import ConversationsModule from "./modules/conversations/ConversationsModule.jsx
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
+import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 
 // Add new modules here as they're built. `ready: true` modules render their
@@ -35,6 +36,12 @@ export const MODULES = [
   // reason Le Mappe is: the switcher lists every content module, and this
   // would otherwise be reachable only two doors into the workshop.
   { id: "articoli", name: "Gli Articoli", lang: "it", icon: Type, ready: true },
+  // Falsi Amici is L'Officina's fourth bench, and in the NavMenu for the
+  // same reason the other two are. It is also the module that is *most*
+  // worth reaching mid-session: the traps it collects are the ones you walk
+  // into somewhere else, and the collection is a thing to read rather than a
+  // course to work through.
+  { id: "falsi-amici", name: "Falsi Amici", lang: "it", icon: TriangleAlert, ready: true },
 ];
 
 export default function App() {
@@ -66,6 +73,7 @@ export default function App() {
         {active === "stories" && <StoriesModule onExit={() => setActive(null)} />}
         {active === "mappe" && <MappeModule onExit={() => setActive(null)} />}
         {active === "articoli" && <ArticoliModule onExit={() => setActive(null)} />}
+        {active === "falsi-amici" && <FalsiAmiciModule onExit={() => setActive(null)} />}
       </main>
     </div>
   );

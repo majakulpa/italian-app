@@ -6,6 +6,7 @@ import { districtById } from "../../shared/districts.js";
 import VocabModule from "../vocab/VocabModule.jsx";
 import MappeModule from "../mappe/MappeModule.jsx";
 import ArticoliModule from "../articoli/ArticoliModule.jsx";
+import FalsiAmiciModule from "../falsiAmici/FalsiAmiciModule.jsx";
 import { BENCHES } from "./benches.js";
 
 // L'Officina — the word workshop, and the front door on the district that
@@ -17,9 +18,9 @@ import { BENCHES } from "./benches.js";
 // session, and for the same reason.
 //
 // The benches it draws, and the ruling on which of them carry a figure, are
-// in benches.js. The short version: two benches have something behind them
-// and show a count derived from storage; three don't, and say in a sentence
-// what they are waiting on. Nothing on this screen is a number the app has
+// in benches.js. The short version: four benches have something behind them
+// and show a count derived from storage; one doesn't, and says in a sentence
+// what it is waiting on. Nothing on this screen is a number the app has
 // not measured.
 //
 // ── Why the workbenches render in here rather than through App ──────────
@@ -253,6 +254,7 @@ export default function OfficinaModule({ onExit }) {
   if (open === "vocab") return <VocabModule onExit={back} exitLabel={EXIT_LABEL} />;
   if (open === "mappe") return <MappeModule onExit={back} exitLabel={EXIT_LABEL} />;
   if (open === "articoli") return <ArticoliModule onExit={back} exitLabel={EXIT_LABEL} />;
+  if (open === "falsi-amici") return <FalsiAmiciModule onExit={back} exitLabel={EXIT_LABEL} />;
 
   return <OfficinaHome progress={progress} onOpen={setOpen} onExit={onExit} />;
 }

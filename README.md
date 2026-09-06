@@ -76,7 +76,10 @@ src/
     riserva/traces.js                  Where you met a word: the deck's example sentence, and the stories that glossed it
     officina/OfficinaModule.jsx        L'Officina's hub — the five benches, and the route into each (done)
     officina/benches.js                The benches as data, and the rule that a figure is measured or absent
-    review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
+    review/ReviewModule.jsx            La Piazza: the landing, and the typed review round (a route, not a MODULES entry)
+    review/feedback.js                 Judges a typed review answer and says *where* it went wrong
+    review/question.js                 Turns a due vocab word or grammar drill into something to produce
+    review/week.js                     Which solid words come back inside the next seven days
 public/
   manifest icons, favicon
 vite.config.js              PWA config (manifest, service worker) + Vitest config
@@ -309,6 +312,49 @@ categories/dialogues/stories each, and four grammar topics.
   measuring what would survive a gap. The per-level
   percentages average the four modules rather than pooling every unit —
   otherwise vocabulary's 120 words would swamp the other three.
+- **La Piazza** — the review district, and design screen 18: the screen the
+  design calls "the most important interaction in the app: a wrong answer gets
+  *located*, never solved". It used to be the opposite — four options, a red
+  cross, and the answer painted green on the spot — and that was the stated
+  reason two of L'Officina's benches stayed out of the Leitner queue rather
+  than be answered that way.
+
+  It **types** now. A grammar item already carries a gapped sentence and one
+  answer, so the gap is the question and its authored options are never drawn.
+  A vocabulary word is asked by its English gloss, with its own example
+  sentence gapped out underneath as disambiguating context — "well / good"
+  narrows to `bene` once you can see `Sto ___, grazie.` Twelve of the 120
+  words don't appear in their own example verbatim, because the lemma is
+  inflected across the sentence (`scadere` in *scade*, `farsi in quattro` in
+  *Si è fatta in quattro*), and those get the gloss alone rather than a
+  guessed span cut out of the wrong place. `question.test.js` pins exactly
+  which twelve, so a new word that silently fails to gap is a test failure.
+
+  A wrong answer is **located, not solved**, the same as Mappatura delle
+  parole and Gli Articoli, and `modules/review/feedback.js` is the third
+  sibling of those two rather than a lift into `shared/`: it says the typed
+  form is one of the *other* forms this item was written with, or that the
+  word is right up to its last letters, or how far a shared prefix got, or —
+  where there is nothing to locate — that plainly, rather than inventing a
+  place. An empty box is not an attempt. Two goes, then `Show me`, which the
+  design draws as a deliberate second choice and which is drawn as one here.
+
+  Grading stays as binary as `srs.js` is — no ease factors, no sixth box.
+  What changed is the bar: **only a first-attempt correct answer promotes**,
+  because a right answer on the second go came after the app said where to
+  look, and "show me" is wrong by definition. An accent left off still counts
+  as correct: that is a spelling slip rather than a failed retrieval, and the
+  spelling is shown back all the same.
+
+  The landing screen refuses one figure the design draws. Screen 18 warns
+  that *14 words leave "solid" if you don't review them by Thursday*, and
+  that sentence would be false here: `srs.js` has no decay, so an unreviewed
+  top-box item stays in the top box and simply goes overdue. Nothing leaves
+  solid by neglect, and inventing a penalty to manufacture urgency is the
+  streak by another name. The card states the fact underneath it instead —
+  which solid words come back inside the next seven days — or says nothing
+  at all when that is zero.
+
 - **Spaced repetition** — a five-box Leitner scheduler over vocabulary and
   grammar. Getting an item right promotes it one box and pushes it further out
   (same day, 1, 3, 7, 21 days); getting it wrong drops it straight back to box
@@ -321,6 +367,12 @@ categories/dialogues/stories each, and four grammar topics.
   is read rather than drilled. Schedule data lives in its own `progress.schedule`
   map, so a save from before the scheduler existed loads unchanged — those
   items simply count as due the first time round.
+
+  One thing the scheduler deliberately does *not* do is decay. An item that
+  reaches the top box and is never answered again stays in the top box; it
+  just goes overdue. Nothing falls out of "solid" for being late, which is
+  why La Piazza states what is coming back rather than what is about to be
+  lost.
 - **Persistence** — progress (`localStorage`) survives a reload: known/
   mastered words, drill items, completed dialogues and finished stories,
   shared across modules. The blob is versioned and migrated on load, so a
@@ -345,10 +397,17 @@ categories/dialogues/stories each, and four grammar topics.
    flashcard and drill sessions still shuffle a whole category. Ordering each
    deck by what's due would make every session, not just Review, benefit from
    it.
-4. **Typed recall / production, everywhere else** — Mappatura delle parole now types, and
-   `src/shared/typedAnswer.js` is the reusable half of it. The vocabulary and
-   grammar sessions are still recognition, and the review queue is still
-   multiple-choice, which is the reason Mappatura delle parole stays out of it.
+4. **Typed recall / production, everywhere else** — Mappatura delle parole and
+   La Piazza both type now, and `src/shared/typedAnswer.js` is the reusable
+   half of it. The vocabulary and grammar sessions themselves are still
+   recognition.
+5. **Bringing the benches into the queue** — La Piazza no longer answers a
+   wrong pick by revealing the right one, which was the stated reason Gli
+   Articoli stayed out of it, and it no longer asks for a pick at all, which
+   was the reason Mappatura delle parole and Falsi Amici did. What is left is
+   a question shape: an article item is a choice between three authored forms
+   and the queue asks for typing. Each `scheduled: false` in
+   `src/shared/stats.js` says what its own bench is now waiting on.
 
 ## Accessibility
 

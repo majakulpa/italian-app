@@ -16,9 +16,9 @@ import { solidThisWeek, WEEK_DAYS } from "./week.js";
 // The design calls this "the most important interaction in the app: a wrong
 // answer gets *located*, never solved". Until now it was the opposite of
 // that: four buttons, a red cross, and the answer handed over on the spot —
-// the weakest feedback shape available, and the stated reason Le Mappe and
-// Gli Articoli both stayed outside the queue rather than be answered that
-// way. So this screen is rebuilt around two changes.
+// the weakest feedback shape available, and the stated reason Mappatura delle
+// parole and Gli Articoli both stayed outside the queue rather than be
+// answered that way. So this screen is rebuilt around two changes.
 //
 // **Production, not recognition.** Every item is typed. A grammar item
 // already carries a gapped sentence and one answer, so the gap is the
@@ -39,11 +39,11 @@ import { solidThisWeek, WEEK_DAYS } from "./week.js";
 // correct — that is a spelling slip, not a failed recall, and typedAnswer.js
 // exists to say so.
 //
-// Built in the La Città design system, like Le Mappe, the L'Officina hub and
-// Gli Articoli. PLAN.md's open question 3 is the seam between that and the
-// four older module interiors, and its answer is that a screen migrates when
-// it is rebuilt, never in a blanket pass — so this screen moves and nothing
-// else does.
+// Built in the La Città design system, like Mappatura delle parole, the
+// L'Officina hub and Gli Articoli. PLAN.md's open question 3 is the seam
+// between that and the four older module interiors, and its answer is that a
+// screen migrates when it is rebuilt, never in a blanket pass — so this
+// screen moves and nothing else does.
 
 const MONO = "'IBM Plex Mono', monospace";
 const SERIF = "'Fraunces', serif";

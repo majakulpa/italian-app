@@ -72,15 +72,17 @@ export const MODULE_STATS = [
     // rather than a gap.
     levels: MAPS,
     // Not in the review queue, and this is a decision rather than an
-    // oversight. Two reasons, both about what the queue is for. A Leitner box
-    // schedules a *lexical item*, which decays one word at a time; a map is a
-    // productive rule, and once `-cja → -zione` is installed it doesn't fade
-    // word by word — the words it unlocks decay, and those belong to the
-    // lexicon, which vocab already feeds. And La Piazza is a multiple-choice
-    // surface: putting a typed production item into it would either turn
-    // "produce first" back into recognition, or need a second interaction
-    // model inside ReviewModule, which is a change to La Piazza and not to
-    // Mappatura delle parole. Revisit when La Piazza learns to ask for typing.
+    // oversight — though it now rests on one reason where it used to rest on
+    // two. A Leitner box schedules a *lexical item*, which decays one word at
+    // a time; a map is a productive rule, and once `-cja → -zione` is
+    // installed it doesn't fade word by word — the words it unlocks decay, and
+    // those belong to the lexicon, which vocab already feeds.
+    //
+    // The second reason is gone. It was that La Piazza is a multiple-choice
+    // surface and this bench types, so scheduling a drill here would have
+    // turned "produce first" back into recognition. La Piazza types now, and
+    // locates a wrong answer rather than solving it, so the interaction model
+    // is no longer the objection — only the rule/word argument above is.
     scheduled: false,
     units: (map) => map.drills.map((d) => ({ key: mappeKey(map, d), item: d, group: map })),
     doneStatus: "known",
@@ -94,22 +96,19 @@ export const MODULE_STATS = [
     // permanent strand. levelStats() looks a container up by level id, finds
     // none, and leaves it out of every rung.
     levels: STRANDS,
-    // Out of the review queue, and — like Mappatura delle parole — a decision rather than
-    // an oversight, though for a different reason. Mappatura delle parole's blocker is the
-    // interaction model: La Piazza is multiple-choice and Mappatura delle parole types. An
-    // article item *is* multiple-choice, so that objection does not apply
-    // here and the queue would accept it as it stands.
+    // Out of the review queue, and the blocker that kept it out is gone.
+    // It was the feedback: La Piazza used to answer a wrong pick by painting
+    // the right option green and revealing it on the spot — the standard
+    // wrong → red cross → answer pattern PLAN.md names as the weakest shape
+    // available, and the exact pattern this bench was built to replace. That
+    // was written down here as "revisit when La Piazza learns to locate a
+    // wrong answer rather than solve it", and it has.
     //
-    // The objection that does apply is the feedback. La Piazza answers a
-    // wrong pick by painting the right option green and revealing it on the
-    // spot — the standard wrong → red cross → answer pattern that PLAN.md
-    // names as the weakest feedback shape available, and the exact pattern
-    // this bench was built to replace. Scheduling article items would take
-    // the app's most carefully located feedback and replay it in the weakest
-    // form available, which is a worse outcome than them not recurring.
-    //
-    // Revisit when La Piazza learns to locate a wrong answer rather than
-    // solve it. That is a change to La Piazza, not to this bench.
+    // What is left is not an argument, it is work: La Piazza asks for typing
+    // and an article item is a choice between three authored forms, so the
+    // queue needs a second question shape before it can carry one. That is a
+    // change of its own rather than a flag flip here, and flipping the flag
+    // without it would put an article item in front of a text box.
     scheduled: false,
     units: (strand) => strand.items.map((i) => ({ key: articoliKey(strand, i), item: i, group: strand })),
     doneStatus: "known",
@@ -124,11 +123,12 @@ export const MODULE_STATS = [
     // a container up by level id, finds none, and leaves this out of every
     // rung.
     levels: TRAP_SETS,
-    // Not in the review queue, and the blocker is Mappatura delle parole's exactly: this
-    // is a typed production item and La Piazza is multiple-choice, so
-    // scheduling it would either turn "produce first" back into recognition
-    // or need a second interaction model inside ReviewModule. Revisit when
-    // La Piazza learns to ask for typing.
+    // Not in the review queue. The blocker used to be the interaction model —
+    // this is a typed production item and La Piazza was multiple-choice — and
+    // that is gone: La Piazza types. What holds now is that a trap is not a
+    // word you are trying to remember but a collision you are trying not to
+    // walk into, and the bench counts catches rather than recalls. Scheduling
+    // the dodge key would be defensible; it is a change of its own.
     scheduled: false,
     // The *dodge* key, never the caught one. What it means to be finished
     // with a false friend is that you can produce the right word for the

@@ -5,19 +5,20 @@
 // common is a *shape* — two attempts, a verdict that is data rather than a
 // sentence, one announce() that builds the plain text for the live region,
 // and nothing revealed until the item is settled. What they do not have in
-// common is judging logic: Le Mappe measures a typed answer against a suffix
-// rule, Gli Articoli classifies a chosen option along two categorical
-// dimensions, and this file has neither a rule nor a set of options — only an
-// answer and whatever the learner typed. The four exports of
+// common is judging logic: Mappatura delle parole measures a typed answer
+// against a suffix rule, Gli Articoli classifies a chosen option along two
+// categorical dimensions, and this file has neither a rule nor a set of
+// options — only an answer and whatever the learner typed. The four exports of
 // shared/typedAnswer.js are the domain-free half, and they are what this is
 // built on.
 //
 // ── Located, not solved, with nothing but the answer to go on ────────────
 // PLAN.md names the standard wrong → red cross → answer pattern as the
 // weakest feedback shape available, and until now La Piazza *was* that
-// pattern — which is why Le Mappe and Gli Articoli both stayed out of the
-// queue. So a verdict here says where the answer went wrong and never what it
-// is, and the second attempt happens before anything is revealed:
+// pattern — which is why Mappatura delle parole and Gli Articoli both stayed
+// out of the queue. So a verdict here says where the answer went wrong and
+// never what it is, and the second attempt happens before anything is
+// revealed:
 //
 //   exact       right.
 //   accents     folded-equal, marks missing. Correct, and spelled back —
@@ -52,8 +53,9 @@ import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "../../shared
 export const ATTEMPTS = 2;
 
 // Two characters is where an overlap stops being a coincidence — the same
-// threshold Le Mappe uses, for the same reason. Italian words overwhelmingly
-// end in a vowel, so a one-letter tail is true of half the lexicon.
+// threshold Mappatura delle parole uses, for the same reason. Italian words
+// overwhelmingly end in a vowel, so a one-letter tail is true of half the
+// lexicon.
 const MEANINGFUL = 2;
 
 // How much of the answer may still be wrong for it to count as "the ending".
@@ -63,7 +65,7 @@ const ENDING = 2;
 
 // The mirror of sharedPrefix: how far the two agree from the *back*, folded,
 // returned in the answer's own spelling. Not in typedAnswer.js because
-// nothing else wants it — Le Mappe's "did the ending land" question is asked
+// nothing else wants it — Mappatura delle parole asks "did the ending land"
 // against the map's rule, a known string, and this file has no rule to ask
 // against, only the answer's own tail.
 //

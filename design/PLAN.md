@@ -44,9 +44,10 @@ layer](#polish-is-a-first-class-layer).
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
 | 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ✅ complete |
-| 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
-| 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
-| 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
+| 4 | **La Piazza** — the review district: typed production, located feedback, a landing screen | ✅ complete |
+| 5 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
+| 6 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
+| 7 | **Scenes with voice** — the four-phase task loop | last, biggest build |
 
 ### What exists on `main` today
 
@@ -72,11 +73,16 @@ layer](#polish-is-a-first-class-layer).
 - `src/modules/riserva/` — La Riserva (design 10), word detail (design 11), and
   `traces.js`, which answers "dove l'hai incontrata" from the deck and the story glosses.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
-  shared-prefix arithmetic the located feedback is built on.
+  shared-prefix arithmetic the located feedback is built on. Three modules judge
+  against it now: `modules/mappe/feedback.js`, `modules/falsiAmici/feedback.js`
+  and `modules/review/feedback.js`.
+- `src/modules/review/` — La Piazza (design 18): the landing, the typed round,
+  `feedback.js` (nine verdict kinds), `question.js` (a due unit turned into
+  something to produce) and `week.js` (the one figure the landing states).
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
   Everything in L'Officina — the hub, Mappatura delle parole, La Riserva, word detail,
-  Gli Articoli and Falsi Amici — is in the new one, per the rule in the visual-seam
-  open question below.
+  Gli Articoli and Falsi Amici — and La Piazza are in the new one, per the rule in
+  the visual-seam open question below.
 
 ---
 
@@ -174,7 +180,7 @@ large, untestable diff for no behaviour change.
 
 ---
 
-## Current chunk — L'Officina
+## Chunk 3 — L'Officina
 
 The word workshop, and the district that makes the lexicon visible. Cheapest per
 unit of value, and the part of the design most worth having.
@@ -186,7 +192,11 @@ Four workbenches, per screen 07:
   `-ista`, each with the Polish road, the English road, what the ending brings
   with it, and the false friends the rule creates. The drill is production —
   the app's first typed exercise — and a wrong answer is located rather than
-  solved.
+  solved. It also stays out of the Leitner queue, and its stated blocker —
+  that La Piazza was multiple-choice and this bench types — is gone as of
+  chunk 4. What holds now is the narrower argument beside its
+  `scheduled: false` flag in `src/shared/stats.js`: a Leitner box schedules a
+  lexical item, and a suffix rule is not one.
 - **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
   Unblocked: it shows counts and per-band worth, no percentage.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
@@ -200,13 +210,14 @@ Four workbenches, per screen 07:
   infinite answer space can — and the rule and the Polish card stay shut until
   the item does.
 
-  It stays out of the Leitner queue, and for a different reason from Mappatura delle parole.
-  Mappatura delle parole's blocker is the interaction model: La Piazza is multiple-choice
-  and Mappatura delle parole types. An article item *is* multiple-choice, so the queue would
-  take it — and would then answer a wrong pick by revealing the right one on
-  the spot, which is the weakest feedback shape available and the exact
-  pattern this bench replaces. Revisit when La Piazza learns to locate rather
-  than solve; that is a change to La Piazza.
+  It stays out of the Leitner queue, but **not for the reason written here
+  before**. That reason was that the queue would answer a wrong pick by
+  revealing the right one on the spot — the weakest feedback shape available,
+  and the exact pattern this bench replaces — and that it should be revisited
+  when La Piazza learned to locate rather than solve. It has (chunk 4). What
+  is left is not an argument but work: La Piazza asks for typing now, and an
+  article item is a choice between three authored forms, so the queue needs a
+  second question shape before it can carry one.
 - **Falsi Amici** — ✅ built. The traps collected as you hit them: `colazione` ≠
   *kolacja*, `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed
   Mappatura delle parole first, because Mappatura delle parole is where most of them get generated — and
@@ -268,6 +279,51 @@ answer gets located, not solved — flag it, say where, allow a second attempt,
 then reveal. The standard wrong→red X→answer pattern is the weakest feedback
 shape available. Mappatura delle parole implements this in `modules/mappe/feedback.js`; reuse
 it rather than re-deciding it.
+
+---
+
+## Chunk 4 — La Piazza
+
+Design screen 18, and the screen the design calls "the most important
+interaction in the app: a wrong answer gets *located*, never solved". It was
+the opposite of that: four options, a red cross, and the answer painted green
+on the spot. Two entries above name that as the reason a bench stays out of
+the Leitner queue; both are now out of date, and both have been corrected.
+
+What it is:
+
+- **Production, not recognition.** Everything is typed. A grammar item's
+  authored `options` stay in the data and stop being drawn — they become the
+  `distractor` verdict instead, which is the most locatable error in the app.
+  A vocabulary word is asked by its English gloss, with its example sentence
+  gapped out underneath, because a gloss alone is often ambiguous. Twelve of
+  the 120 words are inflected across their own example and cannot be gapped
+  without lemmatising; those get the gloss alone, and a data test pins which
+  twelve so a new one cannot fail quietly.
+- **Located, not solved.** `modules/review/feedback.js`, the third sibling of
+  the two feedback files above — same shape, no shared judging logic, all of
+  it built on the four domain-free exports of `shared/typedAnswer.js`.
+- **Only right-first-time promotes.** `srs.js` is untouched and grading stays
+  binary. A correct second attempt came after the app said where to look,
+  which is scaffolding, and "show me" is wrong by definition. An accent left
+  off still counts: a spelling slip is not a failed retrieval.
+
+**One figure of the design is refused.** Screen 18 warns that *14 parole
+escono da «solida» se non le rivedi entro giovedì.* That would be false here:
+`srs.js` has no decay, so a top-box item nobody answers stays in the top box
+and simply goes overdue. Nothing leaves solid by neglect, so nothing can be
+defended by answering before Thursday — and inventing a penalty to manufacture
+urgency is the streak wearing a different hat. The card states the fact
+underneath it instead: which solid words come back inside the next seven days,
+or nothing at all when that is zero. Same rule as the four padlocks the map
+refused and the figures the benches refused.
+
+**What this unblocks, and is not doing here.** Gli Articoli, Mappatura delle
+parole and Falsi Amici each stated a blocker that was a fact about La Piazza,
+and all three of those facts have changed. Bringing any of them into the queue
+is its own chunk: the article strand needs the queue to carry a second
+question shape, since it is a choice between three authored forms and the
+queue now asks for typing.
 
 ---
 

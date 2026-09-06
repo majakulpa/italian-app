@@ -52,22 +52,31 @@ layer](#polish-is-a-first-class-layer).
 
 - `src/data/fondamentale.js` — **300 of a target 2,000** entries, rank order, EN + PL glosses, articles on opaque nouns.
 - `src/shared/wordState.js` — `unseen → learning → known → solid`, derived from the Leitner box, never stored.
-- `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `lexiconStates()`, `rankWeight()`.
+- `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `rankWeight()`, and the
+  vocabulary bridge: `lemmaKey()`, `lexiconUnits()`, `lexiconStates()`, `lexiconEvidence()`.
+  The bridge is walked once into rank → units; the states, the scheduler box behind
+  a word and the traces under it are three reads of that, not three walks.
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
   `officina` routes to its own hub rather than straight to a module.
 - `src/modules/officina/` — the L'Officina hub (design 07) and its bench roster.
-  Three benches open something (the vocabulary deck, Mappatura delle parole, Gli Articoli);
-  two state what they are waiting on and show no figure, because the design's
-  numbers for them are drawings rather than measurements.
+  **All five benches open** — the vocabulary deck, Mappatura delle parole, La Riserva,
+  Gli Articoli and Falsi Amici — and each carries a figure read out of storage.
+  None of the mockup's drawn numbers survived: a bench either measures its count
+  or shows none.
 - `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
   roads, its notes, its false friends and 5–6 production drills.
 - `src/data/articoli.js` — **3 strands, 10 rules, 16 items**, each with three options,
   the rule it instances and a Polish anchor of its own.
+- `src/data/falsiAmici.js` — **14 false friends** from two sources: the traps each map
+  already declares, reused rather than copied, and the pairs no suffix rule generates.
+- `src/modules/riserva/` — La Riserva (design 10), word detail (design 11), and
+  `traces.js`, which answers "dove l'hai incontrata" from the deck and the story glosses.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
-  Mappatura delle parole, the L'Officina hub and Gli Articoli are in the new one, per the rule
-  in open question 4.
+  Everything in L'Officina — the hub, Mappatura delle parole, La Riserva, word detail,
+  Gli Articoli and Falsi Amici — is in the new one, per the rule in the visual-seam
+  open question below.
 
 ---
 
@@ -290,6 +299,12 @@ categories even though the interface is English.
 - Pull styling from `theme.js`. Migrate a screen's styling when you rebuild that
   screen, not in a blanket pass.
 - Legible at 375px, keyboard-reachable, visible focus.
+- **Contrast is measured in a browser, in both themes, not inferred from the
+  tokens.** The token checks in `theme.test.js` prove a colour is good; they
+  cannot see that no colour was set. La Riserva's legend shipped inheriting
+  browser-default black — 1.27:1 in the dark theme — with every arithmetic
+  check passing and 1,336 tests green. jsdom computes no cascade for inherited
+  colour, so nothing automated here can catch it.
 - Never grade a structure above the learner's stage. It stays in the input.
 - Push branches and open PRs freely; never merge without approval.
 - Short PR descriptions. UI evidence goes in the

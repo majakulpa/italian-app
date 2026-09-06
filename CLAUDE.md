@@ -23,9 +23,12 @@ the project structure, what's built, and the roadmap.
   matching the existing files.
 - Run `npm test` before considering any change done. Don't report a task
   finished on UI/logic changes without the suite passing.
-- For UI changes, verify in the browser preview (`npm run dev`, port
-  5173) — this is a PWA; visual and interaction bugs won't show up in
-  unit tests alone.
+- For UI changes, verify in the browser preview (`npm run dev`) — this is a
+  PWA, and visual bugs do not show up in unit tests. Not a formality: jsdom
+  computes no cascade for inherited colour, so an element that sets no `color`
+  passes every arithmetic contrast check and axe pass while being invisible in
+  one theme. That has already shipped once. Measure the rendered page, in both
+  themes, and say what you measured.
 
 ## Git
 

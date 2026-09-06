@@ -14,7 +14,7 @@ import { judge, announce, drillSuffix, ATTEMPTS } from "./feedback.js";
 //
 // Built in the La Città design system (citySurface + CITY_ACCENTS) rather
 // than the old postcard styling the four older module interiors still use.
-// PLAN.md's open question 4 is exactly that seam, and its answer is that a
+// PLAN.md's visual-seam open question is exactly that, and its answer is that a
 // screen migrates when it is built, never in a blanket pass — so this screen
 // is new and the others are left alone.
 //

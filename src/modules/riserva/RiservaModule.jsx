@@ -40,7 +40,8 @@ import WordDetail from "./WordDetail.jsx";
 // "press one of two thousand things".
 //
 // ── Seeded is not the same as unseen ────────────────────────────────────
-// The lexicon is 300 entries of a 2,000 target (PLAN.md open question 2), so
+// The lexicon is 300 entries of a 2,000 target (PLAN.md, the open question on
+// the size of the lexicon), so
 // most ranks have no word behind them yet. A rank nobody has written down
 // cannot be unseen — "unseen" is a claim about the learner and this is a claim
 // about the file — so the grid draws those differently and says so. It makes

@@ -34,7 +34,7 @@ import { BENCHES } from "./benches.js";
 //
 // Built in the La Città design system, like Mappatura delle parole. The vocabulary deck
 // behind the first bench is still in the old postcard styling; that is
-// PLAN.md's open question 4, and the answer there is that a screen migrates
+// PLAN.md's visual-seam open question, and the answer there is that a screen migrates
 // when it is rebuilt, never in a blanket pass.
 
 const MONO = "'IBM Plex Mono', monospace";

@@ -37,13 +37,18 @@ src/
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
     storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
-    stats.js                     Reads that progress back across all four modules (dashboard counts)
+    stats.js                     Reads that progress back across every module that keeps progress (dashboard and bench counts)
     srs.js                       Leitner scheduler: boxes, due dates, the review queue
     wordState.js                 The four word states (unseen/learning/known/solid), derived from the boxes
-    coverage.js                  Frequency-weighted share of running Italian the learner would know
+    coverage.js                  Frequency-weighted share of running Italian the learner would know, and the
+                                  vocabulary bridge onto lexicon ranks (states, scheduler keys, traces)
+    districts.js                 The five districts of the city map, their routes, and the locks that state their condition
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
     typedAnswer.js               Accent-tolerant matching for typed answers, and the shared-prefix arithmetic behind "where it went wrong"
-    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx
+    useThemeMode.js, ThemeToggle.jsx  Light/dark preference, stored and applied as `data-theme`
+    NavMenu.jsx                  The module switcher, rendered from the MODULES registry
+    shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx,
+    LevelPicker.jsx, TicketCard.jsx, TranslationToggle.jsx, LiveStatus.jsx, AnswerMark.jsx, AnswerStatus.jsx
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
@@ -68,6 +73,9 @@ src/
     falsiAmici/feedback.js             Judges a typed answer and tells a near-miss from walking into the trap
     riserva/RiservaModule.jsx          The 2,000 as a grid in frequency order, and what each band of 200 is worth (done)
     riserva/WordDetail.jsx             One word: both glosses, where Polish splits it, and where it sits in the scheduler
+    riserva/traces.js                  Where you met a word: the deck's example sentence, and the stories that glossed it
+    officina/OfficinaModule.jsx        L'Officina's hub — the five benches, and the route into each (done)
+    officina/benches.js                The benches as data, and the rule that a figure is measured or absent
     review/ReviewModule.jsx            Mixed spaced-repetition session (a route, not a MODULES entry)
 public/
   manifest icons, favicon
@@ -85,8 +93,14 @@ npm run test:coverage
 Vitest + React Testing Library. Covers persistence and migration, the Leitner
 scheduler, speech support detection, the module UI flows, and the data itself
 — every gloss key has to occur in its own paragraph, every comprehension
-answer has to be one of its options, and the four data files have to agree on
-the level ladder (see `*.test.js(x)` files next to the code they test).
+answer has to be one of its options, and the level-bearing data files have to
+agree on the ladder (see `*.test.js(x)` files next to the code they test).
+
+`vite.config.js` excludes `.claude/` from test discovery. Agent worktrees live
+at `.claude/worktrees/<name>` and each is a full checkout with its own copy of
+the suite; git ignores a registered worktree automatically, so nothing warns
+you, and vitest was collecting every branch's tests and running them against
+this checkout's `node_modules` — 178 files and 488 failures on a green tree.
 
 `npm run test:coverage` is gated at 100% statements/branches/functions/lines,
 so uncovered code fails the run rather than sliding by. If a branch genuinely
@@ -347,12 +361,26 @@ covers it:
   gloss open, and a review session. `src/test/a11y.js` is the runner; a
   failure prints the rule, the offending markup and axe's own fix advice.
 - **Colour** — jsdom has no paint, so axe can only ever report contrast as
-  "incomplete". `src/shared/theme.test.js` closes that gap arithmetically
-  instead: it parses the hex values out of `THEME_STYLE`, resolves the same
+  "incomplete". `src/shared/theme.test.js` narrows that gap arithmetically:
+  it parses the hex values out of `THEME_STYLE`, resolves the same
   `color-mix()` tints the components ask for, and checks every pairing the
   design system promises — text on each surface (4.5:1), white on a level
   fill, feedback text on its tinted background, and control boundaries
   (3:1, SC 1.4.11). `src/test/contrast.js` holds the maths.
+
+  **It narrows the gap rather than closing it, and the difference is worth
+  knowing.** Those checks prove a *token* has good contrast. They cannot see
+  that no token was applied. La Riserva's legend shipped with rows that set no
+  `color` at all, so every label inherited the browser default of black —
+  18.6:1 on the light ground and 1.27:1 on the dark one — while the token
+  checks passed, axe reported nothing, and 1,336 tests stayed green. jsdom
+  computes no cascade for inherited colour, so nothing in the suite could have
+  caught it.
+
+  What catches this class of bug is opening the running app and measuring the
+  rendered page, in both themes. That is why CLAUDE.md asks for a browser pass
+  on any UI change, and it is not a formality: an unset colour is invisible to
+  every automated check this repo has.
 
 What that translated into in the app:
 

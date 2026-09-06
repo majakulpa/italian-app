@@ -10,11 +10,6 @@ import { saveProgress, wordKey, storyKey, todayISO, addDaysISO } from "../../sha
 import { reviewItem, MAX_BOX } from "../../shared/srs.js";
 import * as speech from "../../shared/speech.js";
 
-// The grid is 300 real buttons, and Testing Library computes an accessible
-// name for every one of them on each query. That is fine uninstrumented and
-// tight against the default 5s once the coverage run is wrapped around it.
-vi.setConfig({ testTimeout: 30000 });
-
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
 function vocabKey(italian) {
@@ -27,8 +22,8 @@ function vocabKey(italian) {
   throw new Error(`no vocab word "${italian}"`);
 }
 
-// Right n times running puts an item in the top box; twice puts it in box 3,
-// which is the first box coverage counts.
+// Right n times running puts an item in box n+1: once is box 2 (learning),
+// twice is box 3 (the first box coverage counts), MAX_BOX times is solid.
 function study(progress, italian, times) {
   let next = progress;
   for (let i = 0; i < times; i += 1) next = reviewItem(next, vocabKey(italian), true, todayISO());
@@ -36,8 +31,18 @@ function study(progress, italian, times) {
 }
 
 const open = () => render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
-const cell = (rank) => screen.getByRole("button", { name: new RegExp(`^posto ${rank}:`) });
-const cells = () => screen.getAllByRole("button", { name: /^posto \d+:/ });
+
+// ── Reaching a square ────────────────────────────────────────────────────
+//
+// Never through getAllByRole({ name }): a name query resolves an accessible
+// name for every button on the screen before it can filter, and this screen
+// has 300 of them, which is tens of seconds under coverage instrumentation to
+// learn something the markup already states. A square carries its rank as an
+// id precisely so the grid can put focus back on it, and that id is an exact
+// selector here too. The accessible name still gets checked — once, with
+// toHaveAccessibleName, in the tests that are actually about the name.
+const square = (container, rank) => container.querySelector(`#riserva-posto-${rank}`);
+const squares = (container) => [...container.querySelectorAll("button")].filter((b) => b.textContent.startsWith("posto "));
 
 beforeEach(() => {
   localStorage.clear();
@@ -89,7 +94,7 @@ describe("the quantity it shows", () => {
   // that every percent sign on the screen is followed by the denominator it
   // is a percentage of, and that denominator is one fascia.
   it("puts its denominator beside every percentage it prints", () => {
-    const { container } = render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
+    const { container } = open();
     const chunks = container.textContent.split("%");
 
     // Ten fasce, ten percentages, and nothing else on the screen uses one.
@@ -99,11 +104,18 @@ describe("the quantity it shows", () => {
     }
   });
 
-  it("counts words in the header rather than quoting a percentage", () => {
-    saveProgress(study(EMPTY, "madre", MAX_BOX));
+  // The header pill is heldWords() — known *plus* solid — and the legend
+  // right under it lists `known` and `solid` as separate counts. So the pill
+  // has to say "known or better", or one screen would use one word for two
+  // populations, on the one screen whose whole point is figures that cannot
+  // be misread.
+  it("counts words in the header, and names the population it counts", () => {
+    saveProgress(study(study(EMPTY, "madre", MAX_BOX), "padre", 2));
     open();
 
-    expect(screen.getByText("1 / 2,000 known")).toBeInTheDocument();
+    expect(screen.getByText("2 / 2,000 known or better")).toBeInTheDocument();
+    expect(screen.getByText("known — 1")).toBeInTheDocument();
+    expect(screen.getByText("solid — 1")).toBeInTheDocument();
   });
 
   // What a fascia is worth, in the design's own coverage points, with no
@@ -122,6 +134,8 @@ describe("the legend", () => {
     open();
 
     expect(screen.getByText("unseen — 2,000")).toBeInTheDocument();
+    expect(screen.getByText("learning — 0")).toBeInTheDocument();
+    expect(screen.getByText("known — 0")).toBeInTheDocument();
     expect(screen.getByText("solid — 0")).toBeInTheDocument();
   });
 
@@ -147,12 +161,12 @@ describe("the fasce", () => {
   // nothing written in them, and 1,600 empty squares would be 1,600 nodes
   // saying what one sentence says.
   it("draws a square only for a rank the word list has reached", () => {
-    open();
+    const { container } = open();
 
-    expect(cells()).toHaveLength(FONDAMENTALE.length);
-    expect(cell(1)).toBeInTheDocument();
-    expect(cell(300)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^posto 301:/ })).toBeNull();
+    expect(squares(container)).toHaveLength(FONDAMENTALE.length);
+    expect(square(container, 1)).toBeInTheDocument();
+    expect(square(container, 300)).toBeInTheDocument();
+    expect(square(container, 301)).toBeNull();
   });
 
   it("says in a sentence how much of each fascia is written", () => {
@@ -167,7 +181,7 @@ describe("the fasce", () => {
   // as hairlines so the square block is honest about being half empty. They
   // are aria-hidden and unfocusable, because there is no word behind them.
   it("draws the unwritten half of a part-written fascia as inert placeholders", () => {
-    const { container } = render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
+    const { container } = open();
     const placeholders = container.querySelectorAll('[aria-hidden="true"][style*="dashed"]');
 
     expect(placeholders).toHaveLength(100);
@@ -186,29 +200,40 @@ describe("the fasce", () => {
 
 // WCAG 1.4.1: a 15px square with a colour in it and nothing else would put
 // the whole meaning of this screen in the one channel a colour-blind or
-// screen-reader user doesn't have.
+// screen-reader user doesn't have. jsdom paints nothing, so the colour half
+// is theme.test.js's problem; what is checkable here is that every square
+// says its own state in words, and that the four states really do produce
+// four different names.
 describe("colour is never the only thing a square says", () => {
-  it("names the word and its state in every square", () => {
-    saveProgress(study(EMPTY, "madre", 2));
-    open();
+  it("names the word and its own state in every square, across all four states", () => {
+    // One word per state, each at the box that produces it: box 2 learning,
+    // box 3 known, the top box solid, and a word nothing has touched.
+    let progress = study(EMPTY, "madre", MAX_BOX);
+    progress = study(progress, "padre", 2);
+    progress = study(progress, "figlio", 1);
+    saveProgress(progress);
 
-    expect(cell(252)).toHaveAccessibleName("posto 252: la madre — known");
-    expect(cell(1)).toHaveAccessibleName("posto 1: essere — unseen");
+    const { container } = open();
+
+    expect(square(container, 252)).toHaveAccessibleName("posto 252: la madre — solid");
+    expect(square(container, 253)).toHaveAccessibleName("posto 253: il padre — known");
+    expect(square(container, 254)).toHaveAccessibleName("posto 254: figlio — learning");
+    expect(square(container, 1)).toHaveAccessibleName("posto 1: essere — unseen");
   });
 
   it("marks the Italian headword inside a square as Italian", () => {
-    open();
+    const { container } = open();
 
-    expect(within(cell(1)).getByText("essere")).toHaveAttribute("lang", "it");
+    expect(within(square(container, 1)).getByText("essere")).toHaveAttribute("lang", "it");
   });
 });
 
 describe("opening a word", () => {
   it("opens the detail from a square and comes back to the grid", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
+    const { container } = open();
 
-    await user.click(cell(252));
+    await user.click(square(container, 252));
     expect(screen.getByRole("heading", { name: "la madre" })).toHaveAttribute("lang", "it");
 
     await user.click(screen.getByRole("button", { name: /La Riserva/ }));
@@ -217,8 +242,8 @@ describe("opening a word", () => {
 
   it("shows the rank and both glosses, and marks the Polish as Polish", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(252));
+    const { container } = open();
+    await user.click(square(container, 252));
 
     expect(screen.getByText("posto 252")).toHaveAttribute("lang", "it");
     expect(screen.getByText("mother")).toBeInTheDocument();
@@ -231,8 +256,8 @@ describe("opening a word", () => {
   // like something that fell out.
   it("shows no pronunciation and no part of speech, because the data has neither", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(252));
+    const { container } = open();
+    await user.click(square(container, 252));
 
     const entry = FONDAMENTALE.find((e) => e.rank === 252);
     expect(Object.keys(entry).sort()).toEqual(["en", "it", "pl", "rank"]);
@@ -241,12 +266,43 @@ describe("opening a word", () => {
   });
 });
 
+// Opening a square unmounts the grid and coming back remounts it, so focus
+// would land on <body> both ways round. Every other screen in the app does
+// exactly that and gets away with it; this one puts 300 tab stops between
+// <body> and anything a keyboard user wants, which is a different problem.
+describe("where focus goes", () => {
+  it("moves to the headword on the way in and back to the square on the way out", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { container } = open();
+
+    await user.click(square(container, 252));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "la madre" }));
+
+    await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+    expect(document.activeElement).toBe(square(container, 252));
+  });
+
+  // Twice running through the same square: the grid's effect depends on a
+  // value that has to change each time, and holding the bare rank would
+  // restore focus the first time and silently not the second.
+  it("restores focus again when the same square is opened twice", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { container } = open();
+
+    for (let visit = 0; visit < 2; visit += 1) {
+      await user.click(square(container, 252));
+      await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+      expect(document.activeElement, `visit ${visit}`).toBe(square(container, 252));
+    }
+  });
+});
+
 describe("the scheduler state", () => {
   it("says the state and the Leitner box the state came from", async () => {
     const user = userEvent.setup({ delay: null });
     saveProgress(study(EMPTY, "madre", 2));
-    open();
-    await user.click(cell(252));
+    const { container } = open();
+    await user.click(square(container, 252));
 
     expect(screen.getByText("known · box 3")).toBeInTheDocument();
   });
@@ -257,8 +313,8 @@ describe("the scheduler state", () => {
   it("says the state alone when there is no schedule entry behind it", async () => {
     const user = userEvent.setup({ delay: null });
     saveProgress({ ...EMPTY, words: { [vocabKey("madre")]: "known" } });
-    open();
-    await user.click(cell(252));
+    const { container } = open();
+    await user.click(square(container, 252));
 
     expect(screen.getByText("known")).toBeInTheDocument();
     expect(screen.queryByText(/box/)).toBeNull();
@@ -266,8 +322,8 @@ describe("the scheduler state", () => {
 
   it("says unseen for a word nothing in the app has evidence about", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(1));
+    const { container } = open();
+    await user.click(square(container, 1));
 
     expect(screen.getByText("unseen")).toBeInTheDocument();
   });
@@ -276,16 +332,17 @@ describe("the scheduler state", () => {
 // The design's "Torna fra 3 giorni". There is no honest answer for a word
 // that has never been answered, so the row is absent rather than guessed.
 describe("when it comes back", () => {
-  const dueIn = (days) => ({
+  const scheduled = (entry) => ({
     version: 2,
     words: { [vocabKey("madre")]: "known" },
-    schedule: { [vocabKey("madre")]: { box: 3, due: addDaysISO(todayISO(), days), last: todayISO() } },
+    schedule: { [vocabKey("madre")]: entry },
   });
+  const dueIn = (days) => scheduled({ box: 3, due: addDaysISO(todayISO(), days), last: todayISO() });
 
   const openDetail = async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(252));
+    const { container } = open();
+    await user.click(square(container, 252));
   };
 
   it("counts the days from today", async () => {
@@ -305,14 +362,26 @@ describe("when it comes back", () => {
 
   // "fra 0 giorni" is not Italian, and an overdue item is not in the future
   // either. Both are today.
-  it("says today for an item that is due or overdue", async () => {
+  it("says today for an item that is due, and for one that is overdue", async () => {
     saveProgress(dueIn(0));
     await openDetail();
     expect(screen.getByText("oggi")).toBeInTheDocument();
 
     saveProgress(dueIn(-9));
     await openDetail();
-    expect(screen.getAllByText("oggi").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("oggi")).toHaveLength(2);
+  });
+
+  // A box with no due date is a save written before the scheduler grew them.
+  // srs.js's isDue() calls that shape due now; so does this, rather than
+  // subtracting from undefined and printing "fra NaN giorni".
+  it("says today for a schedule entry that has a box and no due date", async () => {
+    saveProgress(scheduled({ box: 3 }));
+    await openDetail();
+
+    expect(screen.getByText("known · box 3")).toBeInTheDocument();
+    expect(screen.getByText("oggi")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/NaN/);
   });
 
   it("says nothing at all for a word that has never been answered", async () => {
@@ -325,8 +394,8 @@ describe("when it comes back", () => {
 describe("where you met it", () => {
   it("shows the deck sentence and the story that glossed the word", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(290));
+    const { container } = open();
+    await user.click(square(container, 290));
 
     // "la stazione" is the one lemma both sources reach.
     expect(screen.getByText("Ci vediamo alla stazione.")).toHaveAttribute("lang", "it");
@@ -340,9 +409,12 @@ describe("where you met it", () => {
     const a1 = STORY_LEVELS.find((l) => l.id === "A1");
     const roma = a1.stories.find((s) => s.title === "Un giorno a Roma");
 
-    saveProgress({ ...study(EMPTY, "stazione", 1), words: { [vocabKey("stazione")]: "learning", [storyKey(a1, roma)]: "done" } });
-    open();
-    await user.click(cell(290));
+    saveProgress({
+      ...study(EMPTY, "stazione", 1),
+      words: { [vocabKey("stazione")]: "learning", [storyKey(a1, roma)]: "done" },
+    });
+    const { container } = open();
+    await user.click(square(container, 290));
 
     expect(screen.getByText("You have answered this card.")).toBeInTheDocument();
     expect(screen.getByText("You have finished this story.")).toBeInTheDocument();
@@ -350,8 +422,8 @@ describe("where you met it", () => {
 
   it("says so in a sentence when there is nothing to show", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(1));
+    const { container } = open();
+    await user.click(square(container, 1));
 
     expect(screen.getByText(/Nowhere yet\./)).toBeInTheDocument();
     expect(screen.queryByRole("listitem")).toBeNull();
@@ -359,8 +431,8 @@ describe("where you met it", () => {
 
   it("says what has not been done yet, rather than leaving it blank", async () => {
     const user = userEvent.setup({ delay: null });
-    open();
-    await user.click(cell(290));
+    const { container } = open();
+    await user.click(square(container, 290));
 
     expect(screen.getByText("You have not answered this card yet.")).toBeInTheDocument();
     expect(screen.getByText("You have not finished this story.")).toBeInTheDocument();
@@ -382,7 +454,7 @@ describe("the ceiling, on the screen", () => {
     open();
 
     expect(coverage(progress).counts.solid).toBe(20);
-    expect(screen.getByText("20 / 2,000 known")).toBeInTheDocument();
+    expect(screen.getByText("20 / 2,000 known or better")).toBeInTheDocument();
     expect(screen.getByText("solid — 20")).toBeInTheDocument();
   });
 });

@@ -42,6 +42,23 @@ describe("the workshop", () => {
     expect(screen.getByText("Qui si smontano le parole.")).toHaveAttribute("lang", "it");
   });
 
+  // Nothing checked this sentence, which is how opening La Riserva left the
+  // screen reading "1 that say what they are still waiting on". It is
+  // asserted against the roster rather than against a hardcoded "5 — 4 and
+  // 1", so building the next bench moves the test with the screen instead of
+  // failing it.
+  it("counts its own benches in a sentence that reads correctly at any split", () => {
+    render(<OfficinaModule onExit={() => {}} />);
+
+    const open = BENCHES.filter((b) => b.route).length;
+    expect(
+      screen.getByText(
+        `Here words get taken apart. ${BENCHES.length} benches — ${open} open today and ${BENCHES.length - open} not. ` +
+          "A bench that is shut says what it is waiting on.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("puts every bench on the screen as its own card", () => {
     render(<OfficinaModule onExit={() => {}} />);
 

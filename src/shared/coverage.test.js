@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   coverage,
   coverageBands,
@@ -184,8 +184,13 @@ describe("lexiconEvidence", () => {
 
   // The invariant the word detail leans on: the key it is handed is a key
   // that really is in that state, so the Leitner box it reads back can't
-  // contradict the state printed above it. Checked across a blob with words
-  // in three different states rather than on one lucky rank.
+  // contradict the state printed above it.
+  //
+  // Weak on its own, and knowingly kept as a smoke check: no shipped lexicon
+  // rank has more than one vocabulary unit behind it, so over the real data
+  // the find() this exercises is identically [0] and swapping it for [0]
+  // would leave this green. The fold that makes the find load-bearing gets
+  // its own test below, on data built for it.
   it("hands back a key that is itself in the state it reports", () => {
     const progress = study(study(study(EMPTY, keyFor("madre"), MAX_BOX), keyFor("padre"), 3), keyFor("treno"), 1);
     const evidence = lexiconEvidence(progress);
@@ -194,6 +199,76 @@ describe("lexiconEvidence", () => {
     for (const found of evidence.values()) {
       expect(wordState(progress, found.key), String(found.rank)).toBe(found.state);
     }
+  });
+});
+
+// The case the shipped data cannot produce, and the reason lexiconEvidence
+// picks its key with a find() rather than taking the first unit: one lemma in
+// two decks, at two different states.
+//
+// It is a shape the data may legitimately grow — "la chiave" could reasonably
+// be taught in both a travel deck and a housing one — so the fold is written
+// for it now and tested now. Testing it needs the vocabulary units replaced,
+// which means replacing MODULE_STATS before coverage.js reads it, which means
+// re-importing the module: UNITS_BY_RANK is built once at load, on purpose.
+describe("one lemma in two decks", () => {
+  const A1 = { id: "A1", label: "A1" };
+  const family = { id: "family", name: "Family" };
+  const home = { id: "home", name: "Home" };
+
+  // Both normalise onto "madre", so both land on the same lexicon rank — one
+  // through the article convention and one without it, which is the real
+  // reason two decks can collide here in the first place.
+  const UNITS = [
+    { key: "vocab:one", item: { it: "madre", en: "mother" }, group: family },
+    { key: "vocab:two", item: { it: "la madre", en: "mother" }, group: home },
+  ];
+
+  // Progress built by hand rather than through reviewItem: srs.js reads
+  // MODULE_STATS too, and importing it here would pull in the mock.
+  const boxes = (a, b) => ({
+    version: 2,
+    words: {},
+    schedule: { "vocab:one": { box: a, due: "2026-01-01" }, "vocab:two": { box: b, due: "2026-01-01" } },
+  });
+
+  async function withUnits(units) {
+    vi.resetModules();
+    vi.doMock("./stats.js", () => ({ MODULE_STATS: [{ id: "vocab", levels: [A1], units: () => units }] }));
+    return import("./coverage.js");
+  }
+
+  afterEach(() => {
+    vi.doUnmock("./stats.js");
+    vi.resetModules();
+  });
+
+  it("keeps the stronger state whichever deck it comes from", async () => {
+    const { lexiconStates } = await withUnits(UNITS);
+
+    // box 2 is learning, box 5 is solid. The rank reads solid either way
+    // round, so no deck wins by being last.
+    expect(lexiconStates(boxes(2, MAX_BOX)).get(rankOf("la madre"))).toBe("solid");
+    expect(lexiconStates(boxes(MAX_BOX, 2)).get(rankOf("la madre"))).toBe("solid");
+  });
+
+  // The one that fails if the key is taken off the front of the list instead
+  // of matched to the folded state. Without it the detail screen would print
+  // "solid" over the box of the deck that has the word at box 2.
+  it("hands back the key of the deck that justifies the state", async () => {
+    const { lexiconEvidence } = await withUnits(UNITS);
+    const rank = rankOf("la madre");
+
+    expect(lexiconEvidence(boxes(2, MAX_BOX)).get(rank)).toMatchObject({ state: "solid", key: "vocab:two" });
+    expect(lexiconEvidence(boxes(MAX_BOX, 2)).get(rank)).toMatchObject({ state: "solid", key: "vocab:one" });
+  });
+
+  it("names the deck that key belongs to, so the detail can say where it is taught", async () => {
+    const { lexiconEvidence, lexiconUnits } = await withUnits(UNITS);
+    const rank = rankOf("la madre");
+
+    expect(lexiconUnits(rank)).toHaveLength(2);
+    expect(lexiconEvidence(boxes(2, MAX_BOX)).get(rank).unit.group.name).toBe("Home");
   });
 });
 

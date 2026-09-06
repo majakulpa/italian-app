@@ -212,8 +212,10 @@ categories/dialogues/stories each, and four grammar topics.
   `coverageBands` splits the reservoir into ten bands of 200 for La Riserva to
   draw, `lexiconEvidence` carries the storage key a rank's state came from so
   the word detail can read the Leitner box behind it, and `heldWords` is the
-  one definition of "words you know" the bench badge and the Riserva header
-  both count with.
+  one definition of "known or better" the bench badge and the Riserva header
+  both count with — spelled out in full on the header, because the legend
+  under it lists `known` and `solid` as separate counts and one word must not
+  name two populations on one screen.
 
   The figure is capped low by the content that ships, which is worth knowing
   before reading anything into it: coverage learns that a word is known only

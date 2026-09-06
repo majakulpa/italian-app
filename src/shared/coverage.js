@@ -193,6 +193,10 @@ export function lexiconEvidence(progress) {
   const evidence = new Map();
 
   for (const [rank, state] of lexiconStates(progress)) {
+    // No guard on the find, and it cannot come back undefined: lexiconStates
+    // folds `strongest` over exactly these units and drops the rank when the
+    // fold is "unseen", so any state it reports is one some unit in this list
+    // actually holds. A guard here would be a branch no input can reach.
     const unit = lexiconUnits(rank).find((candidate) => wordState(progress, candidate.key) === state);
     evidence.set(rank, { rank, state, key: unit.key, unit });
   }

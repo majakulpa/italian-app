@@ -279,13 +279,17 @@ describe("La Riserva", () => {
   // rather than an aria-label so the Italian headword can carry lang="it".
   // That is a lot of accessible names to get wrong at once, which is exactly
   // why the grid is scanned rather than trusted.
-  it("has an accessible grid, with squares in every word state", async () => {
-    const word = greetings.words.find((w) => w.it === "sì");
-    saveProgress({
-      words: { [wordKey(a1Vocab, greetings, word)]: "known" },
-      schedule: { [wordKey(a1Vocab, greetings, word)]: { box: 3, due: "2020-01-01" } },
-    });
-
+  //
+  // Scanned on a fresh account, and the test says so rather than claiming to
+  // cover all four word states. It used to seed one studied word and call
+  // itself "with squares in every word state", which was false twice over:
+  // one box-3 word is one `known` square and no `learning` or `solid` ones,
+  // and the only difference the seed made to the DOM was the word "known"
+  // inside a hidden span, which no axe rule reads. What a state actually
+  // changes is a fill colour, and jsdom paints nothing. The four-state claim
+  // now lives in RiservaModule.test.jsx, where the square's name is asserted
+  // per state, and the colours are theme.test.js's.
+  it("has an accessible grid on a fresh account", async () => {
     const { container } = riserva();
     await expectNoViolations(container);
   });

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
@@ -18,16 +18,23 @@ import { wordTraces } from "./traces.js";
 // ── The quantity this screen shows, and the one it must not ─────────────
 // PLAN.md settles which quantity this screen shows, under "La Riserva shows
 // counts and per-band quantities", and this screen is where that ruling
-// lands. Every quantity here has *words* as its denominator: how many of the
-// 2,000 sit in each state, and per fascia, what those 200 are worth in
-// coverage points and how much of that the learner holds. The
-// frequency-weighted share of running text — `pct` in coverage.js — does not
-// appear anywhere on this screen, and that is deliberate rather than an
-// oversight. The top 100 words alone are worth about 55% of running Italian,
-// so a beginner who has learned the function words would read "55%" as "I
-// understand half of Italian". That figure keeps its place on the city map
-// and the dashboard, where it is labelled as a share of running text and is
-// honestly that. A percentage out of 200 words cannot be misread as ability.
+// lands. The rule is about what each figure is *about*, not about its units:
+//
+//   Every quantity that describes the learner is a count of words — how many
+//   of the 2,000 sit in each state, how many of a fascia's 200 you hold.
+//   The only share-of-all-running-text on the screen is `weightPct`, what a
+//   fascia is worth, which is a fact about Italian and not a claim about
+//   you. `bandPct` sits between the two and says so in its own sentence: how
+//   much of *that fascia's* worth you have, with the denominator written out
+//   beside it.
+//
+// What never appears is `pct` from coverage.js — the learner's share of all
+// running Italian. That is deliberate rather than an oversight. The top 100
+// words alone are worth about 55% of running Italian, so a beginner who has
+// learned the function words would read "55%" as "I understand half of
+// Italian". That figure keeps its place on the city map and the dashboard,
+// where it is labelled as a share of running text and is honestly that. A
+// count out of 200 words cannot be misread as ability.
 //
 // ── What is not built from the design ───────────────────────────────────
 // Screen 10 draws all 2,000 cells and a "Studia la fascia 3 →" button.
@@ -85,6 +92,31 @@ const STATE_PAINT = { unseen: null, learning: "azzurro", known: "lemon", solid: 
 // already checks both halves of: on a colour fill the near-black outline
 // does it in light mode and the bright fill does it in dark, while a neutral
 // cell has only its outline, so that one flips.
+// One square, in CSS pixels. Small, and knowingly so — this is a decision
+// rather than an oversight, so here is the trade.
+//
+// WCAG 2.2's SC 2.5.8 asks 24 CSS pixels of any pointer target. This is 15.
+// The app targets WCAG 2.1 AA (see README), where there is no minimum target
+// size at AA, so this sits outside the stated bar rather than under it — but
+// it is a real cost to anyone with a tremor or a large fingertip and it
+// should not be discovered by them.
+//
+// What 24px would cost: at 375px the grid has about 297px of usable width,
+// which is 15 columns at this size and 10 at 24px. A fascia of 200 goes from
+// 14 rows and ~266px to 20 rows and ~560px — one fascia then fills a phone
+// screen on its own, and the whole reservoir roughly doubles to a 5,000px
+// scroll. The screen exists to show 200 words as one block and the gradient
+// forming across it; a fascia you can only see a third of at a time is not
+// that screen.
+//
+// What softens it: no word is reachable *only* by hitting a square. Every
+// square is a real button in rank order, so a keyboard or switch user
+// arrives at one by moving rather than by aiming, and the fascia's own
+// sentences carry the counts without anyone pressing anything. If the target
+// size ever becomes the bar, the answer is a zoom or a list view beside the
+// grid, not a bigger square.
+const CELL_SIZE = 15;
+
 function cellSurface(state) {
   const paint = CITY_ACCENTS[STATE_PAINT[state]];
   return {
@@ -173,9 +205,16 @@ function Screen({ children }) {
 // way the Italian headword can be marked lang="it" and a screen reader says
 // "essere" rather than reading it with English phonetics (SC 3.1.2). The
 // rank goes in the name too, so 300 cells have 300 distinct names.
+// `cellId` rather than a ref map: coming back from the word detail has to
+// find one square out of 300 that were unmounted while the detail was open,
+// so there is no ref to have kept. An id derived from the rank survives the
+// remount, which a ref does not.
+const cellId = (rank) => `riserva-posto-${rank}`;
+
 function Cell({ entry, state, onOpen }) {
   return (
     <button
+      id={cellId(entry.rank)}
       onClick={() => onOpen(entry.rank)}
       style={{
         ...cellSurface(state),
@@ -218,7 +257,7 @@ function BandGrid({ band, evidence, onOpen }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(15px, 1fr))",
+        gridTemplateColumns: `repeat(auto-fill, minmax(${CELL_SIZE}px, 1fr))`,
         gap: 4,
         margin: "12px 0",
       }}
@@ -291,9 +330,19 @@ function Legend({ counts }) {
   );
 }
 
-function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel }) {
+function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel, returnTo }) {
   const total = useMemo(() => coverage(progress), [progress]);
   const bands = useMemo(() => coverageBands(progress), [progress]);
+
+  // Coming back from the word detail puts focus on the square it was opened
+  // from, rather than dropping it on <body> in front of 300 tab stops.
+  // No optional chaining on the lookup: `returnTo` only ever holds a rank
+  // that was reached by pressing its square, so the square is on the screen,
+  // and a guard for a case no input can produce is a branch no test can
+  // honestly cover.
+  useEffect(() => {
+    if (returnTo) document.getElementById(cellId(returnTo.rank)).focus();
+  }, [returnTo]);
 
   return (
     <Screen>
@@ -307,11 +356,14 @@ function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel }) {
           <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.05 }}>
             La Riserva
           </h1>
-          {/* Known or better, out of the whole 2,000 — the same figure the
-              bench badge carries, from the same function, so the door and
-              the room cannot disagree about it. */}
+          {/* "known or better", not "known". The figure is heldWords() —
+              known plus solid — and the legend directly below lists `known`
+              and `solid` as two separate counts, so a pill saying "known"
+              would name one population in the header and a smaller one ten
+              pixels lower. Same function as the L'Officina bench badge, so
+              the door and the room still cannot disagree about the number. */}
           <Pill>
-            {count(heldWords(total.counts))} / {count(FONDAMENTALE_TARGET)} known
+            {count(heldWords(total.counts))} / {count(FONDAMENTALE_TARGET)} known or better
           </Pill>
         </div>
 
@@ -347,16 +399,22 @@ function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel }) {
 
 // ── The word detail (design screen 11) ───────────────────────────────────
 
-// Whole days from today to an ISO due date. Both ends anchored to UTC
-// midnight, the same as todayISO() and addDaysISO() in storage.js, so a DST
-// boundary can't turn one day into 23 hours and round it away.
-function daysUntil(iso, today) {
-  return Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
-}
+// The design's "Torna fra 3 giorni", in Italian and grammatical at zero: an
+// overdue or due-today item is `oggi`, not "fra 0 giorni".
+//
+// A schedule entry with a box and no `due` is a save written before the
+// scheduler grew due dates. srs.js's isDue() reads that shape as due now —
+// there is no honest answer to when it next comes round, and the safe one is
+// "now" — so this reads it the same way rather than subtracting from
+// undefined and rendering "fra NaN giorni".
+//
+// Both ends of the subtraction are anchored to UTC midnight, the same as
+// todayISO() and addDaysISO() in storage.js, so a DST boundary can't turn one
+// day into 23 hours and round it away.
+function whenDue(due, today) {
+  if (!due) return "oggi";
 
-// The design's "Torna fra 3 giorni", in Italian and grammatical at zero:
-// an overdue or due-today item is `oggi`, not "fra 0 giorni".
-function whenDue(days) {
+  const days = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
   if (days <= 0) return "oggi";
   if (days === 1) return "fra 1 giorno";
   return `fra ${days} giorni`;
@@ -415,6 +473,17 @@ function WordDetail({ entry, found, progress, onBack }) {
   const state = found ? found.state : "unseen";
   const traces = wordTraces(progress, entry);
 
+  // Focus moves to the headword when the detail opens. Every other screen in
+  // the app swaps without moving focus and gets away with it, because focus
+  // lands on <body> and the next Tab reaches the back link. Here the next Tab
+  // reaches the first of 300 squares, and a keyboard user who opened the
+  // square at rank 290 would have to walk back through 289 of them. tabIndex
+  // -1 makes the heading focusable without adding a tab stop.
+  const heading = useRef(null);
+  useEffect(() => {
+    heading.current.focus();
+  }, []);
+
   return (
     <Screen>
       <BackLink label={<span lang="it">La Riserva</span>} onClick={onBack} />
@@ -429,7 +498,12 @@ function WordDetail({ entry, found, progress, onBack }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          lang="it"
+          style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}
+        >
           {entry.it}
         </h1>
         <SpeakButton text={entry.it} size={20} color={TOKENS.inkSoft} />
@@ -455,8 +529,12 @@ function WordDetail({ entry, found, progress, onBack }) {
 
       {traces.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
-          {traces.map((trace) => (
-            <Trace key={`${trace.kind}:${trace.where}`} trace={trace} />
+          {/* Keyed by position. `kind:where` reads better but is not
+              unique — two decks can share a category name for one lemma —
+              and this list is derived fresh and never reordered, so the
+              index is a stable identity for it. */}
+          {traces.map((trace, i) => (
+            <Trace key={`${trace.kind}-${i}`} trace={trace} />
           ))}
         </ul>
       ) : (
@@ -476,7 +554,7 @@ function WordDetail({ entry, found, progress, onBack }) {
       {schedule && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 18 }}>
           <Eyebrow style={{ color: TOKENS.inkSoft }}>Next review</Eyebrow>
-          <Pill lang="it">{whenDue(daysUntil(schedule.due, todayISO()))}</Pill>
+          <Pill lang="it">{whenDue(schedule.due, todayISO())}</Pill>
         </div>
       )}
     </Screen>
@@ -492,8 +570,18 @@ export default function RiservaModule({ onExit, exitLabel }) {
   // a bench that did write would still be picked up there.
   const [progress] = useState(loadProgress);
   const [openRank, setOpenRank] = useState(null);
+  // A fresh object rather than the bare rank, so opening and closing the same
+  // square twice running still changes the value the grid's focus effect
+  // depends on. Holding the number would restore focus the first time and
+  // silently not the second.
+  const [returnTo, setReturnTo] = useState(null);
 
   const evidence = useMemo(() => lexiconEvidence(progress), [progress]);
+
+  const back = () => {
+    setReturnTo({ rank: openRank });
+    setOpenRank(null);
+  };
 
   if (openRank) {
     return (
@@ -501,12 +589,19 @@ export default function RiservaModule({ onExit, exitLabel }) {
         entry={BY_RANK.get(openRank)}
         found={evidence.get(openRank)}
         progress={progress}
-        onBack={() => setOpenRank(null)}
+        onBack={back}
       />
     );
   }
 
   return (
-    <RiservaGrid progress={progress} evidence={evidence} onOpen={setOpenRank} onExit={onExit} exitLabel={exitLabel} />
+    <RiservaGrid
+      progress={progress}
+      evidence={evidence}
+      onOpen={setOpenRank}
+      onExit={onExit}
+      exitLabel={exitLabel}
+      returnTo={returnTo}
+    />
   );
 }

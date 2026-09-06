@@ -219,8 +219,14 @@ function OfficinaHome({ progress, onOpen, onExit }) {
           Qui si smontano le parole.
         </p>
         <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.inkSoft, margin: "6px 0 0", lineHeight: 1.55 }}>
-          Here words get taken apart. {BENCHES.length} benches — {OPEN_BENCHES.length} you can walk up to today, and{" "}
-          {SHUT_BENCHES.length} that say what they are still waiting on.
+          {/* Phrased so no word in it has to agree with a number. It used to
+              read "…and N that say what they are still waiting on", which was
+              right while two benches were shut and ungrammatical the moment
+              La Riserva opened and left one. A ternary on the count would fix
+              the grammar and add a branch the shipped roster can never take;
+              a sentence with no verb agreeing with a count needs neither. */}
+          Here words get taken apart. {BENCHES.length} benches — {OPEN_BENCHES.length} open today and{" "}
+          {SHUT_BENCHES.length} not. A bench that is shut says what it is waiting on.
         </p>
       </div>
 
@@ -256,7 +262,7 @@ export default function OfficinaModule({ onExit }) {
   if (open === "articoli") return <ArticoliModule onExit={back} exitLabel={EXIT_LABEL} />;
   // La Riserva is the one bench that is not a MODULES entry — it has no
   // content and nothing to complete — so the hub renders it directly rather
-  // than routing through App, the same as it does for the four that are.
+  // than routing through App, the same as it does for the three that are.
   if (open === "riserva") return <RiservaModule onExit={back} exitLabel={EXIT_LABEL} />;
 
   return <OfficinaHome progress={progress} onOpen={setOpen} onExit={onExit} />;

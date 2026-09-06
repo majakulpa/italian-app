@@ -9,15 +9,15 @@ const modules = [
   { id: "grammar", name: "Grammar", icon: GraduationCap, ready: true },
   { id: "conversations", name: "Conversations", icon: MessageCircle, ready: true },
   { id: "stories", name: "Stories", icon: ScrollText, ready: false },
-  { id: "mappe", name: "Le Mappe", lang: "it", icon: Signpost, ready: true },
+  { id: "mappe", name: "Mappatura delle parole", lang: "it", icon: Signpost, ready: true },
 ];
 
 function renderMenu(active = null, onSelect = () => {}) {
   return render(<NavMenu modules={modules} active={active} onSelect={onSelect} />);
 }
 
-// WCAG 3.1.2. Every module was called something English until Le Mappe, and
-// an unmarked "Le Mappe" is read to a screen-reader user with English
+// WCAG 3.1.2. Every module was called something English until Mappatura delle parole, and
+// an unmarked "Mappatura delle parole" is read to a screen-reader user with English
 // phonetics — the same defect the district names on the city map already fix.
 describe("a module whose name is not English", () => {
   const openMenu = async () => {
@@ -28,7 +28,7 @@ describe("a module whose name is not English", () => {
 
   it("marks a non-English name with its language", async () => {
     await openMenu();
-    expect(screen.getByText("Le Mappe").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("Mappatura delle parole").closest("[lang]")).toHaveAttribute("lang", "it");
   });
 
   it("leaves an English name unmarked rather than claiming lang=\"en\"", async () => {

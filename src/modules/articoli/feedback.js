@@ -5,7 +5,7 @@
 // *shape* — two attempts, a verdict that is data rather than a sentence, one
 // announce() that builds the plain text for the live region, and nothing
 // revealed until the attempts are spent. What they do not have in common is a
-// single line of judging logic: Le Mappe compares a typed string against a
+// single line of judging logic: Mappatura delle parole compares a typed string against a
 // suffix rule and measures how far a shared prefix got, and this file
 // compares a chosen option against an answer along two categorical
 // dimensions. There is nothing to lift but the number 2, and hoisting that

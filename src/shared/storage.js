@@ -114,9 +114,20 @@ export function isStoryDone(progress, level, story) {
   return progress.words[storyKey(level, story)] === "done";
 }
 
-// Le Mappe drills work like grammar drills — right first time is "known",
+// ── Why the key still says `mappe` ──────────────────────────────────────
+// The bench was called Le Mappe until it was renamed to Mappatura delle
+// parole: "maps" read as the city map on a home screen that is literally a
+// city map, which is the one thing the section is not about. The new name says
+// what is being mapped, which is the half that was doing the disambiguating.
+// The rename is user-facing only.
+// These keys are a data contract with every save already on a learner's
+// device, and renaming the namespace would orphan every drill anyone has
+// done for the sake of a word nobody sees. The module id and the file names
+// stay `mappe` for the same reason: they are addresses, not labels.
+//
+// Mappatura delle parole drills work like grammar drills — right first time is "known",
 // anything else is "learning" — so they need no new shape in the blob, only
-// their own namespace. A save written before Le Mappe existed simply has no
+// their own namespace. A save written before Mappatura delle parole existed simply has no
 // "mappe:" keys in it and loads unchanged; nothing here had to be versioned.
 export function mappeKey(map, drill) {
   return `mappe:${map.id}:${drill.id}`;
@@ -126,7 +137,7 @@ export function mapKnownCount(progress, map) {
   return map.drills.filter((d) => progress.words[mappeKey(map, d)] === "known").length;
 }
 
-// Gli Articoli works like Le Mappe and the grammar drills: right first time
+// Gli Articoli works like Mappatura delle parole and the grammar drills: right first time
 // is "known", anything that needed the second attempt is "learning". Its own
 // namespace again, so a save written before the articles strand existed simply
 // has no "articoli:" keys in it and loads unchanged.

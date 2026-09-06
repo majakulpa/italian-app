@@ -3,7 +3,7 @@ import { MAPS, LANG_LABELS } from "./mappe.js";
 import { drillSuffix } from "../modules/mappe/feedback.js";
 import { CITY_ACCENTS } from "../shared/theme.js";
 
-// Le Mappe is authored linguistic data, and a wrong example here is worse
+// Mappatura delle parole is authored linguistic data, and a wrong example here is worse
 // than a bug: it teaches the learner something false, confidently, and a
 // Polish native spots it instantly. So the invariants below are the ones a
 // human proofreader would apply, written down.

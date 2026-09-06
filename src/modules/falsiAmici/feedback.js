@@ -2,7 +2,7 @@
 //
 // A sibling of modules/mappe/feedback.js and modules/articoli/feedback.js
 // rather than a reuse of either, and the reason is what each one judges
-// against. Le Mappe's `judge` is built on `map.rule.to` and `map.routes` —
+// against. Mappatura delle parole's `judge` is built on `map.rule.to` and `map.routes` —
 // it derives which suffix the prompt is an instance of, decides whether the
 // ending landed, and names the rule back. There is no rule here: a false
 // friend is a fact about two words, not a correspondence, so every branch of
@@ -57,7 +57,7 @@ export function judge(trap, input, attempt) {
     correct: false,
     kind: "wrong",
     // Two characters is where a shared prefix stops being a coincidence —
-    // the same bar Le Mappe uses, so the two drills locate alike.
+    // the same bar Mappatura delle parole uses, so the two drills locate alike.
     shared: prefix.length >= 2 ? prefix : null,
     answer: last ? trap.say.it : null,
   };

@@ -8,7 +8,7 @@
 // `tappeto` at the foot of this file).
 //
 // ── Two sources, one collection ─────────────────────────────────────────
-// PLAN.md says Le Mappe is where *most* of these get generated, not all, and
+// PLAN.md says Mappatura delle parole is where *most* of these get generated, not all, and
 // that is exactly the shape of the data.
 //
 //   from a map   `-cja → -zione` reliably produces the right *shape* and has
@@ -45,7 +45,7 @@
 //
 // ── The drill this feeds ────────────────────────────────────────────────
 // Prompt from the lookalike, produce the Italian, and the false friend is
-// the tempting wrong answer — Le Mappe's own trap-drill shape, and PLAN.md's
+// the tempting wrong answer — Mappatura delle parole's own trap-drill shape, and PLAN.md's
 // retrieval rule (produce first, reveal last) either way. So every entry
 // needs a `say` whether it came from a map or not.
 
@@ -93,7 +93,7 @@ const OWN = [
     lookalike: "cena",
     lookalikeLang: "pl",
     lookalikeMeans: "a price",
-    note: "Le Mappe mentions this one in passing, on the drill where kolacja lands on cena. It is written down as a trap here, which is the only place the app can show it to you before it catches you.",
+    note: "Mappatura delle parole mentions this one in passing, on the drill where kolacja lands on cena. It is written down as a trap here, which is the only place the app can show it to you before it catches you.",
     say: { it: "prezzo", also: [], en: "a price" },
   },
   {
@@ -160,7 +160,7 @@ const SAY_FOR_MAP_TRAP = {
   autista: { it: "autistico", also: [], en: "autistic" },
 };
 
-// The trap word as a learner would type it. Le Mappe writes `l'attualità`
+// The trap word as a learner would type it. Mappatura delle parole writes `l'attualità`
 // with its article, because the card is teaching a noun and the article is
 // half of what a -ità noun is; nothing types an article into a one-word
 // answer box.
@@ -185,7 +185,7 @@ export const TRAP_SETS = [
     name: "The maps set these",
     accent: "lemon",
     blurb:
-      "A suffix rule gets the shape right and has no opinion about the meaning, so every map hands you a few confident mistakes along with the few hundred words. Le Mappe names them on the card that creates them; this is where they are kept.",
+      "A suffix rule gets the shape right and has no opinion about the meaning, so every map hands you a few confident mistakes along with the few hundred words. Mappatura delle parole names them on the card that creates them; this is where they are kept.",
     traps: fromMaps(),
   },
   {
@@ -204,7 +204,7 @@ export const TRAP_SETS = [
 export const FALSI_AMICI = TRAP_SETS.flatMap((set) => set.traps);
 
 // The trap a typed Italian word walks into, or null. This is the join
-// between Le Mappe and this bench: a mapping drill that produces a `trap`
+// between Mappatura delle parole and this bench: a mapping drill that produces a `trap`
 // verdict has caught the learner with the map's own output, and where that
 // output is one of these, it is the same event the bench is a record of.
 //

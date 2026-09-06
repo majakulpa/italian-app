@@ -17,7 +17,7 @@ import AnswerMark from "../../shared/AnswerMark.jsx";
 import { judge, announce, ATTEMPTS } from "./feedback.js";
 
 // Falsi Amici — the last of L'Officina's workbenches, and the one that had
-// nothing behind it until now. Le Mappe has returned a `kind: "trap"` verdict
+// nothing behind it until now. Mappatura delle parole has returned a `kind: "trap"` verdict
 // since the day it shipped and drawn a card for it; nothing anywhere wrote it
 // down. This bench is that write, plus the collection it writes into.
 //
@@ -33,12 +33,12 @@ import { judge, announce, ATTEMPTS } from "./feedback.js";
 // ── The drill ───────────────────────────────────────────────────────────
 // Prompt from the lookalike, produce the Italian, and the false friend is
 // the tempting wrong answer. That is PLAN.md's retrieval rule (produce
-// first, reveal last) and it is also Le Mappe's own trap-drill shape, which
+// first, reveal last) and it is also Mappatura delle parole's own trap-drill shape, which
 // matters more than it sounds: typing the false friend here is the same
 // event as typing it there, so it goes through the same key in storage.js
 // and the bench cannot end up with two ideas of what has caught you.
 //
-// Built in the La Città design system, like Le Mappe, the hub and Gli
+// Built in the La Città design system, like Mappatura delle parole, the hub and Gli
 // Articoli. Colour carries meaning and never carries it alone: a caught trap
 // is red *and* says "caught you", the same rule the drill's AnswerMark obeys.
 
@@ -53,7 +53,7 @@ function langAttr(lang) {
   return lang === "en" ? undefined : lang;
 }
 
-// Pink is Polish everywhere in L'Officina — the Polish road in Le Mappe, the
+// Pink is Polish everywhere in L'Officina — the Polish road in Mappatura delle parole, the
 // anchor card in Gli Articoli — and blue is English.
 const LOOKALIKE_ACCENT = { pl: "bubble", en: "azzurro" };
 
@@ -334,7 +334,7 @@ function Drill({ set, onBack, onDone, onGrade, onCaught }) {
   // One button, whatever state the item is in — swapping "Check" for a
   // separate "Next" would unmount the element the learner just pressed and
   // drop focus to the body, which is a keyboard user losing their place on
-  // every answer. Same reasoning as Le Mappe's.
+  // every answer. Same reasoning as Mappatura delle parole's.
   const submit = (event) => {
     event.preventDefault();
     if (settled) {
@@ -358,7 +358,7 @@ function Drill({ set, onBack, onDone, onGrade, onCaught }) {
 
     if (next.correct || next.last) {
       // Right first time is "known", anything that needed a second look is
-      // "learning" — the same bar Le Mappe, Gli Articoli and the grammar
+      // "learning" — the same bar Mappatura delle parole, Gli Articoli and the grammar
       // drill use, so the four cards mean the same thing. Deliberately not
       // the same fact as `caught`: this one says you can produce the word,
       // and that one says the trap has had you. See storage.js.
@@ -521,7 +521,7 @@ function Summary({ set, results, onBack, onAgain }) {
 // Two ways in, so two things `onExit` can mean: L'Officina's hub opens this
 // as a child of itself and comes back to the workshop, and the NavMenu opens
 // it at the top level and comes back to the city. `exitLabel` is how the back
-// link says which of the two it is about to do. Same shape as Le Mappe's.
+// link says which of the two it is about to do. Same shape as Mappatura delle parole's.
 export default function FalsiAmiciModule({ onExit, exitLabel = "All modules" }) {
   const [progress, setProgress] = useState(loadProgress);
   const [session, setSession] = useState(null);

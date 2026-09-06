@@ -56,7 +56,7 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/districts.js` — the five districts, their streets, and their locks.
   `officina` routes to its own hub rather than straight to a module.
 - `src/modules/officina/` — the L'Officina hub (design 07) and its bench roster.
-  Three benches open something (the vocabulary deck, Le Mappe, Gli Articoli);
+  Three benches open something (the vocabulary deck, Mappatura delle parole, Gli Articoli);
   two state what they are waiting on and show no figure, because the design's
   numbers for them are drawings rather than measurements.
 - `src/data/mappe.js` — **4 suffix maps** (`-zione`, `-ità`, `-ico`, `-ista`), each with both
@@ -66,7 +66,7 @@ layer](#polish-is-a-first-class-layer).
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
-  Le Mappe, the L'Officina hub and Gli Articoli are in the new one, per the rule
+  Mappatura delle parole, the L'Officina hub and Gli Articoli are in the new one, per the rule
   in open question 4.
 
 ---
@@ -172,7 +172,7 @@ unit of value, and the part of the design most worth having.
 
 Four workbenches, per screen 07:
 
-- **Le Mappe** — ✅ built ([#11](https://github.com/majakulpa/italian-app/pull/11)).
+- **Mappatura delle parole** — ✅ built ([#11](https://github.com/majakulpa/italian-app/pull/11)).
   Suffix correspondences as rules, not word lists: `-zione`, `-ità`, `-ico`,
   `-ista`, each with the Polish road, the English road, what the ending brings
   with it, and the false friends the rule creates. The drill is production —
@@ -191,27 +191,27 @@ Four workbenches, per screen 07:
   infinite answer space can — and the rule and the Polish card stay shut until
   the item does.
 
-  It stays out of the Leitner queue, and for a different reason from Le Mappe.
-  Le Mappe's blocker is the interaction model: La Piazza is multiple-choice
-  and Le Mappe types. An article item *is* multiple-choice, so the queue would
+  It stays out of the Leitner queue, and for a different reason from Mappatura delle parole.
+  Mappatura delle parole's blocker is the interaction model: La Piazza is multiple-choice
+  and Mappatura delle parole types. An article item *is* multiple-choice, so the queue would
   take it — and would then answer a wrong pick by revealing the right one on
   the spot, which is the weakest feedback shape available and the exact
   pattern this bench replaces. Revisit when La Piazza learns to locate rather
   than solve; that is a change to La Piazza.
 - **Falsi Amici** — ✅ built. The traps collected as you hit them: `colazione` ≠
   *kolacja*, `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed
-  Le Mappe first, because Le Mappe is where most of them get generated — and
-  Le Mappe's `trap` verdict is now the write that records a catch, so walking
+  Mappatura delle parole first, because Mappatura delle parole is where most of them get generated — and
+  Mappatura delle parole's `trap` verdict is now the write that records a catch, so walking
   into one in either place is the same event. The collection draws from two
   sources: the `traps[]` each map already declares, reused rather than copied,
   and the pairs no suffix rule generates, which Latin handed to both languages
   and the two took in different directions. Only a real Italian word with a
-  slid meaning is collected — Le Mappe's other three trap drills bait with
+  slid meaning is collected — Mappatura delle parole's other three trap drills bait with
   `citità`, `musico` and `psichiatrista`, which are the rule overreaching onto
   non-words, a different lesson.
 
 The hub screen (design 07) is built ([#12](https://github.com/majakulpa/italian-app/pull/12)).
-`officina` routes to it, Le Mappe is reached from the map rather than only
+`officina` routes to it, Mappatura delle parole is reached from the map rather than only
 through the NavMenu, and the vocabulary deck sits on it as a fifth bench —
 the district used to route straight there, so it needed a door of its own.
 
@@ -257,7 +257,7 @@ buttons, so pressing a cell is not the answer.
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,
 then reveal. The standard wrong→red X→answer pattern is the weakest feedback
-shape available. Le Mappe implements this in `modules/mappe/feedback.js`; reuse
+shape available. Mappatura delle parole implements this in `modules/mappe/feedback.js`; reuse
 it rather than re-deciding it.
 
 ---

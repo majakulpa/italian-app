@@ -80,7 +80,7 @@ describe("App", () => {
       "Grammar",
       "Conversations",
       "Stories",
-      "Le Mappe",
+      "Mappatura delle parole",
       "Gli Articoli",
       "Falsi Amici",
     ]);
@@ -103,23 +103,23 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  // Le Mappe has no district of its own — it is a bench inside L'Officina —
+  // Mappatura delle parole has no district of its own — it is a bench inside L'Officina —
   // but it keeps its NavMenu entry like every other content module, and that
   // second route has to land at the top level and come back to the city
   // rather than to the workshop.
-  it("opens Le Mappe from the switcher and returns to the city", async () => {
+  it("opens Mappatura delle parole from the switcher and returns to the city", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Le Mappe" }));
-    expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Mappatura delle parole" }));
+    expect(screen.getByRole("heading", { name: "Mappatura delle parole" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  // Gli Articoli is the same shape as Le Mappe: a bench inside L'Officina
+  // Gli Articoli is the same shape as Mappatura delle parole: a bench inside L'Officina
   // with a NavMenu entry of its own, so it has the same second route to keep
   // honest. Without this the module's `onExit` at the App level is never
   // called by anything, which the coverage gate reports and a learner would

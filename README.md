@@ -51,7 +51,7 @@ src/
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
-    mappe.js                     Le Mappe: suffix correspondences, their two roads, their notes, their false friends and their drills
+    mappe.js                     Mappatura delle parole: suffix correspondences, their two roads, their notes, their false friends and their drills
     articoli.js                  Gli Articoli: the three strands, the rules behind them, and every item's Polish anchor
     falsiAmici.js                Falsi Amici: the pairs no suffix rule generates, and the map traps it reuses rather than copies
   modules/
@@ -149,7 +149,7 @@ categories/dialogues/stories each, and four grammar topics.
   words are underlined — tapping one opens a gloss bar at the bottom of the
   screen with its meaning. Three multiple-choice comprehension questions
   follow, each with an explanation, and finishing them marks the story done.
-- **Le Mappe** — suffix correspondences taught as rules rather than word lists,
+- **Mappatura delle parole** — suffix correspondences taught as rules rather than word lists,
   and the first workbench of L'Officina. Four maps so far — `-cja/-tion →
   -zione`, `-ity/-ość → -ità`, `-yczny/-ic → -ico`, `-ysta/-ist → -ista` —
   each a card that gives the Polish road first where it is the shorter one,
@@ -168,7 +168,7 @@ categories/dialogues/stories each, and four grammar topics.
   names the sub-patterns nobody taught, like Latin's `ct → tt` in
   `aktywność → attività`.
 
-  Le Mappe deliberately sits outside the Leitner queue; the reasoning is
+  Mappatura delle parole deliberately sits outside the Leitner queue; the reasoning is
   beside its `scheduled: false` flag in `src/shared/stats.js`. It is reached
   from the L'Officina hub, and from the nav menu.
 - **Gli Articoli** — the permanent strand, and L'Officina's third workbench.
@@ -191,13 +191,13 @@ categories/dialogues/stories each, and four grammar topics.
   case in the set where Polish beats English outright and the instinct to
   leave the gap empty is the right one.
 
-  A wrong answer is **located, not solved**, the same as Le Mappe — but three
+  A wrong answer is **located, not solved**, the same as Mappatura delle parole — but three
   buttons cannot be located the way an infinite answer space can, so a verdict
   names the *dimension* and never the answer: both words right and Italian
   joins them, an article where Italian wants none, an empty gap where Italian
   wants one, the right kind but the wrong shape, or the wrong kind entirely.
   The rule and the Polish card stay shut until the item does, because naming
-  the rule for an item whose answer is `lo` *is* the answer. Like Le Mappe it
+  the rule for an item whose answer is `lo` *is* the answer. Like Mappatura delle parole it
   sits outside the Leitner queue, and for a different reason — the queue would
   accept it, and would answer a wrong pick by revealing the right one on the
   spot, which is the weakest feedback shape available and the exact thing this
@@ -238,12 +238,12 @@ categories/dialogues/stories each, and four grammar topics.
   and a Polish *droga* is a road; `divano` is a sofa and a Polish *dywan* is a
   carpet.
 
-  What was missing until now was not the words but the **memory**: Le Mappe has
+  What was missing until now was not the words but the **memory**: Mappatura delle parole has
   always drawn its traps on the card and always produced a distinct `trap`
   verdict when you typed one, and then forgotten it. That verdict is now a
   write, so walking into `colazione` in a mapping drill and typing it on this
   bench are the same event through the same key. Only a real word with a slid
-  meaning is collected — Le Mappe's other three trap drills bait with `citità`,
+  meaning is collected — Mappatura delle parole's other three trap drills bait with `citità`,
   `musico` and `psichiatrista`, which are the rule overreaching onto things
   that are not words, and that is a different lesson.
 
@@ -331,10 +331,10 @@ categories/dialogues/stories each, and four grammar topics.
    flashcard and drill sessions still shuffle a whole category. Ordering each
    deck by what's due would make every session, not just Review, benefit from
    it.
-4. **Typed recall / production, everywhere else** — Le Mappe now types, and
+4. **Typed recall / production, everywhere else** — Mappatura delle parole now types, and
    `src/shared/typedAnswer.js` is the reusable half of it. The vocabulary and
    grammar sessions are still recognition, and the review queue is still
-   multiple-choice, which is the reason Le Mappe stays out of it.
+   multiple-choice, which is the reason Mappatura delle parole stays out of it.
 
 ## Accessibility
 

@@ -32,7 +32,7 @@ import { BENCHES } from "./benches.js";
 // came from to do any better. The one cost is that the child's exit link has
 // to say where it goes, which is the `exitLabel` prop.
 //
-// Built in the La Città design system, like Le Mappe. The vocabulary deck
+// Built in the La Città design system, like Mappatura delle parole. The vocabulary deck
 // behind the first bench is still in the old postcard styling; that is
 // PLAN.md's open question 4, and the answer there is that a screen migrates
 // when it is rebuilt, never in a blanket pass.

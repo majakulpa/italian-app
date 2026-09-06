@@ -86,9 +86,9 @@ describe("a mapping card", () => {
     const user = userEvent.setup();
     render(<MappeModule onExit={() => {}} />);
     await user.click(screen.getByRole("button", { name: /-cja/ }));
-    await user.click(screen.getByRole("button", { name: /Le Mappe/ }));
+    await user.click(screen.getByRole("button", { name: /Mappatura delle parole/ }));
 
-    expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mappatura delle parole" })).toBeInTheDocument();
   });
 });
 
@@ -242,7 +242,7 @@ describe("what the drill records", () => {
   });
 });
 
-// The join between this module and the Falsi Amici bench. Le Mappe has drawn
+// The join between this module and the Falsi Amici bench. Mappatura delle parole has drawn
 // a card for a trap verdict since the day it shipped and written nothing
 // down; this is that write, and it is the reason the bench has a figure.
 describe("walking into a trap the collection knows about", () => {
@@ -343,10 +343,10 @@ describe("the end of a run", () => {
     expect(screen.getByText("rewolucja")).toBeInTheDocument();
     expect(screen.getByText("1 / 6")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Le Mappe/ }));
+    await user.click(screen.getByRole("button", { name: /Mappatura delle parole/ }));
     await runThrough(user);
     await user.click(screen.getByRole("button", { name: "Back to the maps" }));
-    expect(screen.getByRole("heading", { name: "Le Mappe" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mappatura delle parole" })).toBeInTheDocument();
   });
 });
 

@@ -80,11 +80,11 @@ describe("MODULE_STATS", () => {
     expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar"]);
   });
 
-  // Le Mappe declares its maps where the other modules declare CEFR levels,
+  // Mappatura delle parole declares its maps where the other modules declare CEFR levels,
   // and that is deliberate: a suffix rule is not A1 or B2. The invariant that
   // has to hold is that a map id can never *collide* with a level id, or
   // levelStats would start folding mapping drills into a rung of the ladder.
-  it("keeps Le Mappe out of the CEFR ladder entirely", () => {
+  it("keeps Mappatura delle parole out of the CEFR ladder entirely", () => {
     const mappe = MODULE_STATS.find((m) => m.id === "mappe");
     expect(mappe.levels).toBe(MAPS);
 

@@ -58,7 +58,7 @@ describe("judge", () => {
   });
 
   // Two characters is where a shared prefix stops being a coincidence — the
-  // same bar Le Mappe uses, so the two drills locate alike.
+  // same bar Mappatura delle parole uses, so the two drills locate alike.
   it("says nothing about a prefix too short to mean anything", () => {
     expect(judge(trap, "moquette", 1).shared).toBeNull();
   });

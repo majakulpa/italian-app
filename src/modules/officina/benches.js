@@ -44,7 +44,7 @@ import { moduleStats } from "../../shared/stats.js";
 import { mapKnownCount, trapsCaughtCount } from "../../shared/storage.js";
 
 // A map counts as done when every drill on it is known — the same bar
-// mapKnownCount already uses on Le Mappe's own screen, so the hub and the
+// mapKnownCount already uses on Mappatura delle parole's own screen, so the hub and the
 // module can't disagree. Not moduleStats: that counts drills, and this bench
 // counts whole maps, which is a fraction stats.js has no way to express.
 // `total` is MAPS.length rather than the design's 8: four maps exist, and the
@@ -127,7 +127,7 @@ export const BENCHES = [
   },
   {
     id: "mappe",
-    name: "Le Mappe",
+    name: "Mappatura delle parole",
     lang: "it",
     module: "mappe",
     route: "mappe",

@@ -247,9 +247,9 @@ describe("isConversationDone", () => {
   });
 });
 
-// Le Mappe added no new shape to the blob — only a namespace inside the map
+// Mappatura delle parole added no new shape to the blob — only a namespace inside the map
 // every other module already writes into. That is the property worth pinning:
-// a save written before Le Mappe existed has to keep loading, and a mapping
+// a save written before Mappatura delle parole existed has to keep loading, and a mapping
 // drill must not be able to collide with a vocab word or a grammar drill.
 describe("mappeKey / mapKnownCount", () => {
   const map = { id: "zione", drills: [{ id: "cena" }, { id: "funzione" }] };
@@ -268,7 +268,7 @@ describe("mappeKey / mapKnownCount", () => {
     expect(mapKnownCount(progress, map)).toBe(1);
   });
 
-  it("reads a save written before Le Mappe existed as nothing drilled", () => {
+  it("reads a save written before Mappatura delle parole existed as nothing drilled", () => {
     saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
     expect(mapKnownCount(loadProgress(), map)).toBe(0);
     // and the older progress survives the load untouched

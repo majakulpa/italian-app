@@ -253,9 +253,12 @@ function Band({ band, index, evidence, onOpen }) {
           not 200 empty squares — see the header comment. */}
       {band.seeded > 0 && <BandGrid band={band} evidence={evidence} onOpen={onOpen} />}
 
+      {/* One Italian word inside an English sentence, and it can be told
+          apart from its neighbours here in a way the story glosses can't —
+          so it is marked (SC 3.1.2) rather than left to English phonetics. */}
       <p style={{ fontFamily: SANS, fontSize: 13, color: TOKENS.ink, margin: "10px 0 0", lineHeight: 1.55 }}>
-        These {size} are worth {band.weightPct} coverage points. You hold {held} of them — {band.bandPct}% of what this
-        fascia is worth.
+        These {size} are worth {band.weightPct} coverage points. You hold {held} of them — {band.bandPct}% of what this{" "}
+        <span lang="it">fascia</span> is worth.
       </p>
       <p style={{ fontFamily: SANS, fontSize: 12.5, color: TOKENS.inkSoft, margin: "4px 0 0", lineHeight: 1.5 }}>
         {band.seeded} of {size} written into the list so far.
@@ -326,8 +329,8 @@ function RiservaGrid({ progress, evidence, onOpen, onExit, exitLabel }) {
             app does not hide its own ceilings — see the "ceiling, stated
             because it is low" note in shared/coverage.js. */}
         <p style={{ fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
-          {count(FONDAMENTALE.length)} of the {count(FONDAMENTALE_TARGET)} are written so far. The fasce below draw the
-          ranks that exist and say what the rest will be worth.
+          {count(FONDAMENTALE.length)} of the {count(FONDAMENTALE_TARGET)} are written so far. The{" "}
+          <span lang="it">fasce</span> below draw the ranks that exist and say what the rest will be worth.
         </p>
       </div>
 

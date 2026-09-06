@@ -5,6 +5,11 @@ import { isSpeechSupported, speakItalian } from "./speech.js";
 // Small speaker button that reads Italian text aloud. Drop it next to any
 // Italian word or sentence. Safe to render even where speech isn't
 // supported — it just renders nothing.
+//
+// `type="button"` is load-bearing rather than decoration: a <button> with no
+// type inside a <form> defaults to submit, and La Piazza puts a speaker
+// inside the form that holds the typed answer. Without it, pronouncing the
+// answer would submit the answer.
 export default function SpeakButton({ text, size = 17, color = "currentColor", style }) {
   const [speaking, setSpeaking] = useState(false);
 
@@ -19,6 +24,7 @@ export default function SpeakButton({ text, size = 17, color = "currentColor", s
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       aria-label={`Pronounce "${text}"`}
       style={{

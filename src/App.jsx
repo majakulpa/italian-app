@@ -20,20 +20,20 @@ import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 // the dashboard to count its progress — stats.test.js checks the two agree.
 //
 // `lang` is for a name that isn't English. Every module until now was called
-// something a screen reader could read off the page; "La Mappatura" is Italian
+// something a screen reader could read off the page; "Mappatura delle parole" is Italian
 // and has to say so (WCAG 3.1.2), the same as the district names on the map.
 export const MODULES = [
   { id: "vocab", name: "Vocabulary", icon: BookOpen, ready: true },
   { id: "grammar", name: "Grammar", icon: GraduationCap, ready: true },
   { id: "conversations", name: "Conversations", icon: MessageCircle, ready: true },
   { id: "stories", name: "Stories", icon: ScrollText, ready: true },
-  // La Mappatura is one of L'Officina's workbenches, reached from the hub the
+  // Mappatura delle parole is one of L'Officina's workbenches, reached from the hub the
   // `officina` district routes to. It keeps its NavMenu entry all the same:
-  // the switcher lists every content module, and La Mappatura would otherwise be
+  // the switcher lists every content module, and Mappatura delle parole would otherwise be
   // the one module missing from it.
-  { id: "mappe", name: "La Mappatura", lang: "it", icon: Signpost, ready: true },
+  { id: "mappe", name: "Mappatura delle parole", lang: "it", icon: Signpost, ready: true },
   // Gli Articoli is L'Officina's third bench, and in the NavMenu for the same
-  // reason La Mappatura is: the switcher lists every content module, and this
+  // reason Mappatura delle parole is: the switcher lists every content module, and this
   // would otherwise be reachable only two doors into the workshop.
   { id: "articoli", name: "Gli Articoli", lang: "it", icon: Type, ready: true },
   // Falsi Amici is L'Officina's fourth bench, and in the NavMenu for the

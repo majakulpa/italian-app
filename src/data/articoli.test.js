@@ -37,7 +37,7 @@ describe("the strands", () => {
   });
 
   // Pink is the Polish anchor card on this screen, the way it is the Polish
-  // road in La Mappatura. A strand painted pink would put the colour on two
+  // road in Mappatura delle parole. A strand painted pink would put the colour on two
   // different meanings inside one drill.
   it.each(eachStrand)("%s leaves pink to the Polish anchor", (_id, strand) => {
     expect(strand.accent).not.toBe("bubble");

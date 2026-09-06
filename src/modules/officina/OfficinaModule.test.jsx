@@ -62,7 +62,7 @@ describe("the figures on the benches", () => {
 
   // The design's badge reads "4 / 8". There are four maps, so four is the
   // denominator — derived from MAPS, not copied off the drawing.
-  it("counts La Mappatura against the maps that exist, not the eight in the design", () => {
+  it("counts Mappatura delle parole against the maps that exist, not the eight in the design", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
     expect(card("mappe")).toHaveAccessibleName(expect.stringContaining(`0 / ${MAPS.length} maps`));
@@ -187,12 +187,12 @@ describe("opening a bench", () => {
     expect(left).toBe(false);
   });
 
-  it("opens La Mappatura and comes back to the workshop", async () => {
+  it("opens Mappatura delle parole and comes back to the workshop", async () => {
     const user = userEvent.setup();
     render(<OfficinaModule onExit={() => {}} />);
 
     await user.click(card("mappe"));
-    expect(screen.getByRole("heading", { name: "La Mappatura" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mappatura delle parole" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /L'Officina/ }));
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();

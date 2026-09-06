@@ -49,7 +49,7 @@ describe("the collection", () => {
   });
 
   // `bait` is what a learner would actually type: no article in front of it,
-  // because nothing types an article into a one-word answer box. La Mappatura
+  // because nothing types an article into a one-word answer box. Mappatura delle parole
   // writes `l'attualità` on its card, which is right there and wrong here.
   it("strips the article off the word a learner would type", () => {
     const attualita = FALSI_AMICI.find((t) => t.id === "attualita");
@@ -91,7 +91,7 @@ describe("the traps the maps already declare", () => {
   });
 });
 
-// The join La Mappatura writes through. It has to hit on the map trap that is a
+// The join Mappatura delle parole writes through. It has to hit on the map trap that is a
 // real false friend and miss on the three that are the rule overreaching,
 // because those are a different lesson and the bench is not a list of them.
 describe("trapByWord", () => {

@@ -47,17 +47,18 @@ const STORIES_BY_LEMMA = (() => {
 
   for (const level of STORY_LEVELS) {
     for (const story of level.stories) {
-      // A story can gloss the same word in three paragraphs. It is still one
-      // place you met it, so the story is listed once.
-      const seen = new Set();
+      // The set of lemmas one story glosses, not the list. A story that
+      // glossed the same word in three paragraphs would still be one place
+      // you met it, and a Set says so without a guard clause that today's
+      // data can never take — the shipped stories gloss each word once.
+      const glossed = new Map(
+        story.paragraphs.flatMap((paragraph) =>
+          Object.entries(paragraph.gloss).map(([word, meaning]) => [lemmaKey(word), meaning]),
+        ),
+      );
 
-      for (const paragraph of story.paragraphs) {
-        for (const [word, meaning] of Object.entries(paragraph.gloss)) {
-          const key = lemmaKey(word);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          byLemma.set(key, [...(byLemma.get(key) ?? []), { story, level, meaning }]);
-        }
+      for (const [key, meaning] of glossed) {
+        byLemma.set(key, [...(byLemma.get(key) ?? []), { story, level, meaning }]);
       }
     }
   }

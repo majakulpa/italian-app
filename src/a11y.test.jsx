@@ -10,6 +10,7 @@ import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
 import RiservaModule from "./modules/riserva/RiservaModule.jsx";
+import { FONDAMENTALE } from "./data/fondamentale.js";
 import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
@@ -349,6 +350,17 @@ describe("La Riserva", () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
 
     await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await expectNoViolations(container);
+  });
+
+  // Word detail's way in is the fascia, so the axe pass has to reach it the
+  // way a learner does rather than by rendering the screen in isolation.
+  it("has an accessible word detail behind a fascia", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: FONDAMENTALE[0].it }));
     await expectNoViolations(container);
   });
 });

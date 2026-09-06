@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, citySurface } from "../../shared/theme.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
-import { lexiconStates, coverageBands, BAND_SIZE } from "../../shared/coverage.js";
+import { lexiconEvidence, coverageBands, BAND_SIZE } from "../../shared/coverage.js";
 import { WORD_STATES } from "../../shared/wordState.js";
 import { loadProgress } from "../../shared/storage.js";
+import WordDetail from "./WordDetail.jsx";
 
 // La Riserva — L'Officina's grid of the 2,000, and design screen 10.
 //
@@ -190,7 +191,7 @@ function Legend({ counts, empty }) {
 // much of it the learner has, which is a different number and the one a bar
 // drawn here would be mistaken for. See coverage.js's tally() on why the three
 // percentages must not be swapped.
-function Band({ band, index, selected, onSelect }) {
+function Band({ band, index, selected, onSelect, onOpenWord }) {
   const words = FONDAMENTALE.filter((e) => e.rank >= band.from && e.rank <= band.to);
   const label = `Fascia ${index + 1} · posti ${band.from}–${band.to}`;
 
@@ -219,8 +220,32 @@ function Band({ band, index, selected, onSelect }) {
       {selected && (
         <div style={{ padding: "10px 14px 2px", fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft }}>
           {words.length > 0 ? (
-            <p lang="it" style={{ margin: 0, lineHeight: 1.6 }}>
-              {words.map((e) => e.it).join(" · ")}
+            // The answer to word detail's way in. Two hundred at most, and
+            // only once a band is opened — so a keyboard user reaches a word
+            // in two presses and a band's worth of arrows, instead of
+            // crossing a two-thousand-cell grid.
+            <p style={{ margin: 0, lineHeight: 1.9 }}>
+              {words.map((e, i) => (
+                <React.Fragment key={e.rank}>
+                  {i > 0 && <span aria-hidden="true"> · </span>}
+                  <button
+                    lang="it"
+                    onClick={() => onOpenWord(e)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      cursor: "pointer",
+                      font: "inherit",
+                      color: TOKENS.ink,
+                      textDecoration: "underline",
+                      textUnderlineOffset: 3,
+                    }}
+                  >
+                    {e.it}
+                  </button>
+                </React.Fragment>
+              ))}
             </p>
           ) : (
             <p style={{ margin: 0, lineHeight: 1.6 }}>
@@ -237,8 +262,10 @@ function Band({ band, index, selected, onSelect }) {
 export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
   const [progress] = useState(loadProgress);
   const [open, setOpen] = useState(null);
+  const [word, setWord] = useState(null);
 
-  const states = lexiconStates(progress);
+  const evidence = lexiconEvidence(progress);
+  const states = new Map([...evidence].map(([rank, e]) => [rank, e.state]));
   const bands = coverageBands(progress);
   const seeded = new Set(FONDAMENTALE.map((e) => e.rank));
 
@@ -249,6 +276,21 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
   for (const rank of seeded) counts[states.get(rank) ?? "unseen"] += 1;
 
   const held = WORD_STATES.filter((s) => s !== "unseen").reduce((n, s) => n + counts[s], 0);
+
+  if (word) {
+    const found = evidence.get(word.rank);
+    return (
+      <Screen>
+        <WordDetail
+          entry={word}
+          state={found?.state ?? "unseen"}
+          box={progress.schedule[found?.key]?.box ?? null}
+          progress={progress}
+          onBack={() => setWord(null)}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -295,7 +337,7 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
 
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
         {bands.map((band, i) => (
-          <Band key={band.from} band={band} index={i} selected={open === i} onSelect={setOpen} />
+          <Band key={band.from} band={band} index={i} selected={open === i} onSelect={setOpen} onOpenWord={setWord} />
         ))}
       </ul>
 

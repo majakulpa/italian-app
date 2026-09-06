@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ◧ in progress — only word detail left |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ✅ complete |
 | 4 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 5 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
 | 6 | **Scenes with voice** — the four-phase task loop | last, biggest build |
@@ -215,10 +215,33 @@ The hub screen (design 07) is built ([#12](https://github.com/majakulpa/italian-
 through the NavMenu, and the vocabulary deck sits on it as a fifth bench —
 the district used to route straight there, so it needed a door of its own.
 
-Still to do before the chunk closes:
+**The chunk is closed.** Word detail (design 11) was the last screen, and its
+open question turned out to be the way in rather than the quantity: the grid is
+deliberately not two thousand buttons, so a *fascia* is the door. A band opens
+to at most two hundred words, on demand, and those are the controls.
 
-- **Word detail** (design 11), which is the other half of what makes the
-  lexicon visible.
+Three things on that screen the design draws and the app does not, each for the
+same reason — nothing behind them:
+
+- **IPA and part of speech.** No pronunciation data exists, and inventing a
+  stress mark per word teaches a wrong word. The speak button is the honest
+  version: the browser says it aloud rather than the app claiming to know how
+  it is transcribed.
+- ~~**"Dove l'hai incontrata"**~~ — this one turned out to be buildable, and
+  the first version of the screen was wrong to say otherwise. `Ep. 7` and
+  `Il Bar` are drawings, but two real encounters are provable: the vocabulary
+  deck put the lemma in front of you in an example sentence, and a story
+  glossed it under your finger. `modules/riserva/traces.js` reads both.
+  What stays true is the narrower claim — reading a story writes no word
+  *status*, so a story trace says only that the story was finished.
+  Matching is by written form, so a homograph can land under the wrong sense
+  (`porta` the door against `porta` from *portare*); the trace carries the
+  story's own gloss verbatim so the mismatch is visible rather than asserted.
+- **Why Polish splits a word.** The pink card fires off data the lexicon
+  already had: 87 of the first 300 entries carry more than one Polish sense.
+  What it will not do is say *which* reason, because `pytać · prosić o` is two
+  meanings and `mówić · powiedzieć` is one meaning in two aspects, and nothing
+  in the file tells them apart.
 
 La Riserva is built: the 2,000 as a grid in frequency order, coloured by state,
 with the ten *fasce* underneath saying what each is worth. No percentage on it,

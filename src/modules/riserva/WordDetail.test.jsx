@@ -30,10 +30,19 @@ function bridged() {
 }
 
 // Open a word through the way in it actually has: a fascia, then a word.
+//
+// The word is found by its text and a `button` selector rather than by role
+// and accessible name. Both resolve to the same element, but an open band has
+// 200 word buttons on it and a role query runs the accessibility filter —
+// getComputedStyle per candidate — over every one of them, which under v8
+// coverage instrumentation costs about half a second a call against a 20s
+// timeout. This is navigation, not the assertion: that each word in a band is
+// its own accessible control is claimed by RiservaModule.test.jsx's "opens a
+// fascia to its words", where it is the point of the test.
 async function openWord(user, entry) {
   const band = Math.floor((entry.rank - 1) / 200) + 1;
   await user.click(screen.getByRole("button", { name: new RegExp(`Fascia ${band} `) }));
-  await user.click(screen.getByRole("button", { name: entry.it }));
+  await user.click(screen.getByText(entry.it, { selector: "button" }));
 }
 
 beforeEach(() => {

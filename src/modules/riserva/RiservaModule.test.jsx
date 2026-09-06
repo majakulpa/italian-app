@@ -99,8 +99,15 @@ describe("La Riserva", () => {
     // The band's own list, in rank order, each word its own control — that is
     // word detail's way in. Asserted against the data rather than a literal,
     // so a reordered lexicon fails here instead of drifting.
+    //
+    // One scan, then three matches against it, rather than three role queries.
+    // An open band puts 200 word buttons on the screen and every `getByRole`
+    // runs dom-testing-library's accessibility filter over all of them —
+    // getComputedStyle per candidate, which v8 coverage instrumentation makes
+    // roughly three times slower again. Same claim, a third of the scans.
+    const names = screen.getAllByRole("button").map((b) => b.textContent);
     for (const e of FONDAMENTALE.slice(0, 3)) {
-      expect(screen.getByRole("button", { name: e.it }), e.it).toBeInTheDocument();
+      expect(names.filter((n) => n === e.it), e.it).toHaveLength(1);
     }
 
     await user.click(first);

@@ -273,7 +273,14 @@ describe("La Riserva", () => {
   const riserva = () => render(<RiservaModule onExit={() => {}} exitLabel="L'Officina" />);
   // "la stazione" is the one lexicon entry both trace sources reach, so its
   // detail is the one with the most markup on it.
-  const square = (rank) => screen.getByRole("button", { name: new RegExp(`^posto ${rank}:`) });
+  // By id, not by name. A name query resolves an accessible name for every
+  // one of the 300 squares before it can filter, and under coverage
+  // instrumentation that was enough to put this file past its timeout on
+  // roughly one run in two — a gate that fails intermittently is not a gate.
+  // The one place the name itself is under test resolves it on a single
+  // element, at the bottom of this block.
+  const square = (rank) => document.querySelector(`#riserva-posto-${rank}`);
+  const back = () => document.querySelector("#riserva-back");
 
   // 300 real buttons on one screen, each named by visually-hidden content
   // rather than an aria-label so the Italian headword can carry lang="it".
@@ -304,7 +311,7 @@ describe("La Riserva", () => {
     await user.click(square(290));
     await expectNoViolations(container);
 
-    await user.click(screen.getByRole("button", { name: /La Riserva/ }));
+    await user.click(back());
     await user.click(square(1));
     await expectNoViolations(container);
   });
@@ -325,7 +332,11 @@ describe("La Riserva", () => {
     // rather than 300 times.
     const squares = [...container.querySelectorAll("button")].filter((b) => b.textContent.startsWith("posto "));
     expect(squares).toHaveLength(FONDAMENTALE.length);
-    expect(square(1)).toBe(squares[0]);
+    // The one name resolution in the block, on one element: the square's name
+    // is built from visually-hidden content rather than an aria-label, so that
+    // the Italian headword can carry lang="it", and that is worth checking
+    // resolves the way a screen reader would read it.
+    expect(squares[0]).toHaveAccessibleName(/^posto 1: essere —/);
 
     // First, last, and the seam between the two fasce the word list reaches.
     for (const cell of [squares[0], squares[199], squares.at(-1)]) {

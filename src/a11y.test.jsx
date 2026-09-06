@@ -311,10 +311,22 @@ describe("La Riserva", () => {
   it("keeps every written square focusable and every placeholder out of reach", () => {
     const { container } = riserva();
 
-    expect(screen.getAllByRole("button", { name: /^posto \d+:/ })).toHaveLength(FONDAMENTALE.length);
-    for (const rank of [1, 200, 300]) {
-      square(rank).focus();
-      expect(document.activeElement, String(rank)).toBe(square(rank));
+    // Counted off the DOM rather than through getAllByRole({ name }).
+    // Resolving an accessible name is not free, and a name query resolves one
+    // for every button on the screen before it can filter; over a grid of 300
+    // that is tens of seconds to learn a fact the markup already states, and
+    // it timed the test out. So the bulk count comes from the DOM, and the
+    // sampled square below still goes through the role query — the name the
+    // grid builds is checked the way a screen reader would resolve it, once
+    // rather than 300 times.
+    const squares = [...container.querySelectorAll("button")].filter((b) => b.textContent.startsWith("posto "));
+    expect(squares).toHaveLength(FONDAMENTALE.length);
+    expect(square(1)).toBe(squares[0]);
+
+    // First, last, and the seam between the two fasce the word list reaches.
+    for (const cell of [squares[0], squares[199], squares.at(-1)]) {
+      cell.focus();
+      expect(document.activeElement, cell.textContent).toBe(cell);
     }
     for (const node of container.querySelectorAll('[aria-hidden="true"][style*="dashed"]')) {
       expect(node.tagName).toBe("SPAN");

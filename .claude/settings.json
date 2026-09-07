@@ -1,8 +1,5 @@
 {
   "permissions": {
-    "ask": [
-      "Agent"
-    ],
     "deny": [
       "Bash(gh pr merge)",
       "Bash(gh pr merge *)",

@@ -62,9 +62,15 @@ describe("App", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /La Piazza/ }));
-    expect(screen.getByText(/· REVIEW/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "La Piazza" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Back" }));
+    // The district is a landing rather than a straight jump into a session,
+    // so the route has to reach the round through it.
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+    expect(screen.getByText("A1 · Vocabulary")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /La Piazza/ }));
+    await user.click(screen.getByRole("button", { name: /La Città/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 

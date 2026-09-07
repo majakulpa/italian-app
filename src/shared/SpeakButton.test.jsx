@@ -26,6 +26,25 @@ describe("SpeakButton", () => {
     expect(speakSpy).toHaveBeenCalledWith("ciao");
   });
 
+  // A <button> with no type inside a <form> defaults to submit, and La Piazza
+  // puts a speaker inside the form that holds the typed answer — so without
+  // this, pronouncing the answer would submit the answer.
+  it("does not submit the form it is sitting in", async () => {
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const submit = vi.fn((e) => e.preventDefault());
+    const user = userEvent.setup();
+
+    render(
+      <form onSubmit={submit}>
+        <SpeakButton text="ciao" />
+      </form>
+    );
+    await user.click(screen.getByRole("button", { name: 'Pronounce "ciao"' }));
+
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it("does not trigger a click handler on an ancestor element", async () => {
     vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
     vi.spyOn(speech, "speakItalian").mockImplementation(() => {});

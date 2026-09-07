@@ -1,253 +1,619 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { ChevronRight, Check, X } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import React, { useEffect, useId, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { loadProgress, saveProgress, todayISO } from "../../shared/storage.js";
-import { dueItems, reviewItem } from "../../shared/srs.js";
-import { shuffle } from "../../shared/shuffle.js";
-import TopBar from "../../shared/TopBar.jsx";
-import SessionSummary from "../../shared/SessionSummary.jsx";
-import SpeakButton from "../../shared/SpeakButton.jsx";
+import { dueItems, dueCount, reviewItem, SESSION_LIMIT } from "../../shared/srs.js";
+import { DISTRICTS, districtById } from "../../shared/districts.js";
+import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
-import AnswerStatus from "../../shared/AnswerStatus.jsx";
+import SpeakButton from "../../shared/SpeakButton.jsx";
+import { toQuestion } from "./question.js";
+import { judge, reveal, announce, fullStopAfter, LOCATED, ATTEMPTS } from "./feedback.js";
+import { solidThisWeek, WEEK_DAYS } from "./week.js";
 
-// The summary and the empty state aren't at any one level — a review mixes
-// them — so they borrow the gold that theme.js reserves for prompts and
-// celebration rather than pretending to be A1 or C1.
-const GOLD = { label: "SRS", accent: TOKENS.limoncello, accentDeep: TOKENS.limoncelloDeep };
+// La Piazza — the review district, and design screen 18.
+//
+// The design calls this "the most important interaction in the app: a wrong
+// answer gets *located*, never solved". Until now it was the opposite of
+// that: four buttons, a red cross, and the answer handed over on the spot —
+// the weakest feedback shape available, and the stated reason Mappatura delle
+// parole and Gli Articoli both stayed outside the queue rather than be
+// answered that way. So this screen is rebuilt around two changes.
+//
+// **Production, not recognition.** Every item is typed. A grammar item
+// already carries a gapped sentence and one answer, so the gap is the
+// question and its authored `options` are never drawn — they become a
+// feedback signal instead. A vocabulary item is asked by its English gloss,
+// with its own example sentence gapped underneath as disambiguating context.
+// question.js builds both.
+//
+// **Located, not solved.** feedback.js judges the typed answer and says where
+// it went rather than what it is, the learner gets a second attempt, and only
+// a spent attempt or "Show me" reveals anything.
+//
+// Grading stays exactly as binary as srs.js is — no ease factors, no sixth
+// box. What changed is the bar: **only a first-attempt correct answer
+// promotes.** A right answer on the second go came after the app told the
+// learner where to look, which is scaffolding rather than retrieval, and
+// "Show me" is wrong by definition. An accent left off still counts as
+// correct — that is a spelling slip, not a failed recall, and typedAnswer.js
+// exists to say so.
+//
+// Built in the La Città design system, like Mappatura delle parole, the
+// L'Officina hub and Gli Articoli. PLAN.md's open question 3 is the seam
+// between that and the four older module interiors, and its answer is that a
+// screen migrates when it is rebuilt, never in a blanket pass — so this
+// screen moves and nothing else does.
 
-// A due unit becomes a multiple-choice question. Vocabulary asks for the
-// meaning and draws its distractors from the word's own category, the way the
-// vocab quiz does; a grammar drill already carries its own authored options.
-function toQuestion(unit) {
-  if (unit.moduleId === "vocab") {
-    const distractors = shuffle(unit.group.words.filter((w) => w.it !== unit.item.it)).slice(0, 3);
-    return {
-      prompt: unit.item.it,
-      speak: unit.item.it,
-      hint: null,
-      options: shuffle([unit.item, ...distractors]).map((w) => w.en),
-      answer: unit.item.en,
-      optionsAreItalian: false,
-      recap: { primary: unit.item.it, secondary: unit.item.en },
-    };
-  }
-  return {
-    prompt: unit.item.prompt,
-    speak: null,
-    hint: unit.item.hint,
-    options: shuffle(unit.item.options),
-    answer: unit.item.answer,
-    optionsAreItalian: true,
-    recap: { primary: unit.item.prompt.replace("___", unit.item.answer), secondary: unit.item.en },
-  };
+const MONO = "'IBM Plex Mono', monospace";
+const SERIF = "'Fraunces', serif";
+const SANS = "'Inter', sans-serif";
+
+// One spelling of the name and one copy of the blurb, taken from the tile on
+// the map — a district and the door to it should not drift apart.
+const PIAZZA = districtById("piazza");
+
+// Which district an item came from, for the colour on its card. Derived from
+// districts.js rather than a second table here, so a district that changes
+// its accent changes this too. Every scheduled module has exactly one
+// district; ReviewModule.test.jsx pins that, which is why there is no
+// "no district" branch to cover.
+const SOURCE = Object.fromEntries(
+  DISTRICTS.filter((district) => district.module).map((district) => [district.module, district]),
+);
+
+const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar" };
+
+function Eyebrow({ children, style }) {
+  return (
+    <span
+      style={{
+        fontFamily: MONO,
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: 1.6,
+        textTransform: "uppercase",
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
 }
 
-export default function ReviewModule({ onExit }) {
-  const [progress, setProgress] = useState(loadProgress);
-  // Built once, from the progress as it was when the session opened —
-  // answering shouldn't reshuffle the queue underneath you.
-  const queue = useMemo(() => dueItems(loadProgress(), todayISO()).map((unit) => ({ unit, q: toQuestion(unit) })), []);
+function Screen({ children }) {
+  return (
+    <div className="citta" style={{ maxWidth: 560, margin: "0 auto", padding: "24px 20px 60px" }}>
+      {children}
+    </div>
+  );
+}
 
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [missed, setMissed] = useState([]);
-  const [done, setDone] = useState(false);
+function BackLink({ label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        color: TOKENS.inkSoft,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        fontFamily: SANS,
+        fontSize: 13,
+        padding: "6px 6px 6px 0",
+      }}
+    >
+      <ArrowLeft size={16} aria-hidden="true" /> {label}
+    </button>
+  );
+}
 
-  useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+function PrimaryButton({ children, onClick, type = "button", style }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      style={{
+        border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+        borderRadius: CITY_RULES.radius,
+        boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+        background: CITY_ACCENTS.pistachio.fill,
+        color: CITY_ACCENTS.pistachio.ink,
+        padding: "13px 18px",
+        fontFamily: SANS,
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        width: "100%",
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-  if (queue.length === 0) {
-    return <NothingDue onExit={onExit} />;
-  }
+// "Fammelo vedere" is a deliberate second choice in the design, so it is
+// drawn as one: the same shape in a quieter voice, no accent fill and no
+// shadow, sitting under the primary rather than beside it.
+function SecondaryButton({ children, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+        borderRadius: CITY_RULES.radius,
+        background: "transparent",
+        color: TOKENS.ink,
+        padding: "11px 18px",
+        fontFamily: SANS,
+        fontWeight: 600,
+        fontSize: 14,
+        cursor: "pointer",
+        display: "block",
+        width: "100%",
+        marginTop: 10,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-  if (done) {
-    return (
-      <SessionSummary
-        level={GOLD}
-        title="Review complete"
-        primary={correctCount}
-        primaryLabel="correct"
-        secondary={queue.length - correctCount}
-        secondaryLabel="to see again"
-        missed={missed}
-        missedLang="it"
-        backLabel="Back to home"
-        onBack={onExit}
-      />
-    );
-  }
+// ── The landing (design screen 18) ───────────────────────────────────────
 
-  const { unit, q } = queue[index];
-
-  const choose = (option) => {
-    if (selected) return;
-    setSelected(option);
-    const isCorrect = option === q.answer;
-    setProgress((p) => reviewItem(p, unit.key, isCorrect));
-    if (isCorrect) {
-      setCorrectCount((c) => c + 1);
-    } else {
-      setMissed((m) => [...m, { id: unit.key, ...q.recap }]);
-    }
-  };
-
-  const next = () => {
-    if (index + 1 >= queue.length) {
-      setDone(true);
-    } else {
-      setIndex((i) => i + 1);
-      setSelected(null);
-    }
-  };
+// Screen 18 is a place rather than a jump straight into a session, so La
+// Piazza gets a door: what is waiting, what the district is for, and one
+// derived fact about the week. The card that fact goes in is *not* the
+// design's warning card — see week.js for why that sentence would be false
+// here and what replaced it.
+function PiazzaHome({ progress, due, onStart, onExit }) {
+  const solid = solidThisWeek(progress);
 
   return (
-    <div>
-      {/* the item's own level, so you can see what you're being asked from */}
-      <TopBar level={unit.level} label="Review" onBack={onExit} />
+    <Screen>
+      <BackLink label={<span lang="it">La Citt&agrave;</span>} onClick={onExit} />
 
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 20px 60px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 22 }}>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft }}>
-            {index + 1} / {queue.length}
-          </span>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft }}>
-            {correctCount} correct
-          </span>
-        </div>
+      <div style={{ textAlign: "center", margin: "18px 0 22px" }}>
+        <Eyebrow style={{ color: TOKENS.inkSoft, letterSpacing: 3, display: "block", marginBottom: 6 }}>
+          The review district
+        </Eyebrow>
+        <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.05 }}>
+          {PIAZZA.name}
+        </h1>
+        <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.inkSoft, margin: "10px 0 0", lineHeight: 1.55 }}>
+          {PIAZZA.blurb}
+        </p>
+      </div>
 
-        <div
-          style={{
-            background: TOKENS.card,
-            border: `1px solid ${TOKENS.line}`,
-            borderRadius: 16,
-            padding: "26px 22px",
-            marginBottom: 22,
-            textAlign: "center",
-          }}
-        >
-          <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: 0 }}>
-            <span lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: TOKENS.ink, lineHeight: 1.4 }}>
-              {q.prompt}
-            </span>
-            {q.speak && <SpeakButton text={q.speak} color={unit.level.accentDeep} size={17} />}
+      <div style={{ ...citySurface("pistachio"), padding: "16px", marginBottom: 14, textAlign: "center" }}>
+        <p style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 600, margin: 0, lineHeight: 1 }}>{due}</p>
+        <Eyebrow style={{ opacity: 0.9 }}>{due === 1 ? "item waiting" : "items waiting"}</Eyebrow>
+        {/* Both numbers or the one that is true. A round is capped at
+            SESSION_LIMIT, so 47 waiting and a counter reading 1 / 20 was the
+            landing quietly saying something the round then contradicted —
+            the same unbacked figure week.js exists to refuse, on the screen
+            that refuses it. */}
+        {due > SESSION_LIMIT && (
+          <p style={{ fontFamily: SANS, fontSize: 13, margin: "10px 0 0", lineHeight: 1.5, opacity: 0.9 }}>
+            One round takes {SESSION_LIMIT} of them, most overdue first. The rest keep their place in the queue.
           </p>
-          {q.hint && (
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: TOKENS.inkSoft, margin: "10px 0 0" }}>
-              {q.hint}
+        )}
+      </div>
+
+      {solid > 0 && (
+        <div style={{ ...citySurface("lemon"), padding: "14px 16px", marginBottom: 14 }}>
+          <Eyebrow style={{ opacity: 0.85 }}>The week ahead</Eyebrow>
+          <p style={{ fontFamily: SANS, fontSize: 14, margin: "8px 0 0", lineHeight: 1.55 }}>
+            <b>
+              {solid} solid {solid === 1 ? "word comes" : "words come"} back
+            </b>{" "}
+            in the next {WEEK_DAYS} days — the ones on their longest gap.
+          </p>
+          <p style={{ fontFamily: SANS, fontSize: 13, margin: "6px 0 0", lineHeight: 1.55, opacity: 0.9 }}>
+            Nothing falls out of solid for being answered late. It is just their turn.
+          </p>
+        </div>
+      )}
+
+      <div style={{ ...citySurface(), padding: "14px 16px", marginBottom: 18 }}>
+        <Eyebrow style={{ color: TOKENS.inkSoft }}>Produce &mdash; don&rsquo;t recognise</Eyebrow>
+        <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.ink, margin: "8px 0 0", lineHeight: 1.55 }}>
+          You write the Italian rather than picking it out of a line-up. Get one wrong and the app says{" "}
+          <i>where</i> it went, then gives it back to you — you get {ATTEMPTS} goes before it tells you anything.
+        </p>
+      </div>
+
+      <PrimaryButton onClick={onStart}>
+        Start the round <ArrowRight size={16} aria-hidden="true" />
+      </PrimaryButton>
+    </Screen>
+  );
+}
+
+// Reachable from a stale map, or by finishing a round and coming back.
+function NothingDue({ onExit }) {
+  return (
+    <Screen>
+      <BackLink label={<span lang="it">La Citt&agrave;</span>} onClick={onExit} />
+
+      <div style={{ textAlign: "center", margin: "18px 0 22px" }}>
+        <Eyebrow style={{ color: TOKENS.inkSoft, letterSpacing: 3, display: "block", marginBottom: 6 }}>
+          The review district
+        </Eyebrow>
+        <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.05 }}>
+          {PIAZZA.name}
+        </h1>
+      </div>
+
+      <div style={{ ...citySurface(), padding: "18px 16px", marginBottom: 18 }}>
+        <Eyebrow style={{ color: TOKENS.inkSoft }}>Nothing due</Eyebrow>
+        <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.ink, margin: "8px 0 0", lineHeight: 1.55 }}>
+          Everything you have studied is scheduled for a later day. Answer something in{" "}
+          <span lang="it">L&rsquo;Officina</span> or <span lang="it">Il Cantiere</span> and the first ones come back
+          tomorrow.
+        </p>
+      </div>
+
+      <PrimaryButton onClick={onExit}>Back to the city</PrimaryButton>
+    </Screen>
+  );
+}
+
+// ── The item (design screen 18, the lower half) ──────────────────────────
+
+// Whether the verdict is about something the learner actually wrote. An empty
+// box and a "show me" are not: there is no answer of hers to mark right or
+// wrong. Both the tick/cross and aria-invalid follow this rather than
+// `!correct`, so neither tells her she got something wrong when she typed
+// nothing (WCAG 1.4.1 for the first, 3.3.1 for the second).
+function answered(verdict) {
+  return verdict.kind !== "blank" && verdict.kind !== "revealed";
+}
+
+// Every visible sentence of the verdict, as markup. The plain-text twin that
+// goes to the live region is `announce()` in feedback.js — the two say the
+// same things, and the module test checks a screen reader isn't told less
+// than the screen shows.
+function Verdict({ id, question, verdict }) {
+  const blank = verdict.kind === "blank";
+  const accent = verdict.correct ? "pistachio" : blank ? undefined : "lemon";
+  const heading = verdict.correct ? "Right" : blank ? "Nothing written" : verdict.kind === "revealed" ? "Here it is" : "Not there yet";
+  // AnswerMark's hidden text says "your answer, incorrect", so it is drawn
+  // only where there is an answer of hers to call that — see answered(). The
+  // heading carries the state in words instead, so nothing here is left to
+  // colour alone (WCAG 1.4.1).
+  const marked = answered(verdict);
+
+  return (
+    <div id={id} style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
+      <Eyebrow style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6, color: blank ? TOKENS.inkSoft : undefined }}>
+        {marked && <AnswerMark state={verdict.correct ? "correct" : "incorrect"} size={14} />}
+        {heading}
+      </Eyebrow>
+
+      <div style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.55, display: "grid", gap: 6, marginTop: 8 }}>
+        {/* The located sentence, rendered from the very strings announce()
+            speaks. Correct answers and the reveal have nothing to locate. */}
+        {LOCATED[verdict.kind] && <p style={{ margin: 0 }}>{LOCATED[verdict.kind]}</p>}
+
+        {verdict.shared && (
+          <p style={{ margin: 0 }}>
+            You have <b lang="it">{verdict.shared}</b> right.
+          </p>
+        )}
+
+        {verdict.tail && (
+          <p style={{ margin: 0 }}>
+            Both end <b lang="it">{verdict.tail}</b>.
+          </p>
+        )}
+
+        {verdict.correct && !verdict.answer && <p style={{ margin: 0 }}>That is the one.</p>}
+
+        {verdict.answer && (
+          <>
+            <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {/* The full stop is conditional because an answer can bring its
+                  own: `come stai?` is a vocabulary entry, and "The answer is
+                  come stai?." reads as a typo. fullStopAfter is shared with
+                  announce() so the card and the live region agree. */}
+              <span>
+                {verdict.correct ? "Italian writes it " : "The answer is "}
+                <b lang="it">{verdict.answer}</b>
+                {fullStopAfter(verdict.answer)}
+              </span>
+              <SpeakButton text={verdict.answer} size={16} />
             </p>
-          )}
-        </div>
+            <p style={{ margin: 0, opacity: 0.9 }}>
+              <span lang="it">{question.context.it}</span> &mdash; {question.context.en}
+            </p>
+          </>
+        )}
 
-        <div style={{ display: "grid", gap: 10 }}>
-          {/* Same colour language as the vocab quiz and the grammar drill:
-              green marks the answer, red marks a wrong pick, and the answer
-              is always revealed once you've committed. */}
-          {q.options.map((option) => {
-            const isAnswer = option === q.answer;
-            const isPicked = selected === option;
-            let bg = TOKENS.card;
-            let border = TOKENS.controlLine;
-            let color = TOKENS.ink;
-            if (selected) {
-              if (isAnswer) {
-                bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachiteDeep;
-                color = TOKENS.malachiteDeep;
-              } else if (isPicked) {
-                bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corolloDeep;
-                color = TOKENS.corolloDeep;
-              }
-            }
-
-            return (
-              <button
-                key={option}
-                onClick={() => choose(option)}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 10,
-                  textAlign: "left",
-                  border: `1.5px solid ${border}`,
-                  background: bg,
-                  color,
-                  borderRadius: 10,
-                  padding: "13px 16px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
-                  fontSize: 15,
-                  cursor: selected ? "default" : "pointer",
-                  width: "100%",
-                }}
-              >
-                <span lang={q.optionsAreItalian ? "it" : undefined}>{option}</span>
-                {selected && isAnswer && <AnswerMark state="correct" />}
-                {selected && isPicked && !isAnswer && <AnswerMark state="incorrect" />}
-              </button>
-            );
-          })}
-        </div>
-
-        <AnswerStatus correct={selected === null ? null : selected === q.answer} answer={q.answer} />
-
-        {selected && (
-          <button
-            onClick={next}
-            style={{
-              border: "none",
-              background: TOKENS.ink,
-              color: TOKENS.paper,
-              borderRadius: 10,
-              padding: "13px 22px",
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              margin: "22px 0 0 auto",
-            }}
-          >
-            {index + 1 >= queue.length ? "See results" : "Next"} <ChevronRight size={16} />
-          </button>
+        {!verdict.correct && !verdict.last && !blank && (
+          <p style={{ margin: 0 }}>Have another go &mdash; you get one more.</p>
         )}
       </div>
     </div>
   );
 }
 
-// Reachable by opening a review from a stale dashboard, or by finishing
-// everything and coming straight back.
-function NothingDue({ onExit }) {
+function Round({ queue, onGrade, onDone, onBack }) {
+  const inputId = useId();
+  const verdictId = useId();
+  const inputRef = useRef(null);
+  const [index, setIndex] = useState(0);
+  const [input, setInput] = useState("");
+  const [attempt, setAttempt] = useState(1);
+  const [verdict, setVerdict] = useState(null);
+  const [results, setResults] = useState([]);
+
+  const { unit, q } = queue[index];
+  const district = SOURCE[unit.moduleId];
+  // A wrong first attempt is not the end of the item: the learner keeps the
+  // located feedback and the input. Only a right answer, a spent second
+  // attempt or "Show me" closes it.
+  const settled = verdict !== null && (verdict.correct || verdict.last);
+
+  // The single grading point, and the reason the item can't be graded twice:
+  // it is only ever called from a branch that also settles the item, and a
+  // settled item's button advances rather than re-checking.
+  const settle = (promoted) => {
+    onGrade(unit.key, promoted);
+    setResults((r) => [...r, { key: unit.key, promoted, recap: q.recap }]);
+  };
+
+  const advance = () => {
+    if (index + 1 >= queue.length) {
+      onDone(results);
+      return;
+    }
+    setIndex(index + 1);
+    setInput("");
+    setAttempt(1);
+    setVerdict(null);
+  };
+
+  // One button, whatever state the item is in — swapping a "Check" button for
+  // a separate "Next" one would unmount the element the learner just pressed
+  // and drop focus to the body, which is a keyboard user losing their place
+  // every single answer.
+  const submit = (event) => {
+    event.preventDefault();
+    if (settled) {
+      advance();
+      return;
+    }
+
+    const next = judge(q, input, attempt);
+    setVerdict(next);
+
+    if (next.correct || next.last) {
+      // Only right first time promotes. A second-attempt correct answer came
+      // after the app said where to look, and that is scaffolding.
+      settle(next.correct && attempt === 1);
+    } else {
+      if (next.spent) setAttempt(attempt + 1);
+      // Straight back into the field: the point of the second attempt is to
+      // fix the word that is still sitting in it.
+      inputRef.current.focus();
+    }
+  };
+
+  const showMe = () => {
+    setVerdict(reveal(q));
+    settle(false);
+  };
+
+  const buttonLabel = () => {
+    if (settled) return index + 1 >= queue.length ? "See how it went" : "Next";
+    return attempt === 1 ? "Check" : "Check again";
+  };
+
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto", padding: "80px 20px", textAlign: "center" }}>
-      <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: "0 0 10px" }}>
-        Nothing due
-      </h2>
-      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: TOKENS.inkSoft, margin: "0 0 26px", lineHeight: 1.6 }}>
-        Everything you've studied is scheduled for a later day. Study something new and it'll come back here when it's time.
-      </p>
-      <button
-        onClick={onExit}
-        style={{
-          border: "none",
-          background: TOKENS.ink,
-          color: TOKENS.paper,
-          borderRadius: 10,
-          padding: "13px 26px",
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 600,
-          fontSize: 15,
-          cursor: "pointer",
-        }}
-      >
-        Back to home
-      </button>
-    </div>
+    <Screen>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <BackLink label={<span lang="it">{PIAZZA.name}</span>} onClick={onBack} />
+        <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: TOKENS.inkSoft, margin: 0 }}>
+          {unit.level.label} · {MODULE_LABEL[unit.moduleId]}
+        </p>
+      </div>
+
+      {/* Mounted for the life of the screen and empty until there is a
+          verdict — see LiveStatus.jsx. A region that appears with its text
+          already inside may never be announced at all. */}
+      <LiveStatus>{verdict ? announce(verdict) : ""}</LiveStatus>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+        <Eyebrow style={{ color: TOKENS.inkSoft }}>
+          {index + 1} / {queue.length}
+        </Eyebrow>
+        <Eyebrow style={{ color: TOKENS.inkSoft }}>
+          Attempt {attempt} of {ATTEMPTS}
+        </Eyebrow>
+      </div>
+
+      <div style={{ ...citySurface(district.accent), padding: "14px 16px", marginBottom: 14 }}>
+        <Eyebrow style={{ opacity: 0.85 }}>
+          <span lang="it">{district.name}</span>
+        </Eyebrow>
+
+        {/* Vocabulary is asked by its English gloss; the example sentence
+            underneath, with the word cut out of it, is what tells "well"
+            from "good". Twelve of the 120 words can't be gapped without
+            lemmatising them, and those get the gloss on its own rather than
+            a wrong span cut out — see question.js. */}
+        {q.gloss && (
+          <p style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 600, margin: "6px 0 0", lineHeight: 1.25 }}>{q.gloss}</p>
+        )}
+        {q.cloze && (
+          <p lang="it" style={{ fontFamily: SANS, fontSize: 15, margin: "10px 0 0", lineHeight: 1.5, opacity: 0.92 }}>
+            {q.cloze}
+          </p>
+        )}
+
+        {q.prompt && (
+          <p lang="it" style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 600, margin: "6px 0 0", lineHeight: 1.3 }}>
+            {q.prompt}
+          </p>
+        )}
+        {q.hint && (
+          <p style={{ fontFamily: SANS, fontSize: 13, margin: "10px 0 0", lineHeight: 1.5, opacity: 0.92 }}>{q.hint}</p>
+        )}
+      </div>
+
+      <form onSubmit={submit}>
+        <label htmlFor={inputId} style={{ display: "block", fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, marginBottom: 6 }}>
+          Write it in Italian
+        </label>
+        {/* aria-invalid marks something the learner wrote that is wrong, so
+            it follows answered() rather than "not correct": a blank box and a
+            reveal are verdicts about an empty field, and calling that field
+            invalid is telling a screen reader she got something wrong when
+            she typed nothing. aria-describedby hangs the verdict card off the
+            field, so returning to the input after a wrong answer reads back
+            where it went and not just that it went. */}
+        <input
+          id={inputId}
+          ref={inputRef}
+          lang="it"
+          value={input}
+          readOnly={settled}
+          onChange={(e) => setInput(e.target.value)}
+          aria-invalid={verdict !== null && !verdict.correct && answered(verdict) ? "true" : undefined}
+          aria-describedby={verdict !== null ? verdictId : undefined}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            fontFamily: SERIF,
+            fontSize: 20,
+            fontWeight: 600,
+            color: TOKENS.ink,
+            background: TOKENS.card,
+            border: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+            borderRadius: CITY_RULES.radius,
+            padding: "12px 14px",
+          }}
+        />
+
+        {verdict && <Verdict id={verdictId} question={q} verdict={verdict} />}
+
+        <PrimaryButton type="submit" style={{ marginTop: 14 }}>
+          {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />
+        </PrimaryButton>
+      </form>
+
+      {!settled && <SecondaryButton onClick={showMe}>Show me</SecondaryButton>}
+    </Screen>
   );
+}
+
+// ── The end of a round ───────────────────────────────────────────────────
+
+function Summary({ results, onBack }) {
+  const promoted = results.filter((r) => r.promoted);
+  const again = results.filter((r) => !r.promoted);
+
+  return (
+    <Screen>
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        <RefreshCw size={30} color={TOKENS.ink} aria-hidden="true" />
+        <h1 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 600, color: TOKENS.ink, margin: "8px 0 0" }}>
+          That&rsquo;s the round
+        </h1>
+      </div>
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+        <div style={{ ...citySurface("pistachio"), padding: "14px 16px", flex: 1 }}>
+          <p style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 600, margin: 0 }}>{promoted.length}</p>
+          <Eyebrow style={{ opacity: 0.9 }}>right first time</Eyebrow>
+        </div>
+        <div style={{ ...citySurface("lemon"), padding: "14px 16px", flex: 1 }}>
+          <p style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 600, margin: 0 }}>{again.length}</p>
+          <Eyebrow style={{ opacity: 0.9 }}>coming back</Eyebrow>
+        </div>
+      </div>
+
+      {again.length > 0 && (
+        <div style={{ ...citySurface(), padding: "14px 16px", marginBottom: 20 }}>
+          <Eyebrow style={{ color: TOKENS.inkSoft }}>Worth another look</Eyebrow>
+          <ul style={{ listStyle: "none", margin: "10px 0 0", padding: 0, display: "grid", gap: 6 }}>
+            {again.map(({ key, recap }) => (
+              <li key={key} style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.ink, lineHeight: 1.45 }}>
+                <b lang="it">{recap.primary}</b>
+                <span style={{ color: TOKENS.inkSoft }}> &middot; {recap.secondary}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* One flex child, not two: the button lays its children out with a
+          gap, so "Back to" and the name would come out two spaces apart. */}
+      <PrimaryButton onClick={onBack}>
+        <span>
+          Back to <span lang="it">{PIAZZA.name}</span>
+        </span>
+      </PrimaryButton>
+    </Screen>
+  );
+}
+
+// onExit returns to the city map (see src/App.jsx). Review is a route rather
+// than a MODULES entry: it has no content and no progress of its own, it
+// replays other districts'.
+export default function ReviewModule({ onExit }) {
+  const [progress, setProgress] = useState(loadProgress);
+  const [round, setRound] = useState(null);
+  const [results, setResults] = useState(null);
+
+  useEffect(() => {
+    saveProgress(progress);
+  }, [progress]);
+
+  // Built once, when the round starts, from storage as it is at that moment —
+  // answering must not reshuffle the queue underneath you, and the landing
+  // screen may have been open a while.
+  const start = () => {
+    setResults(null);
+    setRound(dueItems(loadProgress(), todayISO()).map((unit) => ({ unit, q: toQuestion(unit) })));
+  };
+
+  const backToHome = () => {
+    setRound(null);
+    setResults(null);
+  };
+
+  if (results !== null) {
+    return <Summary results={results} onBack={backToHome} />;
+  }
+
+  if (round !== null) {
+    return (
+      <Round
+        queue={round}
+        onBack={backToHome}
+        onGrade={(key, correct) => setProgress((p) => reviewItem(p, key, correct))}
+        onDone={setResults}
+      />
+    );
+  }
+
+  const due = dueCount(progress);
+  if (due === 0) return <NothingDue onExit={onExit} />;
+
+  return <PiazzaHome progress={progress} due={due} onStart={start} onExit={onExit} />;
 }

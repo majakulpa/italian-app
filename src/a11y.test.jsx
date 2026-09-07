@@ -508,19 +508,82 @@ describe("Falsi Amici", () => {
 });
 
 describe("the review session", () => {
-  it("has an accessible mixed session and summary", async () => {
+  // The typed drill has more states than the multiple choice it replaced —
+  // the landing, an item mid-flight, a located verdict with the input handed
+  // back, and a settled one — and the located verdict is the state most
+  // worth auditing: it is the one that repaints the screen without moving
+  // focus, which is what LiveStatus is there for.
+  it("has an accessible landing, item, located verdict, settled item and summary", async () => {
     const word = greetings.words[0];
-    saveProgress({
-      words: { [wordKey(a1Vocab, greetings, word)]: "known" },
-      schedule: { [wordKey(a1Vocab, greetings, word)]: { box: 1, due: "2020-01-01" } },
-    });
+    const key = wordKey(a1Vocab, greetings, word);
+    saveProgress({ words: { [key]: "known" }, schedule: { [key]: { box: 1, due: "2020-01-01" } } });
 
     const user = userEvent.setup();
     const { container } = render(<ReviewModule onExit={() => {}} />);
     await expectNoViolations(container);
 
-    await user.click(screen.getByRole("button", { name: word.en }));
-    await user.click(screen.getByRole("button", { name: /See results/ }));
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+    await expectNoViolations(container);
+
+    const type = async (text) => {
+      const input = screen.getByLabelText("Write it in Italian");
+      await user.clear(input);
+      if (text) await user.type(input, text);
+      await user.click(screen.getByRole("button", { name: /^Check/ }));
+    };
+
+    // An empty box: a verdict card with no tick, no cross and no answer, and
+    // a field that must not be called invalid for holding nothing.
+    await type("");
+    await expectNoViolations(container);
+
+    // Wrong once: the verdict card is up, the input is still live, and the
+    // answer has not been handed over.
+    await type("ciap");
+    await expectNoViolations(container);
+
+    // Wrong twice: settled, revealed, and the input is read-only.
+    await type("ciar");
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
+    await expectNoViolations(container);
+  });
+
+  // The sweep above walks one item to the end of its two attempts, which
+  // leaves three of the six verdict states unaudited — and they are the three
+  // that change the markup most: a correct answer swaps the card's accent and
+  // its AnswerMark, and "Show me" settles the item with no mark at all and a
+  // read-only field nothing has been typed into.
+  it("has an accessible right answer and an accessible reveal", async () => {
+    const word = greetings.words[0];
+    const key = wordKey(a1Vocab, greetings, word);
+    const second = greetings.words[1];
+    const secondKey = wordKey(a1Vocab, greetings, second);
+    saveProgress({
+      words: { [key]: "known", [secondKey]: "known" },
+      schedule: { [key]: { box: 1, due: "2020-01-01" }, [secondKey]: { box: 1, due: "2020-01-01" } },
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+
+    // Right: the pistachio card, the tick, and the sentence the gap came from.
+    const onScreen = () => (screen.queryByText(word.en) ? word : second);
+    const first = onScreen();
+    await user.type(screen.getByLabelText("Write it in Italian"), first.it);
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await expectNoViolations(container);
+
+    // Revealed: settled, no mark, and a read-only field with nothing in it.
+    await user.click(screen.getByRole("button", { name: /^Next/ }));
+    await user.click(screen.getByRole("button", { name: "Show me" }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible empty state", async () => {
+    const { container } = render(<ReviewModule onExit={() => {}} />);
     await expectNoViolations(container);
   });
 });
@@ -667,6 +730,32 @@ describe("Italian text is marked as Italian", () => {
     // The gloss bar repeats the headword in Italian and its meaning in English.
     const meaning = a1Story.paragraphs[0].gloss[glossed];
     expect(italianAncestor(screen.getByText(meaning))).toBeNull();
+  });
+
+  // La Piazza puts three languages' worth of claim in one card: the English
+  // gloss that asks the question, the Italian sentence it is gapped out of,
+  // and — once the item settles — the answer and the sentence with the gap
+  // closed. Getting this wrong reads `ciao` with English phonetics.
+  it("marks the gapped example and the answer in La Piazza, and not the English gloss", async () => {
+    const user = userEvent.setup();
+    const word = greetings.words[0];
+    const key = wordKey(a1Vocab, greetings, word);
+    saveProgress({ words: { [key]: "known" }, schedule: { [key]: { box: 1, due: "2020-01-01" } } });
+
+    render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+
+    expect(italianAncestor(screen.getByText("___, come stai?"))).not.toBeNull();
+    // The gloss is what the question is asked in, and it is English.
+    expect(italianAncestor(screen.getByText(word.en))).toBeNull();
+    // The typed answer is Italian, so the field has to say so — otherwise a
+    // screen reader spells back what is typed with English letter names.
+    expect(screen.getByLabelText("Write it in Italian")).toHaveAttribute("lang", "it");
+
+    await user.click(screen.getByRole("button", { name: "Show me" }));
+    expect(italianAncestor(screen.getByText(word.it))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(word.ex))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(word.exEn, { exact: false }))).toBeNull();
   });
 });
 

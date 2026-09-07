@@ -9,6 +9,14 @@ import { LEVEL_ACCENTS } from "../shared/theme.js";
 // in English ("parlare (to speak) — io") — without those a beginner can't
 // tell what they're being asked to complete.
 //
+// A hint may never contain its own `answer`. Under four options, naming the
+// infinitive was the scaffold; La Piazza asks these same drills by typing
+// and draws the hint verbatim next to the gap, so a hint that says the
+// answer puts it on screen before an attempt is spent. Three did — the
+// three drills whose answer *is* the citation form — and they name the
+// English and the class instead ("to eat (an -are verb) — negative
+// imperativo, tu"). grammar.test.js holds the line.
+//
 // A table header or cell can be a plain string, or { it, en } where the
 // English needs spelling out for a beginner — the renderer puts the `en`
 // underneath in small type. Subject pronouns are the exception: they repeat
@@ -192,7 +200,7 @@ export const GRAMMAR_LEVELS = [
           { id: "3", prompt: "Le ragazze sono ___.", en: "The girls are Italian.", hint: "italiano (Italian) — feminine plural", options: ["italiane", "italiani", "italiana", "italiano"], answer: "italiane" },
           { id: "4", prompt: "Ho una macchina ___.", en: "I have a small car.", hint: "piccolo (small) — feminine singular", options: ["piccola", "piccolo", "piccole", "piccoli"], answer: "piccola" },
           { id: "5", prompt: "Ho comprato due ___ rossi.", en: "I bought two red books.", hint: "libro (book) — plural", options: ["libri", "libro", "libre", "libra"], answer: "libri" },
-          { id: "6", prompt: "Vorrei un caffè ___.", en: "I'd like a cold coffee.", hint: "freddo (cold) — masculine singular", options: ["freddo", "fredda", "freddi", "fredde"], answer: "freddo" },
+          { id: "6", prompt: "Vorrei un caffè ___.", en: "I'd like a cold coffee.", hint: "cold (an -o adjective) — masculine singular", options: ["freddo", "fredda", "freddi", "fredde"], answer: "freddo" },
           { id: "7", prompt: "Le mie amiche sono molto ___.", en: "My friends (all women) are very nice.", hint: "simpatico (nice) — feminine plural", options: ["simpatiche", "simpatici", "simpatica", "simpatico"], answer: "simpatiche" },
           { id: "8", prompt: "Marco e Anna sono ___.", en: "Marco and Anna are Italian.", hint: "italiano (Italian) — a mixed group takes the masculine plural", options: ["italiani", "italiane", "italiano", "italiana"], answer: "italiani" },
         ],
@@ -699,7 +707,7 @@ export const GRAMMAR_LEVELS = [
           { id: "5", prompt: "Mi presti la macchina? — Sì, ___ presto volentieri.", en: "Will you lend me the car? — Yes, I'll gladly lend it to you.", hint: "it to you (ti + la combined)", options: ["te la", "ti la", "me la", "gliela"], answer: "te la" },
           { id: "6", prompt: "Chi ha dato il libro a Paolo? — ___ ho dato io.", en: "Who gave Paolo the book? — I gave it to him.", hint: "it to him (gli + lo combined)", options: ["Glielo", "Gli lo", "Lo gli", "Gliela"], answer: "Glielo" },
           { id: "7", prompt: "Hai comprato le mele? — Sì, ___ ho comprate tre.", en: "Did you buy the apples? — Yes, I bought three of them.", hint: "of them (a quantity)", options: ["ne", "le", "li", "ci"], answer: "ne" },
-          { id: "8", prompt: "Questo problema? Preferisco non ___ adesso.", en: "This problem? I'd rather not talk about it now.", hint: "parlarne (to talk about it) — the pronoun joins onto the infinitive", options: ["parlarne", "ne parlare", "parlarlo", "parlargli"], answer: "parlarne" },
+          { id: "8", prompt: "Questo problema? Preferisco non ___ adesso.", en: "This problem? I'd rather not talk about it now.", hint: "to talk about it (parlare + ne) — the pronoun joins onto the infinitive", options: ["parlarne", "ne parlare", "parlarlo", "parlargli"], answer: "parlarne" },
         ],
       },
       {
@@ -741,7 +749,7 @@ export const GRAMMAR_LEVELS = [
           { id: "2", prompt: "Signora, ___ pure, la ascolto.", en: "Madam, do go ahead and speak, I'm listening.", hint: "parlare (to speak) — imperativo, Lei (the formal you)", options: ["parli", "parla", "parlate", "parlare"], answer: "parli" },
           { id: "3", prompt: "___ questa strada e poi gira a destra.", en: "Take this street and then turn right — to a friend.", hint: "prendere (to take) — imperativo, tu", options: ["Prendi", "Prenda", "Prendete", "Prendere"], answer: "Prendi" },
           { id: "4", prompt: "Ragazzi, ___ attenzione!", en: "Guys, pay attention!", hint: "fare (to do, to make) — imperativo, voi", options: ["fate", "fai", "faccia", "facciamo"], answer: "fate" },
-          { id: "5", prompt: "Non ___ così in fretta!", en: "Don't eat so fast! — to a friend.", hint: "mangiare (to eat) — negative imperativo, tu", options: ["mangiare", "mangi", "mangia", "mangiate"], answer: "mangiare" },
+          { id: "5", prompt: "Non ___ così in fretta!", en: "Don't eat so fast! — to a friend.", hint: "to eat (an -are verb) — negative imperativo, tu", options: ["mangiare", "mangi", "mangia", "mangiate"], answer: "mangiare" },
           { id: "6", prompt: "___ la verità, ti prego.", en: "Tell me the truth, please — to a friend.", hint: "dirmi (to tell me) — imperativo tu, with the pronoun attached", options: ["Dimmi", "Mi dica", "Dimmelo", "Dici"], answer: "Dimmi" },
           { id: "7", prompt: "Prego, ___, il dottore arriva subito.", en: "Please take a seat, the doctor will be right with you — formal.", hint: "accomodarsi (to take a seat) — imperativo, Lei: the pronoun stays in front", options: ["si accomodi", "accomodati", "si accomoda", "accomodatevi"], answer: "si accomodi" },
           { id: "8", prompt: "___ subito, è tardi!", en: "Let's go right away, it's late!", hint: "andare (to go) — imperativo, noi", options: ["Andiamo", "Andate", "Vai", "Vada"], answer: "Andiamo" },

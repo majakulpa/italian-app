@@ -59,21 +59,22 @@ runs, screenshotting, data entry.
 | `verifier` | haiku | `npm test`, the coverage gate, the build. Returns a verdict, not a log. |
 | `evidence` | haiku | Before/after screenshots at 375x812, console errors, wiki URLs. |
 
-### Dispatch is approved, not assumed
+### Dispatch freely, and say what you dispatched
 
-`.claude/settings.json` puts an `ask` rule on the `Agent` tool, so every
-dispatch prompts the owner. Before that prompt, state the **job card** in one
-short block so the answer is informed:
+Dispatch is not gated. Don't ask permission for it, don't narrate a job card
+before each one, and don't pause the work waiting to be told to proceed. The
+orchestrator decides who does what; that is the job.
 
-```
-Agent:  verifier
-Job:    is the L'Officina branch green?
-Scope:  npm test + coverage on claude/officina-riserva
-Done:   a pass/fail verdict with failing assertions
-```
+What the owner needs is not approval-in-advance but a legible account
+afterwards — one line per agent saying what it was asked and what came back.
+Two rules survive from when this was gated: don't bundle three unrelated
+dispatches into one worker, and don't dispatch to "get started" while the
+plan is still being argued.
 
-One card per agent. Don't bundle three dispatches into one paragraph and
-don't dispatch to "get started" while the plan is still being discussed.
+The gate that used to live here was an `ask` rule on the `Agent` tool in
+`.claude/settings.json`. It was removed because it fired on every dispatch,
+including the read-only recon ones, and a prompt that always gets the same
+answer is a prompt that stops being read.
 
 ### Routing
 

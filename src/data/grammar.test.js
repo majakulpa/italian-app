@@ -95,6 +95,33 @@ describe("GRAMMAR_LEVELS", () => {
 
   // Without these a beginner sees an Italian sentence with a hole in it and
   // an infinitive they may never have met.
+  // A hint is scaffolding, and scaffolding that says the answer is the
+  // answer. It matters more than it used to: these drills used to be asked
+  // only as four options, where naming the infinitive narrowed a choice the
+  // learner could already see, and La Piazza now asks them by typing and
+  // draws the hint verbatim beside the gap. Three shipped hints named their
+  // own answer — `freddo (cold) — masculine singular` for the answer
+  // `freddo`, and the same for `parlarne` and `mangiare` — which handed the
+  // answer over before an attempt was spent.
+  //
+  // Whole-word, and bounded by Unicode letters rather than \b, for the same
+  // reason question.js is: \b is defined over ASCII, so an answer ending in
+  // an accent would never match and would slip through.
+  it.each(allTopics.map(({ level, topic }) => [`${level.id} · ${topic.id}`, topic]))(
+    "%s never spells out a drill's own answer in its hint",
+    (_name, topic) => {
+      for (const drill of topic.drills) {
+        const escaped = drill.answer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const names = new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, "iu").test(drill.hint);
+        expect({ answer: drill.answer, hint: drill.hint, names }).toEqual({
+          answer: drill.answer,
+          hint: drill.hint,
+          names: false,
+        });
+      }
+    }
+  );
+
   it.each(allTopics.map(({ level, topic }) => [`${level.id} · ${topic.id}`, topic]))(
     "%s translates every drill prompt and spells out its hint in English",
     (_name, topic) => {

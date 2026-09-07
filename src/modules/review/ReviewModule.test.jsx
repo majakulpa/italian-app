@@ -137,7 +137,11 @@ describe("La Piazza — a typed item", () => {
     expect(screen.queryByRole("button", { name: word.en })).not.toBeInTheDocument();
   });
 
-  it("asks a grammar drill by its own gap and hint, and never draws its options", async () => {
+  // The hint is rendered verbatim, so "the hint is on screen" is only half a
+  // test: three shipped hints contained their own answer, and this assertion
+  // as first written would have passed while the screen gave the answer away.
+  // grammar.test.js keeps them out of the data; this checks what is drawn.
+  it("asks a grammar drill by its own gap and hint, without putting the answer on screen", async () => {
     const user = userEvent.setup();
     seedDue({ [DRILL_KEY]: "learning" });
     renderReview();
@@ -148,6 +152,7 @@ describe("La Piazza — a typed item", () => {
     for (const option of drill.options) {
       expect(screen.queryByRole("button", { name: option }), option).not.toBeInTheDocument();
     }
+    expect(document.body.textContent).not.toMatch(new RegExp(`(?<!\\p{L})${drill.answer}(?!\\p{L})`, "iu"));
   });
 
   // The round trip that makes the feature worth having: answering right has

@@ -528,9 +528,14 @@ describe("the review session", () => {
     const type = async (text) => {
       const input = screen.getByLabelText("Write it in Italian");
       await user.clear(input);
-      await user.type(input, text);
+      if (text) await user.type(input, text);
       await user.click(screen.getByRole("button", { name: /^Check/ }));
     };
+
+    // An empty box: a verdict card with no tick, no cross and no answer, and
+    // a field that must not be called invalid for holding nothing.
+    await type("");
+    await expectNoViolations(container);
 
     // Wrong once: the verdict card is up, the input is still live, and the
     // answer has not been handed over.
@@ -542,6 +547,38 @@ describe("the review session", () => {
     await expectNoViolations(container);
 
     await user.click(screen.getByRole("button", { name: /See how it went/ }));
+    await expectNoViolations(container);
+  });
+
+  // The sweep above walks one item to the end of its two attempts, which
+  // leaves three of the six verdict states unaudited — and they are the three
+  // that change the markup most: a correct answer swaps the card's accent and
+  // its AnswerMark, and "Show me" settles the item with no mark at all and a
+  // read-only field nothing has been typed into.
+  it("has an accessible right answer and an accessible reveal", async () => {
+    const word = greetings.words[0];
+    const key = wordKey(a1Vocab, greetings, word);
+    const second = greetings.words[1];
+    const secondKey = wordKey(a1Vocab, greetings, second);
+    saveProgress({
+      words: { [key]: "known", [secondKey]: "known" },
+      schedule: { [key]: { box: 1, due: "2020-01-01" }, [secondKey]: { box: 1, due: "2020-01-01" } },
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+
+    // Right: the pistachio card, the tick, and the sentence the gap came from.
+    const onScreen = () => (screen.queryByText(word.en) ? word : second);
+    const first = onScreen();
+    await user.type(screen.getByLabelText("Write it in Italian"), first.it);
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await expectNoViolations(container);
+
+    // Revealed: settled, no mark, and a read-only field with nothing in it.
+    await user.click(screen.getByRole("button", { name: /^Next/ }));
+    await user.click(screen.getByRole("button", { name: "Show me" }));
     await expectNoViolations(container);
   });
 

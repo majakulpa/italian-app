@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { loadProgress, saveProgress, todayISO } from "../../shared/storage.js";
-import { dueItems, dueCount, reviewItem } from "../../shared/srs.js";
+import { dueItems, dueCount, reviewItem, SESSION_LIMIT } from "../../shared/srs.js";
 import { DISTRICTS, districtById } from "../../shared/districts.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
@@ -197,6 +197,16 @@ function PiazzaHome({ progress, due, onStart, onExit }) {
       <div style={{ ...citySurface("pistachio"), padding: "16px", marginBottom: 14, textAlign: "center" }}>
         <p style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 600, margin: 0, lineHeight: 1 }}>{due}</p>
         <Eyebrow style={{ opacity: 0.9 }}>{due === 1 ? "item waiting" : "items waiting"}</Eyebrow>
+        {/* Both numbers or the one that is true. A round is capped at
+            SESSION_LIMIT, so 47 waiting and a counter reading 1 / 20 was the
+            landing quietly saying something the round then contradicted —
+            the same unbacked figure week.js exists to refuse, on the screen
+            that refuses it. */}
+        {due > SESSION_LIMIT && (
+          <p style={{ fontFamily: SANS, fontSize: 13, margin: "10px 0 0", lineHeight: 1.5, opacity: 0.9 }}>
+            One round takes {SESSION_LIMIT} of them, most overdue first. The rest keep their place in the queue.
+          </p>
+        )}
       </div>
 
       {solid > 0 && (
@@ -260,23 +270,31 @@ function NothingDue({ onExit }) {
 
 // ── The item (design screen 18, the lower half) ──────────────────────────
 
+// Whether the verdict is about something the learner actually wrote. An empty
+// box and a "show me" are not: there is no answer of hers to mark right or
+// wrong. Both the tick/cross and aria-invalid follow this rather than
+// `!correct`, so neither tells her she got something wrong when she typed
+// nothing (WCAG 1.4.1 for the first, 3.3.1 for the second).
+function answered(verdict) {
+  return verdict.kind !== "blank" && verdict.kind !== "revealed";
+}
+
 // Every visible sentence of the verdict, as markup. The plain-text twin that
 // goes to the live region is `announce()` in feedback.js — the two say the
 // same things, and the module test checks a screen reader isn't told less
 // than the screen shows.
-function Verdict({ question, verdict }) {
+function Verdict({ id, question, verdict }) {
   const blank = verdict.kind === "blank";
   const accent = verdict.correct ? "pistachio" : blank ? undefined : "lemon";
   const heading = verdict.correct ? "Right" : blank ? "Nothing written" : verdict.kind === "revealed" ? "Here it is" : "Not there yet";
-  // The tick/cross marks something the learner wrote. An empty box and a
-  // reveal are neither: AnswerMark's hidden text says "your answer,
-  // incorrect", and in both of those cases there is no answer of hers to call
-  // incorrect. The heading carries the state in words instead, so nothing
-  // here is left to colour alone (WCAG 1.4.1).
-  const marked = !blank && verdict.kind !== "revealed";
+  // AnswerMark's hidden text says "your answer, incorrect", so it is drawn
+  // only where there is an answer of hers to call that — see answered(). The
+  // heading carries the state in words instead, so nothing here is left to
+  // colour alone (WCAG 1.4.1).
+  const marked = answered(verdict);
 
   return (
-    <div style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
+    <div id={id} style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
       <Eyebrow style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6, color: blank ? TOKENS.inkSoft : undefined }}>
         {marked && <AnswerMark state={verdict.correct ? "correct" : "incorrect"} size={14} />}
         {heading}
@@ -331,6 +349,7 @@ function Verdict({ question, verdict }) {
 
 function Round({ queue, onGrade, onDone, onBack }) {
   const inputId = useId();
+  const verdictId = useId();
   const inputRef = useRef(null);
   const [index, setIndex] = useState(0);
   const [input, setInput] = useState("");
@@ -456,6 +475,13 @@ function Round({ queue, onGrade, onDone, onBack }) {
         <label htmlFor={inputId} style={{ display: "block", fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, marginBottom: 6 }}>
           Write it in Italian
         </label>
+        {/* aria-invalid marks something the learner wrote that is wrong, so
+            it follows answered() rather than "not correct": a blank box and a
+            reveal are verdicts about an empty field, and calling that field
+            invalid is telling a screen reader she got something wrong when
+            she typed nothing. aria-describedby hangs the verdict card off the
+            field, so returning to the input after a wrong answer reads back
+            where it went and not just that it went. */}
         <input
           id={inputId}
           ref={inputRef}
@@ -463,7 +489,8 @@ function Round({ queue, onGrade, onDone, onBack }) {
           value={input}
           readOnly={settled}
           onChange={(e) => setInput(e.target.value)}
-          aria-invalid={verdict !== null && !verdict.correct ? "true" : undefined}
+          aria-invalid={verdict !== null && !verdict.correct && answered(verdict) ? "true" : undefined}
+          aria-describedby={verdict !== null ? verdictId : undefined}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -482,7 +509,7 @@ function Round({ queue, onGrade, onDone, onBack }) {
           }}
         />
 
-        {verdict && <Verdict question={q} verdict={verdict} />}
+        {verdict && <Verdict id={verdictId} question={q} verdict={verdict} />}
 
         <PrimaryButton type="submit" style={{ marginTop: 14 }}>
           {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />

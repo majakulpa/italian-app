@@ -7,7 +7,7 @@ import { LEVELS } from "../../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 import { wordKey, drillKey, loadProgress, saveProgress, todayISO, addDaysISO } from "../../shared/storage.js";
 import { MODULE_STATS } from "../../shared/stats.js";
-import { MAX_BOX } from "../../shared/srs.js";
+import { MAX_BOX, SESSION_LIMIT } from "../../shared/srs.js";
 import { DISTRICTS } from "../../shared/districts.js";
 import * as speech from "../../shared/speech.js";
 
@@ -85,6 +85,33 @@ describe("La Piazza — the landing", () => {
     expect(screen.getByText(DISTRICTS.find((d) => d.id === "piazza").blurb)).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("items waiting")).toBeInTheDocument();
+  });
+
+  // The badge counted everything due and the round then delivered 20 of them,
+  // so a learner with 47 waiting read "47 items waiting" and answered
+  // "1 / 20" with nothing on screen acknowledging the cap. That is the same
+  // class of unbacked figure week.js was written to refuse, on the screen
+  // that refuses it — so the landing says both numbers or neither.
+  it("says what one round delivers when more is waiting than a round holds", () => {
+    const over = {};
+    for (const level of LEVELS) {
+      for (const category of level.categories) {
+        for (const w of category.words) over[wordKey(level, category, w)] = "learning";
+      }
+    }
+    expect(Object.keys(over).length).toBeGreaterThan(SESSION_LIMIT);
+
+    seedDue(over);
+    renderReview();
+
+    expect(screen.getByText(String(Object.keys(over).length))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`One round takes ${SESSION_LIMIT} of them`))).toBeInTheDocument();
+  });
+
+  it("says nothing about the cap when a round takes everything waiting", () => {
+    seedDue({ [WORD_KEY]: "learning", [DRILL_KEY]: "learning" });
+    renderReview();
+    expect(screen.queryByText(/One round takes/)).not.toBeInTheDocument();
   });
 
   // Design screen 18 draws "14 words leave solid if you don't review them by
@@ -243,6 +270,49 @@ describe("La Piazza — a typed item", () => {
     expect(screen.getByText(LOCATED.stem)).toBeInTheDocument();
     expect(screen.getByText("iao")).toBeInTheDocument();
     expect(screen.queryByText(word.it)).not.toBeInTheDocument();
+  });
+
+  // aria-invalid says "what you wrote is wrong", so it may only be set where
+  // she wrote something. And the verdict card is the field's description, or
+  // a screen reader landing back in the input after a wrong answer is told it
+  // is invalid without being told where it went — which is the whole point of
+  // locating rather than solving.
+  it("marks the field invalid only for an answer the learner actually wrote", async () => {
+    const user = userEvent.setup();
+    seedDue({ [WORD_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    const field = () => screen.getByLabelText("Write it in Italian");
+    expect(field()).not.toHaveAttribute("aria-invalid");
+    expect(field()).not.toHaveAttribute("aria-describedby");
+
+    // An empty box is not an attempt, so there is nothing of hers to call
+    // invalid — but there is a verdict card to point at.
+    await answer(user, "");
+    expect(field()).not.toHaveAttribute("aria-invalid");
+    const described = field().getAttribute("aria-describedby");
+    expect(document.getElementById(described)).toHaveTextContent(LOCATED.blank);
+
+    await answer(user, "ciap");
+    expect(field()).toHaveAttribute("aria-invalid", "true");
+    expect(document.getElementById(field().getAttribute("aria-describedby"))).toHaveTextContent(LOCATED.ending);
+
+    await answer(user, word.it);
+    expect(field()).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("does not call the field invalid when nothing was typed and the answer was asked for", async () => {
+    const user = userEvent.setup();
+    seedDue({ [WORD_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await user.click(screen.getByRole("button", { name: "Show me" }));
+
+    const field = screen.getByLabelText("Write it in Italian");
+    expect(field).not.toHaveAttribute("aria-invalid");
+    expect(document.getElementById(field.getAttribute("aria-describedby"))).toHaveTextContent(word.it);
   });
 
   it("says the same thing to a screen reader as it draws on the card", async () => {

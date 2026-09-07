@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { TOKENS, CITY_RULES, citySurface } from "../../shared/theme.js";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import { boxInterval, MAX_BOX } from "../../shared/srs.js";
+import { glossSenses } from "../../data/fondamentale.js";
 import { wordTraces } from "./traces.js";
 
 // Word detail — design screen 11, and the screen behind a fascia.
@@ -44,7 +45,15 @@ import { wordTraces } from "./traces.js";
 // Polish senses with " · ", and 87 of the first 300 entries carry one. So the
 // card fires off the data that is there.
 //
-// What it must not do is say *why*. Polish splits an Italian word for two
+// What it must not say is that the split only bites in one direction. It read
+// "going this way you choose, and coming back you do not", and coming back you
+// often do: 24 Polish senses in the first 300 entries are carried by more than
+// one entry — `mówić` by both `dire` and `parlare`, which is a card this very
+// screen draws — and `strada` and `via` share their whole Polish set.
+// fondamentale.test.js pins that, and La Riserva's drill screen makes the same
+// correction in its own note.
+//
+// What it must not do either is say *why* the split is there. Polish splits an Italian word for two
 // quite different reasons — `pytać · prosić o` is two meanings, `mówić ·
 // powiedzieć` is one meaning in two aspects — and nothing in the file
 // distinguishes them. Aspect is a verb category, so the two cases are not
@@ -62,17 +71,25 @@ const MONO = "'IBM Plex Mono', monospace";
 const SERIF = "'Fraunces', serif";
 const SANS = "'Inter', sans-serif";
 
-const STATE_LABEL = { unseen: "not started", learning: "in corso", known: "nota", solid: "solida" };
+// Three Italian labels and one English one, so the language travels with the
+// label rather than being asserted over all four. The pill used to carry a
+// flat `lang="it"`, which told a screen reader to read "not started" as
+// Italian — and, because <Pill> swallowed the prop, told it nothing at all.
+// Both halves of that are fixed here: the prop reaches the DOM, and it is only
+// there when the string is Italian.
+const STATE_LABEL = {
+  unseen: { label: "not started", lang: undefined },
+  learning: { label: "in corso", lang: "it" },
+  known: { label: "nota", lang: "it" },
+  solid: { label: "solida", lang: "it" },
+};
 
-// The gloss as senses. " · " is the separator fondamentale.js uses, and the
-// count is the whole point of the card below.
-export function senses(gloss) {
-  return gloss.split(" · ").map((s) => s.trim());
-}
-
-function Pill({ children, accent, style }) {
+// `...rest` for the `lang` the state pill passes — see RiservaModule.jsx's
+// <Eyebrow> for what a component that quietly drops it costs.
+function Pill({ children, accent, style, ...rest }) {
   return (
     <span
+      {...rest}
       style={{
         ...citySurface(accent),
         borderRadius: 999,
@@ -143,8 +160,8 @@ function Schedule({ box }) {
 
 export default function WordDetail({ entry, state, box, progress, onBack }) {
   const traces = wordTraces(progress, entry);
-  const pl = senses(entry.pl);
-  const en = senses(entry.en);
+  const pl = glossSenses(entry.pl);
+  const en = glossSenses(entry.en);
   const divides = pl.length > 1;
 
   return (
@@ -169,9 +186,11 @@ export default function WordDetail({ entry, state, box, progress, onBack }) {
       </button>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0 10px" }}>
-        <Pill>posto {entry.rank}</Pill>
-        <Pill accent={state === "unseen" ? undefined : "lemon"} lang="it">
-          {STATE_LABEL[state]}
+        {/* Italian, like the drill screen's twin — `posto` is a word, not a
+            label, and an English document has to say so. */}
+        <Pill lang="it">posto {entry.rank}</Pill>
+        <Pill accent={state === "unseen" ? undefined : "lemon"} lang={STATE_LABEL[state].lang}>
+          {STATE_LABEL[state].label}
         </Pill>
       </div>
 
@@ -202,8 +221,9 @@ export default function WordDetail({ entry, state, box, progress, onBack }) {
             <Eyebrow style={{ opacity: 0.85 }}>🇵🇱 Polish uses more than one word here</Eyebrow>
             <p style={{ margin: 0, fontFamily: SANS, fontSize: 14, lineHeight: 1.6 }}>
               Italian has <i lang="it">{entry.it}</i>. Polish has{" "}
-              <b lang="pl">{pl.slice(0, -1).join(", ")}</b> and <b lang="pl">{pl[pl.length - 1]}</b> — so going this way you
-              choose, and coming back you do not.
+              <b lang="pl">{pl.slice(0, -1).join(", ")}</b> and <b lang="pl">{pl[pl.length - 1]}</b> — so going this way
+              you choose between them. Coming back is easier, and not free: a Polish word here can belong to another
+              Italian entry too.
             </p>
             <p style={{ margin: 0, fontFamily: SANS, fontSize: 13, lineHeight: 1.6, opacity: 0.9 }}>
               That happens for two different reasons: two senses Italian does not separate, or one sense in two aspects,

@@ -4,7 +4,11 @@ import { FASCE, FONDAMENTALE } from "../../data/fondamentale.js";
 import { LEVELS } from "../../data/vocab.js";
 import { riservaKey, wordKey } from "../../shared/storage.js";
 import { reviewItem } from "../../shared/srs.js";
-import { judge } from "../../shared/locatedFeedback.js";
+// drillRound and unmetCount take the rank → state Map rather than a progress
+// object, because La Riserva builds it once and asks all ten bands off it.
+// The tests go in through the same door.
+import { lexiconStates as states } from "../../shared/coverage.js";
+import { judge, ATTEMPTS } from "../../shared/locatedFeedback.js";
 
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
@@ -34,7 +38,7 @@ function metInDeck(progress, italian) {
 
 describe("drillRound", () => {
   it("takes the band's first words in frequency order", () => {
-    const round = drillRound(EMPTY, BAND_1);
+    const round = drillRound(states(EMPTY), BAND_1);
 
     expect(round).toHaveLength(ROUND_SIZE);
     expect(round.map((e) => e.rank)).toEqual(Array.from({ length: ROUND_SIZE }, (_, i) => i + 1));
@@ -44,8 +48,8 @@ describe("drillRound", () => {
   // The band is the door and the round is the sitting. 200 typed items is not
   // a sitting, so the cap is the same as a review round's.
   it("caps a round at ROUND_SIZE however many the band holds", () => {
-    expect(unmetCount(EMPTY, BAND_1)).toBeGreaterThan(ROUND_SIZE);
-    expect(drillRound(EMPTY, BAND_1).length).toBe(ROUND_SIZE);
+    expect(unmetCount(states(EMPTY), BAND_1)).toBeGreaterThan(ROUND_SIZE);
+    expect(drillRound(states(EMPTY), BAND_1).length).toBe(ROUND_SIZE);
   });
 
   // The selection rule: this bench meets a word for the first time, and the
@@ -53,7 +57,7 @@ describe("drillRound", () => {
   // afternoon would be two schedules racing over one key.
   it("skips a word that has already been met on this bench", () => {
     const progress = met(EMPTY, FONDAMENTALE[0]);
-    const round = drillRound(progress, BAND_1);
+    const round = drillRound(states(progress), BAND_1);
 
     expect(round.map((e) => e.it)).not.toContain("essere");
     expect(round[0].rank).toBe(2);
@@ -65,11 +69,11 @@ describe("drillRound", () => {
   // Twenty lemmas overlap; without this they would be asked twice.
   it("skips a word the vocabulary deck already taught", () => {
     const bene = entryFor("bene");
-    expect(drillRound(EMPTY, BAND_1).concat(FONDAMENTALE.slice(0, 60)).map((e) => e.it)).toContain("bene");
+    expect(drillRound(states(EMPTY), BAND_1).concat(FONDAMENTALE.slice(0, 60)).map((e) => e.it)).toContain("bene");
 
     const progress = metInDeck(EMPTY, "bene");
-    expect(unmetCount(progress, BAND_1)).toBe(unmetCount(EMPTY, BAND_1) - 1);
-    expect(drillRound(progress, BAND_1).map((e) => e.rank)).not.toContain(bene.rank);
+    expect(unmetCount(states(progress), BAND_1)).toBe(unmetCount(states(EMPTY), BAND_1) - 1);
+    expect(drillRound(states(progress), BAND_1).map((e) => e.rank)).not.toContain(bene.rank);
   });
 
   // A rank nobody has written down is a fact about the file, not about the
@@ -78,23 +82,23 @@ describe("drillRound", () => {
   // shipped, held in the code that opens a round.
   it("offers no round for a band with no word written down in it", () => {
     expect(EMPTY_BAND.from).toBeGreaterThan(FONDAMENTALE.length);
-    expect(drillRound(EMPTY, EMPTY_BAND)).toEqual([]);
-    expect(unmetCount(EMPTY, EMPTY_BAND)).toBe(0);
+    expect(drillRound(states(EMPTY), EMPTY_BAND)).toEqual([]);
+    expect(unmetCount(states(EMPTY), EMPTY_BAND)).toBe(0);
   });
 
   it("offers no round once every word in the band has been met", () => {
     let progress = EMPTY;
     for (const entry of FONDAMENTALE.filter((e) => e.rank <= BAND_1.to)) progress = met(progress, entry);
 
-    expect(unmetCount(progress, BAND_1)).toBe(0);
-    expect(drillRound(progress, BAND_1)).toEqual([]);
+    expect(unmetCount(states(progress), BAND_1)).toBe(0);
+    expect(drillRound(states(progress), BAND_1)).toEqual([]);
   });
 
   // Band 2 is half written down (ranks 201–300 of 201–400), which is the
   // partial case: it drills what exists and counts what exists.
   it("drills only the written-down half of a partly seeded band", () => {
-    expect(unmetCount(EMPTY, FASCE[1])).toBe(100);
-    expect(drillRound(EMPTY, FASCE[1]).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
+    expect(unmetCount(states(EMPTY), FASCE[1])).toBe(100);
+    expect(drillRound(states(EMPTY), FASCE[1]).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
   });
 });
 
@@ -110,29 +114,71 @@ describe("lexiconQuestion", () => {
 
   // The multi-sense decision, held in a test so it cannot be quietly
   // "tidied" into a first-sense-only prompt. 87 of the first 300 entries
-  // split in Polish, the file cannot say whether a split is two meanings or
-  // two aspects, and in this direction both senses point at one answer.
+  // split in Polish and the file cannot say whether a split is two meanings
+  // or two aspects, so the prompt shows both and lets the English pick.
+  //
+  // Both assertions are on fields the screen renders: `glossPl` is the Polish
+  // line and `splits` is what draws the note under it. The version of this
+  // test that shipped asserted on a `senses` field nothing read, so it would
+  // have stayed green with the Polish gone from the screen entirely.
   it("shows every Polish sense rather than picking one", () => {
     const q = lexiconQuestion(entryFor("dire"));
 
     expect(q.glossPl).toBe("mówić · powiedzieć");
-    expect(q.senses.pl).toEqual(["mówić", "powiedzieć"]);
     expect(q.splits).toBe(true);
     expect(q.answer).toBe("dire");
   });
 
   it("does not claim a split where the file has one sense", () => {
     expect(lexiconQuestion(entryFor("essere")).splits).toBe(false);
-    expect(lexiconQuestion(entryFor("essere")).senses.pl).toEqual(["być"]);
+    expect(lexiconQuestion(entryFor("essere")).glossPl).toBe("być");
   });
 
   // A lexicon entry is not authored with alternative forms, so the
   // `distractor` verdict has nothing to fire on — and near neighbours from
   // elsewhere in the list must not be faked into it, because they were never
-  // offered with this item.
+  // offered with this item. They get a verdict of their own instead.
   it("offers the judge no alternatives to mistake for authored forms", () => {
     expect(lexiconQuestion(entryFor("dire")).alternatives).toEqual([]);
     expect(judge(lexiconQuestion(entryFor("dire")), "fare", 1).kind).not.toBe("distractor");
+  });
+
+  // `strada` (280, `droga · ulica`) and `via` (281, `ulica · droga`) have
+  // identical Polish sets at adjacent ranks, so they arrive in one round and
+  // the Polish half of the prompt cannot separate them. Typing one for the
+  // other is not a spelling slip and it is not "nothing lines up" — it is a
+  // real word from this very list, which is the most locatable thing that can
+  // be said about it without naming the answer.
+  it("names a wrong answer that is another entry in the list", () => {
+    const verdict = judge(lexiconQuestion(entryFor("strada")), "via", 1);
+
+    expect(verdict.kind).toBe("neighbour");
+    expect(verdict.correct).toBe(false);
+    // Located, not solved: the first attempt still reveals nothing.
+    expect(verdict.answer).toBeNull();
+    expect(judge(lexiconQuestion(entryFor("strada")), "via", ATTEMPTS).answer).toBe("strada");
+  });
+
+  // The same shape one rank apart at the top of the list, where the Polish is
+  // `do · w` on both entries and only the English tells them apart.
+  it("catches the near neighbour the Polish gloss cannot separate", () => {
+    expect(judge(lexiconQuestion(entryFor("a")), "in", 1).kind).toBe("neighbour");
+    expect(judge(lexiconQuestion(entryFor("in")), "a", 1).kind).toBe("neighbour");
+  });
+
+  // An entry is never its own neighbour, walked over the whole list.
+  it("never calls the answer itself a neighbour", () => {
+    for (const entry of FONDAMENTALE) {
+      expect(lexiconQuestion(entry).neighbours, entry.it).not.toContain(entry.it);
+      expect(judge(lexiconQuestion(entry), entry.it, 1).correct, entry.it).toBe(true);
+    }
+  });
+
+  // And the verdict stays honest about what it cannot place. A word that is
+  // not in the list gets `other`, as before — "a real word from this list" has
+  // to mean that, or it means nothing.
+  it("still says nothing lines up for a word that is not in the list", () => {
+    expect(judge(lexiconQuestion(entryFor("strada")), "xilofono", 1).kind).toBe("other");
   });
 
   // There is no example sentence anywhere in fondamentale.js, so the line

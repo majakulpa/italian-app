@@ -62,6 +62,14 @@ export function clozeExample(word) {
 // but typing one of them is the most locatable error in the app, so the
 // judge is given them.
 //
+// `neighbours` is the sibling field: other whole *items* the learner might
+// have been reaching for instead. Empty on both shapes built here and filled
+// only by La Riserva, and that is a fact about the content rather than an
+// omission. A base-vocabulary entry sits in a closed list of 300 words the
+// learner is working through, so "that is another word from this list" is a
+// true and useful thing to say; a deck word's siblings are its category, and
+// a grammar drill's are sentences, and neither would make that sentence true.
+//
 // `context` is the gap closed: the sentence in full, once the item is
 // settled, so the answer arrives in the place it came from rather than as a
 // loose word. `recap` is the one-line form the end-of-round list wants, where
@@ -79,6 +87,7 @@ export function toQuestion(unit) {
       hint: null,
       answer: unit.item.it,
       alternatives: [],
+      neighbours: [],
       context: { it: unit.item.ex, en: unit.item.exEn },
       recap: { primary: unit.item.it, secondary: unit.item.en },
     };
@@ -94,6 +103,7 @@ export function toQuestion(unit) {
     hint: unit.item.hint,
     answer: unit.item.answer,
     alternatives: unit.item.options.filter((option) => option !== unit.item.answer),
+    neighbours: [],
     context: { it: filled, en: unit.item.en },
     recap: { primary: filled, secondary: unit.item.en },
   };

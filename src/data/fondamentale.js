@@ -390,3 +390,12 @@ export const FONDAMENTALE = [
 export function fasciaWords(fascia) {
   return FONDAMENTALE.filter((entry) => entry.rank >= fascia.from && entry.rank <= fascia.to);
 }
+
+// A gloss split into its senses. " · " is this file's own separator, which is
+// why the function lives beside the data rather than in either of the two
+// screens that read it — it was exported from WordDetail.jsx, and pulling a
+// React component module into drill.js (and so into La Piazza's question.js
+// import path) to reach one string split was the wrong direction entirely.
+export function glossSenses(gloss) {
+  return gloss.split(" · ").map((sense) => sense.trim());
+}

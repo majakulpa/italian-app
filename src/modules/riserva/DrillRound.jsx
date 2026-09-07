@@ -25,12 +25,32 @@ import { lexiconQuestion } from "./drill.js";
 // ── Both glosses ────────────────────────────────────────────────────────
 // English and Polish, every sense, verbatim. modules/riserva/drill.js carries
 // the argument; the short version is that the file cannot say which Polish
-// sense is primary and that in this direction a split is extra evidence for
-// one Italian answer rather than ambiguity between two.
+// sense is primary, so trimming to one would assert a fact it does not have —
+// and that the English gloss is what disambiguates while the Polish
+// corroborates. See SPLIT_NOTE below for what the screen may claim about a
+// split, and what it may not.
 
 const MONO = "'IBM Plex Mono', monospace";
 const SERIF = "'Fraunces', serif";
 const SANS = "'Inter', sans-serif";
+
+// What the screen says under a Polish gloss that splits, so two Polish words
+// do not read as two questions.
+//
+// The sentence that shipped here was "Polish uses more than one word here.
+// They all point at the same Italian one", and the second half is false. 24
+// Polish senses in the first 300 entries are carried by more than one entry —
+// `mówić` by dire and parlare, `głowa` by testa and capo — and `strada`
+// (`droga · ulica`) and `via` (`ulica · droga`) share their whole Polish set
+// one rank apart, so the drill puts them in the same round. fondamentale.test.js
+// pins that, so the claim cannot come back.
+//
+// What is true is the division of labour: the English gloss is what
+// disambiguates — no two entries share one — and the Polish corroborates it.
+// So the note says which gloss to steer by instead of promising the Polish is
+// unambiguous. Exported so the test asserts the string the learner reads.
+export const SPLIT_NOTE =
+  "Polish needs more than one word for this one. Go by the English gloss: a Polish word here can belong to another entry as well.";
 
 // `...rest` is load-bearing rather than tidiness. Two of the callers below
 // pass `lang="it"`, and a signature of ({ children, style }) drops it on the
@@ -245,14 +265,10 @@ export default function DrillRound({ fascia, queue, onGrade, onDone, onBack }) {
           {q.glossPl}
         </p>
 
-        {/* Where Polish divides the word, said rather than hidden — and said
-            as the reassurance it is in this direction. WordDetail's pink card
-            makes the same point at length ("going this way you choose, and
-            coming back you do not"); here it only has to stop two Polish
-            words reading as two questions. */}
+        {/* Where Polish divides the word, said rather than hidden. */}
         {q.splits && (
           <p style={{ fontFamily: SANS, fontSize: 13, margin: "8px 0 0", lineHeight: 1.5, opacity: 0.9 }}>
-            Polish uses more than one word here. They all point at the same Italian one.
+            {SPLIT_NOTE}
           </p>
         )}
       </div>

@@ -65,12 +65,16 @@ export default function Dashboard({ onSelect }) {
 // occurs (shared/coverage.js), beside the count of solid words the
 // percentage is made of.
 //
-// Both numbers are capped low by the content that ships — 1.6% and 20 solid
-// is everything the app can currently teach, because only 20 of the vocab
-// module's 120 words are inside the base 2,000. So this card reads 0,0% for
-// a real day-one learner and never climbs far. That is a property of the
-// seeded lexicon, not of the arithmetic; coverage.js explains it at length
-// and coverage.test.js pins the ceiling.
+// Both numbers are capped by the content that ships, and the cap has moved.
+// It was 1.6% and 20 solid, because coverage learned that a word was known
+// from the vocabulary deck alone and only 20 of its 120 words are inside the
+// base 2,000. La Riserva's drill made every seeded rank reachable, so the
+// ceiling is now what those ranks are worth: 66.1%, and 300 of 2,000 solid.
+//
+// This card still reads 0,0% for a real day-one learner, and it still cannot
+// pass 66.1% — the list is 300 of a 2,000 target, which is a property of the
+// seeded lexicon rather than of the arithmetic. coverage.js explains it at
+// length and coverage.test.js pins the ceiling.
 function CoverageCard({ progress }) {
   const { pct, counts } = coverage(progress);
   const ink = CITY_ACCENTS.pistachio.ink;

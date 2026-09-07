@@ -4,8 +4,8 @@ import { foldTyped } from "./typedAnswer.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 
-// A question, as question.js builds one. Only the two fields the judge reads.
-const q = (answer, alternatives = []) => ({ answer, alternatives });
+// A question, as question.js builds one. Only the three fields the judge reads.
+const q = (answer, alternatives = [], neighbours = []) => ({ answer, alternatives, neighbours });
 
 const WORD = q("sorella");
 const DRILL = q("parlo", ["parli", "parla", "parlano"]);
@@ -63,6 +63,33 @@ describe("judging a typed review answer", () => {
     const verdict = judge(DRILL, "parli", FIRST);
     expect(verdict).toMatchObject({ correct: false, kind: "distractor", answer: null, shared: null });
     expect(LOCATED.distractor).not.toContain("parlo");
+  });
+
+  // The sibling verdict, and the reason it is a kind of its own rather than
+  // more `alternatives`: a distractor is another *form of this item*, and a
+  // neighbour is another *item*. Saying "one of the other forms this item was
+  // written with" about a word that was never written with it would be false.
+  it("names a typed neighbour as another item from the same list", () => {
+    const strada = q("strada", [], ["via", "il ponte"]);
+
+    expect(judge(strada, "via", FIRST)).toMatchObject({ kind: "neighbour", correct: false, answer: null });
+    expect(judge(strada, "via", LAST).answer).toBe("strada");
+    expect(announce(judge(strada, "via", FIRST))).toContain(LOCATED.neighbour);
+    expect(LOCATED.neighbour).not.toContain("strada");
+  });
+
+  // The ordering is the argument. A neighbour that happens to share a front
+  // with the answer is still a neighbour: `parola` against `parlare` starts
+  // `par` and is not a misspelling of it, so "it starts right and then goes
+  // somewhere else" would be confident and wrong about the kind of error.
+  it("prefers the neighbour verdict to the spelling one it would outrank", () => {
+    expect(judge(q("parlare", [], ["parola"]), "parola", FIRST).kind).toBe("neighbour");
+    // And an authored form of the item itself still beats both.
+    expect(judge(q("parlo", ["parli"], ["parli"]), "parli", FIRST).kind).toBe("distractor");
+  });
+
+  it("leaves a word that is in neither list where it was", () => {
+    expect(judge(q("strada", [], ["via"]), "xilofono", FIRST).kind).toBe("other");
   });
 
   it("holds the answer back until the attempts are spent", () => {

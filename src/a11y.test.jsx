@@ -789,6 +789,29 @@ describe("Italian text is marked as Italian", () => {
     expect(italianAncestor(screen.getByText("1 / 20"))).toBeNull();
   });
 
+  // The mirror of that bug, on the same screen: the four word-state labels are
+  // three Italian words and one English phrase, and the legend used to wrap
+  // all four in lang="it" — so "not started" was handed to a screen reader as
+  // Italian. Marking English as Italian is the same WCAG 3.1.2 failure as
+  // leaving Italian unmarked, and axe cannot see either.
+  it("marks only the Italian word-state labels, in the legend and on a word", async () => {
+    const user = userEvent.setup();
+    render(<RiservaModule onExit={() => {}} />);
+
+    expect(screen.getByText("in corso").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("solida").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(italianAncestor(screen.getByText("not started"))).toBeNull();
+    expect(italianAncestor(screen.getByText("not written down yet"))).toBeNull();
+
+    // And the same label again on word detail, where it is a pill rather than
+    // a legend row. `essere` has never been studied here, so it reads English.
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: "essere" }));
+
+    expect(screen.getByText("posto 1").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(italianAncestor(screen.getByText("not started"))).toBeNull();
+  });
+
   it("marks the story text and the word gloss in stories", async () => {
     const user = userEvent.setup();
     render(<StoriesModule onExit={() => {}} />);

@@ -48,10 +48,12 @@
 // distinction since it shipped — so an empty band yields an empty round and
 // the screen says so rather than opening a drill of nothing.
 
-import { fasciaWords, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
-import { lexiconStates } from "../../shared/coverage.js";
+import { FONDAMENTALE, fasciaWords, glossSenses, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { SESSION_LIMIT } from "../../shared/srs.js";
-import { senses } from "./WordDetail.jsx";
+
+// Every word written down in the list, for the `neighbour` verdict below.
+// Built once: it is the same 300 strings whichever entry is being asked.
+const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
 
 // One sitting. The same size as a review round, for the same reason: it is
 // how many typed items a person will actually finish before the session stops
@@ -60,22 +62,28 @@ import { senses } from "./WordDetail.jsx";
 export const ROUND_SIZE = SESSION_LIMIT;
 
 // The band's written-down words the learner has not met, in rank order.
-function unmet(progress, fascia) {
-  const states = lexiconStates(progress);
+//
+// Both of these take the rank → state Map that coverage.js's lexiconStates()
+// builds, rather than the progress object, and the reason is that La Riserva
+// asks the question ten times in one render — once per band. lexiconStates()
+// walks every unit of two modules and normalises each one onto a lemma, so
+// building it inside here meant ten full rebuilds of the same Map per paint,
+// on a screen that also draws two thousand cells. The caller builds it once.
+function unmet(states, fascia) {
   return fasciaWords(fascia).filter((entry) => (states.get(entry.rank) ?? "unseen") === "unseen");
 }
 
 // The next sitting for one band, or an empty array when there is nothing left
 // to introduce. See the header for why "not met" is the rule.
-export function drillRound(progress, fascia) {
-  return unmet(progress, fascia).slice(0, ROUND_SIZE);
+export function drillRound(states, fascia) {
+  return unmet(states, fascia).slice(0, ROUND_SIZE);
 }
 
 // How many of a band's written-down words are still waiting to be met. The
 // band states this, so a learner can tell "nothing written down here yet"
 // from "you have already met all of it" without opening either.
-export function unmetCount(progress, fascia) {
-  return unmet(progress, fascia).length;
+export function unmetCount(states, fascia) {
+  return unmet(states, fascia).length;
 }
 
 // One entry as something to produce.
@@ -92,27 +100,43 @@ export function unmetCount(progress, fascia) {
 // be the app asserting a fact it does not have — the same class of invention
 // as the mockup's `giorno 148`.
 //
-// The second is that in this direction the split is not ambiguity at all. The
-// drill runs gloss → Italian, and the Italian collapses every one of those
-// senses back into a single word: if you can be shown *both* `mówić` and
-// `powiedzieć` and both point at `dire`, that is more evidence for the answer
-// than either alone, not less. A split only costs the learner something going
-// the other way, which is the direction this drill does not run — and that is
-// the sentence WordDetail's pink card already makes ("going this way you
-// choose, and coming back you do not").
+// The second is that showing both costs the learner less than trimming to one
+// would — but it is not free, and the version of this argument that shipped
+// said it was. It claimed the Polish senses "all point at the same Italian
+// one", so a split was "more evidence for the answer than either alone". The
+// file says otherwise. 24 Polish senses in the first 300 entries are carried
+// by two entries or more — `mówić` by dire and parlare, `uczyć się` by
+// studiare and imparare, `głowa` by testa and capo — and `strada` (280,
+// `droga · ulica`) and `via` (281, `ulica · droga`) have identical Polish sets
+// at adjacent ranks, so they land in the same round with nothing in the Polish
+// to separate them. fondamentale.test.js now pins that, so the claim cannot
+// come back.
 //
-// So: both languages, every sense, exactly as written down. The screen shows
-// the Polish with `lang="pl"` and, where it splits, says that it splits.
+// What is actually true is a division of labour between the two glosses:
 //
-// ── Where the prompt is still thin, said plainly ────────────────────────
-// No two entries in the file share an English gloss or an English+Polish pair
-// (fondamentale.test.js pins both), so a prompt never has two right answers
-// *in the list*. What it can still have is a near neighbour: `di` is
-// "of, from · z · od" and `da` is "from, by, since · od · z · przez", and no
-// pair of glosses separates two Italian prepositions that overlap that
-// heavily. Those are the items the second attempt and the located verdict
-// exist for, and they are also the items where being wrong once and meeting
-// the word again in La Piazza is the correct outcome rather than a failure.
+//   English   disambiguates. No two entries share an English gloss —
+//             fondamentale.test.js pins that, and it is the guarantee a prompt
+//             never has two right answers in the list. `strada` is "road,
+//             street" and `via` is "way; street (in an address)".
+//   Polish    corroborates. On most entries it narrows the answer alongside
+//             the English; on a minority it would not be enough on its own.
+//
+// So the decision stands and the reason for it changes: both languages, every
+// sense, exactly as written down — because the file cannot say which sense is
+// primary and picking one would assert a fact it does not have — and the
+// screen tells the learner which gloss to steer by rather than claiming the
+// Polish is unambiguous.
+//
+// ── Where the prompt is still thin, and what says so ────────────────────
+// A near neighbour is the residue: `di` is "of, from · z · od" and `da` is
+// "from, by, since · od · z · przez", and no pair of glosses separates two
+// Italian prepositions overlapping that heavily. Typing one for the other used
+// to be judged `other` — "there is nothing in that to line up against the
+// answer" — which is false about a real word from the very list being drilled.
+// So the question carries `neighbours`, and locatedFeedback.js has a verdict
+// for it. Being wrong once here and meeting the word again in La Piazza is the
+// correct outcome rather than a failure; being told the wrong thing about why
+// is not.
 //
 // ── The answer includes the article ─────────────────────────────────────
 // `la chiave`, not `chiave`. The article is not decoration on these entries:
@@ -123,8 +147,6 @@ export function unmetCount(progress, fascia) {
 // front of that does not" — which is a true and useful location of a real
 // error rather than a technicality.
 export function lexiconQuestion(entry) {
-  const pl = senses(entry.pl);
-
   return {
     kind: "lexicon",
     // `gloss`, `cloze`, `prompt` and `hint` are the fields La Piazza's round
@@ -137,23 +159,31 @@ export function lexiconQuestion(entry) {
     prompt: null,
     hint: null,
     answer: entry.it,
-    // Nothing to be confused with. A lexicon entry is not authored with
-    // alternative forms the way a grammar drill is, so the `distractor`
-    // verdict — "that is one of the other forms this item was written with" —
-    // has nothing to fire on and must not be faked with near neighbours from
-    // elsewhere in the list, which were never offered and so were never
-    // "written with" this item.
+    // A lexicon entry is not authored with alternative forms the way a grammar
+    // drill is, so the `distractor` verdict — "that is one of the other forms
+    // this item was written with" — has nothing to fire on here, and must not
+    // be faked with words from elsewhere in the list. Those were never offered
+    // with this item and so were never "written with" it.
     alternatives: [],
+    // They get their own verdict instead. Every other word written down in the
+    // list, so typing a real Italian word aimed at the wrong entry is named as
+    // that rather than as a spelling that failed to line up. The whole list,
+    // not a hand-picked set of confusable pairs: "that is a word from this
+    // list, and not this one" is true of any of them, and choosing which
+    // neighbours count would be the app asserting a similarity judgement the
+    // file does not contain.
+    neighbours: LEXICON_WORDS.filter((word) => word !== entry.it),
     // A lexicon word has no example sentence to close a gap in, so the
     // context line says the other true thing about where it sits: its place
     // in the reservoir. Repeating the answer and its gloss back under the
     // answer and its gloss would be a line that says nothing.
     context: { it: entry.it, en: `rank ${entry.rank} of De Mauro's ${FONDAMENTALE_TARGET.toLocaleString("en-GB")}` },
     recap: { primary: entry.it, secondary: entry.en },
-    // Split for the drill screen, which draws the senses rather than the raw
-    // string, and needs to know whether Polish divides this word.
-    senses: { en: senses(entry.en), pl },
-    splits: pl.length > 1,
+    // Whether Polish divides this word, which is what draws the note under the
+    // Polish line. The senses themselves are not carried: the screen renders
+    // `glossPl` as written, so a split array here would be a second copy of
+    // the prompt that nothing reads — which is exactly what it was.
+    splits: glossSenses(entry.pl).length > 1,
     rank: entry.rank,
   };
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE, FASCE } from "../../data/fondamentale.js";
-import { lexiconEvidence, coverageBands } from "../../shared/coverage.js";
+import { lexiconEvidence, lexiconStates, coverageBands } from "../../shared/coverage.js";
 import { WORD_STATES } from "../../shared/wordState.js";
 import { loadProgress, saveProgress, riservaKey } from "../../shared/storage.js";
 import { reviewItem } from "../../shared/srs.js";
@@ -73,11 +73,19 @@ const SANS = "'Inter', sans-serif";
 // Weakest to strongest, then the ranks with nothing behind them. Order is
 // WORD_STATES' own, so a fifth state added there shows up here rather than
 // silently vanishing from the legend.
+//
+// `lang` travels with the label because three of the four are Italian and one
+// is not. The legend used to wrap every one of them in `lang="it"`, so a
+// screen reader was told to pronounce the English "not started" with Italian
+// phonetics (WCAG 3.1.2) — the mirror of the bug that dropped the tag from the
+// fascia headings, and just as invisible to axe. `undefined` renders no
+// attribute at all, which is what an English string in an English document
+// wants.
 const STATE_PAINT = {
-  unseen: { fill: TOKENS.controlLine, label: "not started" },
-  learning: { fill: TOKENS.viola, label: "in corso" },
-  known: { fill: TOKENS.limoncello, label: "nota" },
-  solid: { fill: TOKENS.malachite, label: "solida" },
+  unseen: { fill: TOKENS.controlLine, label: "not started", lang: undefined },
+  learning: { fill: TOKENS.viola, label: "in corso", lang: "it" },
+  known: { fill: TOKENS.limoncello, label: "nota", lang: "it" },
+  solid: { fill: TOKENS.malachite, label: "solida", lang: "it" },
 };
 
 // A rank with no word behind it has to *recede*, and the first version of this
@@ -240,7 +248,7 @@ function Legend({ counts, empty }) {
       {WORD_STATES.map((state) => (
         <li key={state} style={{ ...LEGEND_ROW }}>
           <Swatch fill={STATE_PAINT[state].fill} />
-          <span lang="it">{STATE_PAINT[state].label}</span>
+          <span lang={STATE_PAINT[state].lang}>{STATE_PAINT[state].label}</span>
           <b>{counts[state]}</b>
         </li>
       ))}
@@ -385,9 +393,22 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
   // answering must not reshuffle the queue underneath you, and the same
   // argument La Piazza makes applies here: the band list may have been open a
   // while.
+  //
+  // That fresh read is also adopted as state, and that is the fix to a real
+  // hazard rather than tidiness. The button that opens a round is drawn from
+  // `progress`, the queue was built from loadProgress(): two reads of the same
+  // storage that can disagree, and when they did — another tab finished the
+  // band — the screen offered a round whose queue was empty and DrillRound
+  // reached for queue[0]. One read now decides both, so an empty queue simply
+  // re-renders the band list, which then says the true thing: every word
+  // written down here has been met.
   const startDrill = (fascia) => {
+    const fresh = loadProgress();
+    const queue = drillRound(lexiconStates(fresh), fascia);
+
+    setProgress(fresh);
     setResults(null);
-    setRound({ fascia, queue: drillRound(loadProgress(), fascia) });
+    if (queue.length > 0) setRound({ fascia, queue });
   };
 
   const backToBands = () => {
@@ -495,7 +516,7 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
             band={band}
             fascia={FASCE[i]}
             index={i}
-            unmet={unmetCount(progress, FASCE[i])}
+            unmet={unmetCount(states, FASCE[i])}
             selected={open === i}
             onSelect={setOpen}
             onOpenWord={setWord}

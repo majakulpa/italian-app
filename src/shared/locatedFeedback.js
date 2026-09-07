@@ -41,6 +41,13 @@
 //               was authored with. The most locatable error there is: the
 //               right word in the wrong form. Naming that is not naming the
 //               answer, and this never says which form was wanted.
+//   neighbour   what was typed is a different *item from the same list* —
+//               `via` when the answer is `strada`. Not another form of this
+//               item, so not `distractor`, and emphatically not `other`: it
+//               is real Italian, from the vocabulary being studied, aimed at
+//               the wrong entry. Only La Riserva fills this in (see
+//               drill.js); a deck word and a grammar drill have no list of
+//               siblings the learner could have been reaching for instead.
 //   ending      the answer is right up to its last letter or two.
 //   partial     it starts right and diverges further in than that.
 //   stem        it ends the way the answer ends and starts differently.
@@ -196,6 +203,16 @@ export function judge(question, input, attempt) {
     return { ...base, kind: "distractor", answer: last ? answer : null };
   }
 
+  // Before the spelling analysis, and that ordering is the argument. If what
+  // she typed is another whole word from the list, she did not misspell this
+  // one — she reached for the wrong entry — and "it starts right and then goes
+  // somewhere else" would be a confident lie about the kind of error it is.
+  // `parlare` against `parola` shares three characters at the front and none
+  // of the mistake.
+  if (question.neighbours.some((word) => sameTyped(typed, withoutClosing(word)))) {
+    return { ...base, kind: "neighbour", answer: last ? answer : null };
+  }
+
   const prefix = sharedPrefix(typed, target);
   const behind = target.length - prefix.length;
   const tail = sharedTail(typed, target);
@@ -256,6 +273,8 @@ export function reveal(question) {
 export const LOCATED = {
   distractor:
     "That is one of the other forms this item was written with — the right word, in a form the sentence does not want. Which one does it want?",
+  neighbour:
+    "That is a real word from this list, but it belongs to a different entry. Read the English gloss again — which word does this one want?",
   ending: "You have the word right up to its last letters. It is the ending that missed.",
   partial: "It starts right and then goes somewhere else.",
   stem: "It ends the way the answer ends. What comes in front of that does not.",

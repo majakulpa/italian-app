@@ -102,17 +102,19 @@ function wordsKnown(progress) {
 }
 
 // `route` is what this bench opens, or null for one that doesn't open yet.
-// Usually that is a module id. La Riserva is the exception and the reason
-// `view` exists: it opens a screen that *reads* progress the other benches
-// wrote and keeps none of its own, exactly as ReviewModule is "a route, not a
-// MODULES entry". Giving it a MODULE_STATS entry to satisfy the old
-// route-implies-module rule would have meant inventing keys nothing writes —
-// the same mistake as the `met` word state, which was designed, counted,
-// tested, and impossible for any learner to have. So a bench either names a
-// module it opens, or is marked `view: true` and names neither. `module` is its id in MODULE_STATS, which districts.test.js uses
-// to check nothing the app ships has lost its front door. `waiting` is the
-// sentence a shut bench states instead of a count — never a bare padlock,
-// per PLAN.md.
+// `module` is its id in MODULE_STATS, which districts.test.js uses to check
+// nothing the app ships has lost its front door. `waiting` is the sentence a
+// shut bench states instead of a count — never a bare padlock, per PLAN.md.
+//
+// A bench may also be marked `view: true`, meaning it opens a screen that
+// *reads* progress the other benches wrote and keeps none of its own, exactly
+// as ReviewModule is "a route, not a MODULES entry". That flag was invented
+// for La Riserva, and La Riserva no longer needs it: the reservoir is
+// drillable, so it has keys of its own and names a module like everything
+// else. No bench carries `view` today. The flag stays because the rule it
+// encodes is the one worth keeping — a route without a module has to *say*
+// that it counts nothing, rather than being handed a MODULE_STATS entry over
+// keys nothing writes, which is the mistake the `met` word state was.
 export const BENCHES = [
   {
     id: "vocab",
@@ -142,9 +144,15 @@ export const BENCHES = [
     id: "riserva",
     name: "La Riserva",
     lang: "it",
-    module: null,
+    // A module, where it used to be `module: null, view: true`. The comment
+    // above `route` said a view was one that "keeps none of its own" progress
+    // and that giving it a MODULE_STATS entry "would have meant inventing keys
+    // nothing writes". Something writes them now: a fascia opens onto a typed
+    // drill over the entries it holds, graded through reviewItem under
+    // `riserva:` keys. So the bench names a module, and the last `view` in the
+    // roster is gone.
+    module: "riserva",
     route: "riserva",
-    view: true,
     // The last free hue in the city palette. `bubble` is the other one and is
     // not available: pink means Polish everywhere in L'Officina.
     accent: "pistachio",

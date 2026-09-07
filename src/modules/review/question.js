@@ -15,6 +15,14 @@
 //            — "well / good" could be `bene` or `buono` — so the word's own
 //            example sentence comes with it, with the word itself gapped out
 //            as disambiguating context.
+//   riserva  a base-vocabulary entry: an English gloss and a Polish one, and
+//            no example sentence anywhere in the file. Its question is built
+//            by modules/riserva/drill.js rather than here, because that is
+//            where the argument about the two glosses lives and a second copy
+//            of it would drift. The import direction is the right way round:
+//            La Piazza has no content of its own, it replays other districts'.
+
+import { lexiconQuestion } from "../riserva/drill.js";
 
 const GAP = "___";
 
@@ -59,10 +67,13 @@ export function clozeExample(word) {
 // loose word. `recap` is the one-line form the end-of-round list wants, where
 // the word itself is the thing being listed.
 export function toQuestion(unit) {
+  if (unit.moduleId === "riserva") return lexiconQuestion(unit.item);
+
   if (unit.moduleId === "vocab") {
     return {
       kind: "vocab",
       gloss: unit.item.en,
+      glossPl: null,
       cloze: clozeExample(unit.item),
       prompt: null,
       hint: null,
@@ -77,6 +88,7 @@ export function toQuestion(unit) {
   return {
     kind: "grammar",
     gloss: null,
+    glossPl: null,
     cloze: null,
     prompt: unit.item.prompt,
     hint: unit.item.hint,

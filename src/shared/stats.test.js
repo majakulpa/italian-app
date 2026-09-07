@@ -6,7 +6,8 @@ import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { MAPS } from "../data/mappe.js";
-import { wordKey, drillKey, conversationKey, storyKey, mappeKey } from "./storage.js";
+import { FASCE, FONDAMENTALE } from "../data/fondamentale.js";
+import { wordKey, drillKey, conversationKey, storyKey, mappeKey, riservaKey } from "./storage.js";
 
 // Pure arithmetic over a seeded progress object — no rendering, so these can
 // pin the exact numbers the dashboard will show.
@@ -75,9 +76,42 @@ describe("MODULE_STATS", () => {
   });
 
   // Conversations have no wrong answer and a story is read rather than
-  // drilled, so neither belongs in a review queue.
-  it("schedules vocabulary and grammar only", () => {
-    expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar"]);
+  // drilled, so neither belongs in a review queue. The three that do are the
+  // ones whose unit is a lexical item or a sentence slot: words, grammar
+  // drills, and — since La Riserva gained a typed drill — base-vocabulary
+  // entries. Each `scheduled: false` in stats.js states its own reason.
+  it("schedules vocabulary, grammar and the base vocabulary only", () => {
+    expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar", "riserva"]);
+  });
+
+  // La Riserva declares fasce where the other modules declare CEFR levels,
+  // for the same reason Mappatura delle parole declares maps: frequency is
+  // its own ladder. The invariant is that a fascia id can never collide with
+  // a level id, or levelStats would fold reservoir words into a rung.
+  it("keeps the fasce out of the CEFR ladder entirely", () => {
+    const riserva = MODULE_STATS.find((m) => m.id === "riserva");
+    expect(riserva.levels).toBe(FASCE);
+
+    const ladder = LEVELS.map((l) => l.id);
+    for (const fascia of FASCE) expect(ladder).not.toContain(fascia.id);
+
+    const drilled = withWords({ [riservaKey(FONDAMENTALE[0])]: "known" });
+    for (const id of ladder) {
+      expect({ id, ...levelStats(drilled, id) }).toEqual({ id, ...levelStats(EMPTY, id) });
+    }
+  });
+
+  // Only ranks that have a word written down. The list is 300 of 2,000, and
+  // a rank nobody has written down is a fact about the file rather than a
+  // word the learner has failed to learn — so it is not a unit, cannot be
+  // counted, and cannot be scheduled.
+  it("counts only the lexicon ranks that have an entry behind them", () => {
+    expect(moduleStats(EMPTY, "riserva").total).toBe(FONDAMENTALE.length);
+
+    const riserva = MODULE_STATS.find((m) => m.id === "riserva");
+    const empty = FASCE.filter((f) => f.from > FONDAMENTALE.length);
+    expect(empty.length).toBeGreaterThan(0);
+    for (const fascia of empty) expect(riserva.units(fascia), fascia.id).toEqual([]);
   });
 
   // Mappatura delle parole declares its maps where the other modules declare CEFR levels,

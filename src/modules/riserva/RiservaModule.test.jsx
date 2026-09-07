@@ -6,9 +6,11 @@ import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { saveProgress } from "../../shared/storage.js";
 
-// The bridge from the vocabulary deck is the only thing that puts a state on a
-// lexicon rank (coverage.js says so at length), so a test that wants a word
-// "known" has to write the key the vocab module would have written.
+// Two things put a state on a lexicon rank now — the vocabulary deck and the
+// fascia drill — and these tests use the deck, which is the harder of the two
+// to get right: it bridges by matching Italian strings through lemmaKey. A
+// test that wants a word "known" that way has to write the key the vocab
+// module would have written.
 const vocab = MODULE_STATS.find((m) => m.id === "vocab");
 const lexiconLemmas = new Set(FONDAMENTALE.map((e) => e.it));
 

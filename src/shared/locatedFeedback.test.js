@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./feedback.js";
-import { foldTyped } from "../../shared/typedAnswer.js";
-import { LEVELS } from "../../data/vocab.js";
-import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./locatedFeedback.js";
+import { foldTyped } from "./typedAnswer.js";
+import { LEVELS } from "../data/vocab.js";
+import { GRAMMAR_LEVELS } from "../data/grammar.js";
 
 // A question, as question.js builds one. Only the two fields the judge reads.
 const q = (answer, alternatives = []) => ({ answer, alternatives });

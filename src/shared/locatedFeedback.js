@@ -1,16 +1,26 @@
-// Judging one typed answer in a review session.
+// Judging one typed answer against the answer that was wanted.
 //
-// The third of these files, and deliberately a sibling of modules/mappe and
-// modules/articoli rather than a lift into shared/. What the three have in
-// common is a *shape* — two attempts, a verdict that is data rather than a
-// sentence, one announce() that builds the plain text for the live region,
-// and nothing revealed until the item is settled. What they do not have in
-// common is judging logic: Mappatura delle parole measures a typed answer
+// This was modules/review/feedback.js, and its header argued at length that
+// it was "deliberately a sibling of modules/mappe and modules/articoli rather
+// than a lift into shared/": the three share a *shape* — two attempts, a
+// verdict that is data rather than a sentence, one announce() building the
+// plain text for the live region, nothing revealed until the item is settled
+// — but not judging logic. Mappatura delle parole measures a typed answer
 // against a suffix rule, Gli Articoli classifies a chosen option along two
 // categorical dimensions, and this file has neither a rule nor a set of
-// options — only an answer and whatever the learner typed. The four exports of
-// shared/typedAnswer.js are the domain-free half, and they are what this is
-// built on.
+// options, only an answer and whatever the learner typed.
+//
+// That argument was right about those two and it is what moved this file: La
+// Riserva's drill has neither a rule nor a set of options either. It shows a
+// gloss and takes the Italian, which is the same judging problem to the
+// character, so the choice was one shared judge or a fourth copy of it. The
+// two callers are La Piazza (modules/review) and La Riserva
+// (modules/riserva/drill.js); the four exports of shared/typedAnswer.js are
+// still the domain-free half underneath.
+//
+// What did *not* move is the screen. Each bench composes its own markup
+// around this, the way mappe, articoli and falsiAmici already do — the
+// verdicts are data precisely so that stays possible.
 //
 // ── Located, not solved, with nothing but the answer to go on ────────────
 // PLAN.md names the standard wrong → red cross → answer pattern as the
@@ -54,7 +64,7 @@
 // renders the very same strings rather than keeping a second copy that can
 // drift.
 
-import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "../../shared/typedAnswer.js";
+import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "./typedAnswer.js";
 
 export const ATTEMPTS = 2;
 
@@ -219,6 +229,18 @@ export function judge(question, input, attempt) {
     tail: back ? quote : null,
     answer: last ? answer : null,
   };
+}
+
+// Whether the verdict is about something the learner actually wrote. An empty
+// box and a "show me" are not: there is no answer of hers to mark right or
+// wrong. The tick/cross and aria-invalid both follow this rather than
+// `!correct`, so neither tells her she got something wrong when she typed
+// nothing (WCAG 1.4.1 for the first, 3.3.1 for the second).
+//
+// It lives beside the verdicts rather than in a screen because it is a fact
+// about a verdict, and both screens that render one need it.
+export function answered(verdict) {
+  return verdict.kind !== "blank" && verdict.kind !== "revealed";
 }
 
 // "Show me" — a deliberate second choice, and wrong by definition: the item

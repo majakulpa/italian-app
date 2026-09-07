@@ -5,7 +5,7 @@ import SpeakButton from "../../shared/SpeakButton.jsx";
 import { boxInterval, MAX_BOX } from "../../shared/srs.js";
 import { wordTraces } from "./traces.js";
 
-// Word detail — design screen 11, and the last screen in L'Officina.
+// Word detail — design screen 11, and the screen behind a fascia.
 //
 // The other half of what makes the lexicon visible: La Riserva says how much
 // of the reservoir you hold, this says what one drop of it is.
@@ -219,8 +219,8 @@ export default function WordDetail({ entry, state, box, progress, onBack }) {
           <Card>
             <Eyebrow style={{ opacity: 0.85, color: TOKENS.inkSoft }}>Where it sits</Eyebrow>
             <p style={{ margin: 0, fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: TOKENS.inkSoft }}>
-              Not in the scheduler. Nothing has asked you this word yet, so there is no box and no date to show — the
-              vocabulary deck is the only thing that puts a lexicon word into the queue.
+              Not in the scheduler. Nothing has asked you this word yet, so there is no box and no date to show — drill
+              its <i lang="it">fascia</i> and it goes into the queue with everything else.
             </p>
           </Card>
         )}

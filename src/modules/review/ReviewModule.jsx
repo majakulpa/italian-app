@@ -3,12 +3,11 @@ import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { loadProgress, saveProgress, todayISO } from "../../shared/storage.js";
 import { dueItems, dueCount, reviewItem, SESSION_LIMIT } from "../../shared/srs.js";
-import { DISTRICTS, districtById } from "../../shared/districts.js";
+import { districtById, districtForModule } from "../../shared/districts.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
-import AnswerMark from "../../shared/AnswerMark.jsx";
-import SpeakButton from "../../shared/SpeakButton.jsx";
 import { toQuestion } from "./question.js";
-import { judge, reveal, announce, fullStopAfter, LOCATED, ATTEMPTS } from "./feedback.js";
+import { judge, reveal, announce, answered, ATTEMPTS } from "../../shared/locatedFeedback.js";
+import Verdict from "../../shared/Verdict.jsx";
 import { solidThisWeek, WEEK_DAYS } from "./week.js";
 
 // La Piazza — the review district, and design screen 18.
@@ -53,16 +52,19 @@ const SANS = "'Inter', sans-serif";
 // the map — a district and the door to it should not drift apart.
 const PIAZZA = districtById("piazza");
 
-// Which district an item came from, for the colour on its card. Derived from
-// districts.js rather than a second table here, so a district that changes
-// its accent changes this too. Every scheduled module has exactly one
-// district; ReviewModule.test.jsx pins that, which is why there is no
-// "no district" branch to cover.
-const SOURCE = Object.fromEntries(
-  DISTRICTS.filter((district) => district.module).map((district) => [district.module, district]),
-);
+// Which district an item came from, for the colour on its card. Resolved by
+// districts.js rather than by a second table here, so a district that changes
+// its accent changes this too, and so a bench that is not the module its
+// district's tile counts still finds its walls — La Riserva sits inside
+// L'Officina, whose tile counts the vocabulary deck. Every scheduled module
+// resolves; ReviewModule.test.jsx pins that, which is why there is no "no
+// district" branch to cover.
 
-const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar" };
+// The names are English because this line is English prose that marks no
+// spans. "La Riserva" is Italian, so what goes here is what the bench is —
+// the base vocabulary — and the district name beside it carries `lang="it"`
+// where it is drawn.
+const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar", riserva: "Base vocabulary" };
 
 function Eyebrow({ children, style }) {
   return (
@@ -270,83 +272,6 @@ function NothingDue({ onExit }) {
 
 // ── The item (design screen 18, the lower half) ──────────────────────────
 
-// Whether the verdict is about something the learner actually wrote. An empty
-// box and a "show me" are not: there is no answer of hers to mark right or
-// wrong. Both the tick/cross and aria-invalid follow this rather than
-// `!correct`, so neither tells her she got something wrong when she typed
-// nothing (WCAG 1.4.1 for the first, 3.3.1 for the second).
-function answered(verdict) {
-  return verdict.kind !== "blank" && verdict.kind !== "revealed";
-}
-
-// Every visible sentence of the verdict, as markup. The plain-text twin that
-// goes to the live region is `announce()` in feedback.js — the two say the
-// same things, and the module test checks a screen reader isn't told less
-// than the screen shows.
-function Verdict({ id, question, verdict }) {
-  const blank = verdict.kind === "blank";
-  const accent = verdict.correct ? "pistachio" : blank ? undefined : "lemon";
-  const heading = verdict.correct ? "Right" : blank ? "Nothing written" : verdict.kind === "revealed" ? "Here it is" : "Not there yet";
-  // AnswerMark's hidden text says "your answer, incorrect", so it is drawn
-  // only where there is an answer of hers to call that — see answered(). The
-  // heading carries the state in words instead, so nothing here is left to
-  // colour alone (WCAG 1.4.1).
-  const marked = answered(verdict);
-
-  return (
-    <div id={id} style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
-      <Eyebrow style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6, color: blank ? TOKENS.inkSoft : undefined }}>
-        {marked && <AnswerMark state={verdict.correct ? "correct" : "incorrect"} size={14} />}
-        {heading}
-      </Eyebrow>
-
-      <div style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.55, display: "grid", gap: 6, marginTop: 8 }}>
-        {/* The located sentence, rendered from the very strings announce()
-            speaks. Correct answers and the reveal have nothing to locate. */}
-        {LOCATED[verdict.kind] && <p style={{ margin: 0 }}>{LOCATED[verdict.kind]}</p>}
-
-        {verdict.shared && (
-          <p style={{ margin: 0 }}>
-            You have <b lang="it">{verdict.shared}</b> right.
-          </p>
-        )}
-
-        {verdict.tail && (
-          <p style={{ margin: 0 }}>
-            Both end <b lang="it">{verdict.tail}</b>.
-          </p>
-        )}
-
-        {verdict.correct && !verdict.answer && <p style={{ margin: 0 }}>That is the one.</p>}
-
-        {verdict.answer && (
-          <>
-            <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              {/* The full stop is conditional because an answer can bring its
-                  own: `come stai?` is a vocabulary entry, and "The answer is
-                  come stai?." reads as a typo. fullStopAfter is shared with
-                  announce() so the card and the live region agree. */}
-              <span>
-                {verdict.correct ? "Italian writes it " : "The answer is "}
-                <b lang="it">{verdict.answer}</b>
-                {fullStopAfter(verdict.answer)}
-              </span>
-              <SpeakButton text={verdict.answer} size={16} />
-            </p>
-            <p style={{ margin: 0, opacity: 0.9 }}>
-              <span lang="it">{question.context.it}</span> &mdash; {question.context.en}
-            </p>
-          </>
-        )}
-
-        {!verdict.correct && !verdict.last && !blank && (
-          <p style={{ margin: 0 }}>Have another go &mdash; you get one more.</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Round({ queue, onGrade, onDone, onBack }) {
   const inputId = useId();
   const verdictId = useId();
@@ -358,7 +283,7 @@ function Round({ queue, onGrade, onDone, onBack }) {
   const [results, setResults] = useState([]);
 
   const { unit, q } = queue[index];
-  const district = SOURCE[unit.moduleId];
+  const district = districtForModule(unit.moduleId);
   // A wrong first attempt is not the end of the item: the learner keeps the
   // located feedback and the input. Only a right answer, a spent second
   // attempt or "Show me" closes it.
@@ -455,6 +380,19 @@ function Round({ queue, onGrade, onDone, onBack }) {
         {q.gloss && (
           <p style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 600, margin: "6px 0 0", lineHeight: 1.25 }}>{q.gloss}</p>
         )}
+        {/* A base-vocabulary word arrives with both glosses, because
+            fondamentale.js carries both and PLAN.md's "Polish is a
+            first-class layer" means the Polish half is not an afterthought
+            to be dropped when the item leaves its own bench. It is a
+            separate element rather than appended to the English string
+            because it is a different language and has to say so (WCAG
+            3.1.2). See modules/riserva/drill.js on why every sense is
+            shown rather than one being picked. */}
+        {q.glossPl && (
+          <p lang="pl" style={{ fontFamily: SANS, fontSize: 15, margin: "8px 0 0", lineHeight: 1.5, opacity: 0.92 }}>
+            {q.glossPl}
+          </p>
+        )}
         {q.cloze && (
           <p lang="it" style={{ fontFamily: SANS, fontSize: 15, margin: "10px 0 0", lineHeight: 1.5, opacity: 0.92 }}>
             {q.cloze}
@@ -509,7 +447,7 @@ function Round({ queue, onGrade, onDone, onBack }) {
           }}
         />
 
-        {verdict && <Verdict id={verdictId} question={q} verdict={verdict} />}
+        {verdict && <Verdict id={verdictId} context={q.context} verdict={verdict} />}
 
         <PrimaryButton type="submit" style={{ marginTop: 14 }}>
           {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />

@@ -41,34 +41,45 @@
 // "834", and the difference is exactly this rule — 834 is every word touched
 // at all, 715 is the known-or-better subset the percentage is made of.
 //
-// ── The ceiling, stated because it is low ───────────────────────────────
-// Coverage learns that a word is known from one place: the vocabulary
-// module's 120 words, matched onto lemmas by lexiconStates() below. Only 20
-// of those 120 are in the base 2,000, so a learner who masters every word,
-// drill, dialogue and story the app ships sees 1.6% and "20 / 2000 solid",
-// and cannot see more. The other 100 vocabulary words are real Italian and
-// worth learning; they are simply outside the population this figure is a
-// percentage of.
+// ── The ceiling, and what moved it ──────────────────────────
+// Coverage used to learn that a word is known from exactly one place: the
+// vocabulary module's 120 words, matched onto lemmas by lexiconStates()
+// below. Only 20 of those 120 are in the base 2,000, so a learner who
+// mastered every word, drill, dialogue and story the app shipped saw 1.6% and
+// "20 / 2000 solid", and could not see more. The other 100 vocabulary words
+// are real Italian and worth learning; they were simply outside the
+// population this figure is a percentage of.
 //
-// That is a property of the content, not a bug in the arithmetic — the
-// weighting is right, the list is 300 of a 2,000 target, and the bridge is
-// deliberately one narrow seam. But it means the headline is close to a
-// constant today, and nobody should discover that from a user. The ceiling is
-// pinned by test in coverage.test.js ("the ceiling a fully-mastered account
-// reaches") so it can never move, or fail to move, silently. Widening it is a
-// product decision: seed more of the lexicon, widen what feeds the bridge, or
-// change what the headline is a percentage of.
+// The comment that stood here named three ways out — "seed more of the
+// lexicon, widen what feeds the bridge, or change what the headline is a
+// percentage of" — and La Riserva took the second. The reservoir has a verb
+// now: a *fascia* opens onto a typed production round over the entries it
+// holds, graded through the same reviewItem() as everything else, under
+// `riserva:` keys of its own. So LEXICON_SOURCES below is two modules rather
+// than one, and every rank with a word written down is reachable.
+//
+// The ceiling is therefore the coverage of the ranks that have a word behind
+// them, which today is 1–300: **66.1%, and 300 / 2000 solid.** That is not a
+// coincidence — the sanity check higher up this file says the top 300 words
+// are worth about two thirds of running text, and this is the same figure
+// arriving from the other side.
+//
+// What is left under it is the honest bottleneck, and it is now the one
+// PLAN.md always claimed it was: the list is 300 of a 2,000 target, so 1,700
+// ranks have no word to drill. Raising the ceiling past 66.1% is a content
+// job — entries with accurate English and Polish glosses — and no longer an
+// engineering one.
+//
+// coverage.test.js pins the ceiling ("the ceiling a fully-mastered account
+// reaches") so it can never move, or fail to move, silently. Moving it is the
+// point; moving it quietly is not.
 
-import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../data/fondamentale.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE } from "../data/fondamentale.js";
 import { MODULE_STATS } from "./stats.js";
 import { wordState, WORD_STATES, strongest } from "./wordState.js";
 
 // What the full 2,000 is worth, as a fraction of running text.
 export const LEXICON_COVERAGE = 0.86;
-
-// La Riserva draws the reservoir in *fasce* of 200 — "Fascia 3 · posti
-// 401–600". Ten bands over the 2,000.
-export const BAND_SIZE = 200;
 
 const COVERED = new Set(["known", "solid"]);
 
@@ -106,41 +117,76 @@ export function lemmaKey(italian) {
 
 const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
 
-// rank -> the vocabulary units whose lemma normalises onto it, built once.
-// The bridge is walked in one place and read from three: the states below,
-// the detail screen's box, and the traces under "dove l'hai incontrata".
-// Walking it per word opened would be the same answer computed again.
+// The modules that can tell coverage a lexicon word is known, in the order
+// their evidence is folded. Two, where there used to be one:
+//
+//   vocab    the deck. It teaches 120 Italian words with example sentences,
+//            and 20 of them normalise onto a base-vocabulary lemma. Narrow,
+//            and it was the whole bridge.
+//   riserva  the reservoir itself. Every entry in fondamentale.js is a unit
+//            under a `riserva:` key, so a word can be studied *as* a lexicon
+//            word rather than only by turning up in a deck category.
+//
+// Order matters only for a tie, and only for which key travels with the
+// state: vocab is first, so a word the learner holds equally well in both
+// places reports the deck key, which is the one with an example sentence
+// behind it.
+const LEXICON_SOURCES = ["vocab", "riserva"];
+
+// rank -> the units whose lemma normalises onto it, built once. The bridge is
+// walked in one place and read from three: the states below, the detail
+// screen's box, and the traces under "dove l'hai incontrata". Walking it per
+// word opened would be the same answer computed again.
+//
+// `moduleId` travels with each unit because the three readers do not want the
+// same subset — see lexiconUnits().
 const UNITS_BY_RANK = (() => {
   const byRank = new Map();
-  const vocab = MODULE_STATS.find((mod) => mod.id === "vocab");
 
-  for (const level of vocab.levels) {
-    for (const unit of vocab.units(level)) {
-      const entry = BY_LEMMA.get(lemmaKey(unit.item.it));
-      if (entry) byRank.set(entry.rank, [...(byRank.get(entry.rank) ?? []), { ...unit, level }]);
+  for (const id of LEXICON_SOURCES) {
+    const mod = MODULE_STATS.find((m) => m.id === id);
+    for (const level of mod.levels) {
+      for (const unit of mod.units(level)) {
+        // A Riserva unit normalises onto itself, which is the point of going
+        // through lemmaKey() for both rather than special-casing the one that
+        // already knows its rank: one code path, and it stays correct if a
+        // third source ever arrives with its own spelling of a lemma.
+        const entry = BY_LEMMA.get(lemmaKey(unit.item.it));
+        if (entry) {
+          byRank.set(entry.rank, [...(byRank.get(entry.rank) ?? []), { ...unit, level, moduleId: id }]);
+        }
+      }
     }
   }
 
   return byRank;
 })();
 
-// Every vocabulary unit that reaches one lexicon rank. Empty for the ranks
-// the deck never covers, which is most of them.
+// Every *deck* unit that reaches one lexicon rank. Empty for the ranks the
+// deck never covers, which is most of them.
+//
+// Deliberately not every unit at that rank. Its one caller is traces.js,
+// answering "dove l'hai incontrata" — where the app can prove it put this
+// word in front of you, in a category, inside an example sentence. A Riserva
+// unit is not an encounter of that kind: it is the lexicon asking about
+// itself, with no context to show, and listing it would turn "where you met
+// this word" into "you have a scheduler entry", which the state pill at the
+// top of that screen already says.
 export function lexiconUnits(rank) {
-  return UNITS_BY_RANK.get(rank) ?? [];
+  return (UNITS_BY_RANK.get(rank) ?? []).filter((unit) => unit.moduleId === "vocab");
 }
 
 // rank -> state, for every lexicon word the app has any evidence about.
 //
-// The evidence is the vocabulary module: its 120 words are the only place the
-// app currently learns that a *word* is known, so coverage bridges from there
-// by matching Italian strings. It goes through MODULE_STATS rather than
-// walking the data itself, for the same reason stats.js does — the key
-// builders have to be the ones the modules wrote with, or the number drifts.
+// The evidence is LEXICON_SOURCES: the vocabulary deck, which teaches Italian
+// words that happen to be in the base 2,000, and La Riserva, which drills the
+// base 2,000 as itself. Both are matched onto lemmas by their Italian string.
+// It goes through MODULE_STATS rather than walking the data itself, for the
+// same reason stats.js does — the key builders have to be the ones the
+// modules wrote with, or the number drifts.
 //
-// When La Riserva lands in a later phase the lexicon gets keys of its own and
-// this bridge becomes one more source rather than the only one. The seam is
-// deliberately this one function.
+// The seam is deliberately this one function. Widening it was what raised the
+// ceiling from 1.6% to 66.1%; a third source widens it here and nowhere else.
 export function lexiconEvidence(progress) {
   const found = new Map();
 

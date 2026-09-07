@@ -22,7 +22,8 @@ import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
 import { STRANDS, ZERO } from "./data/articoli.js";
 import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
-import { saveProgress, wordKey, drillKey, trapCaughtKey } from "./shared/storage.js";
+import { saveProgress, wordKey, drillKey, trapCaughtKey, riservaKey } from "./shared/storage.js";
+import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
 
@@ -361,6 +362,46 @@ describe("La Riserva", () => {
 
     await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
     await user.click(screen.getByRole("button", { name: FONDAMENTALE[0].it }));
+    await expectNoViolations(container);
+  });
+
+  // The drill is the other thing behind a fascia, and it is three screen
+  // states rather than one: the prompt, the prompt with a verdict card open
+  // under an invalid field, and the summary. The middle one is where the
+  // interesting markup is — a live region, an aria-describedby pointing at a
+  // card that was not there a moment ago, and a Polish string inside an
+  // English page.
+  it("has an accessible drill behind a fascia", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+    await expectNoViolations(container);
+
+    await user.type(screen.getByLabelText("Write it in Italian"), "sbagliato");
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible drill summary", async () => {
+    const user = userEvent.setup();
+    // Everything in band 1 met bar the first word, so one answer finishes the
+    // round and the summary is two clicks away rather than twenty.
+    let progress = { version: 2, words: {}, schedule: {} };
+    for (const entry of FONDAMENTALE.filter((e) => e.rank > 1 && e.rank <= 200)) {
+      progress = reviewItem(progress, riservaKey(entry), true, "2026-09-01");
+    }
+    saveProgress(progress);
+
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+    await user.type(screen.getByLabelText("Write it in Italian"), "sbagliato");
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await user.click(screen.getByRole("button", { name: /^Check again/ }));
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
+
     await expectNoViolations(container);
   });
 });

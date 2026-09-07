@@ -1,11 +1,14 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { TOKENS, SR_ONLY, CITY_RULES, citySurface } from "../../shared/theme.js";
-import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
-import { lexiconEvidence, coverageBands, BAND_SIZE } from "../../shared/coverage.js";
+import React, { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE, FASCE } from "../../data/fondamentale.js";
+import { lexiconEvidence, coverageBands } from "../../shared/coverage.js";
 import { WORD_STATES } from "../../shared/wordState.js";
-import { loadProgress } from "../../shared/storage.js";
+import { loadProgress, saveProgress, riservaKey } from "../../shared/storage.js";
+import { reviewItem } from "../../shared/srs.js";
 import WordDetail from "./WordDetail.jsx";
+import DrillRound, { DrillSummary, fasciaLabel } from "./DrillRound.jsx";
+import { drillRound, unmetCount, ROUND_SIZE } from "./drill.js";
 
 // La Riserva — L'Officina's grid of the 2,000, and design screen 10.
 //
@@ -28,6 +31,21 @@ import WordDetail from "./WordDetail.jsx";
 // the design already draws ("queste 200 da sole valgono 4,3 punti"). The
 // percentage stays on the city map, where it is labelled as a share of running
 // text rather than as progress.
+//
+// ── The screen has a verb now ───────────────────────────────────────────
+// It did not, and that was the ceiling on the whole app: coverage learned a
+// word was known from one place, the vocabulary deck, and only 20 of its 120
+// words are in the base 2,000 — so a fully-mastered account read 1.6% and
+// could not read more. Every cell here was a picture of a word there was no
+// way to study.
+//
+// A *fascia* is the door, which PLAN.md settled for word detail and which is
+// the same answer here. Opening a band offers a typed production round over
+// the entries it holds — gloss in English and Polish, you write the Italian —
+// judged by shared/locatedFeedback.js and graded through reviewItem(), so a
+// word met here is in the Leitner queue and in the coverage figure by the
+// same write. See drill.js for what one round is and why, and DrillRound.jsx
+// for the screen.
 //
 // ── Why the grid is not 2,000 buttons ───────────────────────────────────
 // The design draws cells you could imagine tapping, and a word detail screen
@@ -235,9 +253,9 @@ function Legend({ counts, empty }) {
 // much of it the learner has, which is a different number and the one a bar
 // drawn here would be mistaken for. See coverage.js's tally() on why the three
 // percentages must not be swapped.
-function Band({ band, index, selected, onSelect, onOpenWord }) {
+function Band({ band, fascia, index, unmet, selected, onSelect, onOpenWord, onDrill }) {
   const words = FONDAMENTALE.filter((e) => e.rank >= band.from && e.rank <= band.to);
-  const label = `Fascia ${index + 1} · posti ${band.from}–${band.to}`;
+  const label = fasciaLabel(fascia);
 
   return (
     <li>
@@ -263,6 +281,50 @@ function Band({ band, index, selected, onSelect, onOpenWord }) {
 
       {selected && (
         <div style={{ padding: "10px 14px 2px", fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft }}>
+          {/* The verb, and the rule that a band of empty ranks must not
+              present as a drill of nothing: a band with no word written down
+              offers no round, and a band whose words have all been met says
+              so rather than opening an empty one. Both are true sentences
+              about different subjects — the file, and the learner. */}
+          {words.length > 0 &&
+            (unmet > 0 ? (
+              <button
+                onClick={() => onDrill(fascia)}
+                style={{
+                  border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+                  borderRadius: CITY_RULES.radius,
+                  boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+                  background: CITY_ACCENTS.pistachio.fill,
+                  color: CITY_ACCENTS.pistachio.ink,
+                  padding: "11px 16px",
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  width: "100%",
+                  marginBottom: 12,
+                }}
+              >
+                Drill the next {Math.min(unmet, ROUND_SIZE)} words
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            ) : (
+              <p style={{ margin: "0 0 12px", lineHeight: 1.6, color: TOKENS.ink }}>
+                You have met every word written down in this band.{" "}
+                <span lang="it">La Piazza</span> is where they come back.
+              </p>
+            ))}
+
+          {words.length > 0 && unmet > 0 && (
+            <p style={{ margin: "-4px 0 12px", lineHeight: 1.6 }}>
+              {unmet} of the {words.length} written down here are still to meet.
+            </p>
+          )}
+
           {words.length > 0 ? (
             // The answer to word detail's way in. Two hundred at most, and
             // only once a band is opened — so a keyboard user reaches a word
@@ -304,9 +366,51 @@ function Band({ band, index, selected, onSelect, onOpenWord }) {
 }
 
 export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
-  const [progress] = useState(loadProgress);
+  const [progress, setProgress] = useState(loadProgress);
   const [open, setOpen] = useState(null);
   const [word, setWord] = useState(null);
+  const [round, setRound] = useState(null);
+  const [results, setResults] = useState(null);
+
+  useEffect(() => {
+    saveProgress(progress);
+  }, [progress]);
+
+  // Built once, when the round starts, from storage as it is at that moment —
+  // answering must not reshuffle the queue underneath you, and the same
+  // argument La Piazza makes applies here: the band list may have been open a
+  // while.
+  const startDrill = (fascia) => {
+    setResults(null);
+    setRound({ fascia, queue: drillRound(loadProgress(), fascia) });
+  };
+
+  const backToBands = () => {
+    setRound(null);
+    setResults(null);
+  };
+
+  if (results !== null) {
+    return (
+      <Screen>
+        <DrillSummary fascia={round.fascia} results={results} onBack={backToBands} />
+      </Screen>
+    );
+  }
+
+  if (round !== null) {
+    return (
+      <Screen>
+        <DrillRound
+          fascia={round.fascia}
+          queue={round.queue}
+          onBack={backToBands}
+          onGrade={(entry, correct) => setProgress((p) => reviewItem(p, riservaKey(entry), correct))}
+          onDone={setResults}
+        />
+      </Screen>
+    );
+  }
 
   const evidence = lexiconEvidence(progress);
   const states = new Map([...evidence].map(([rank, e]) => [rank, e.state]));
@@ -381,7 +485,17 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
 
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
         {bands.map((band, i) => (
-          <Band key={band.from} band={band} index={i} selected={open === i} onSelect={setOpen} onOpenWord={setWord} />
+          <Band
+            key={band.from}
+            band={band}
+            fascia={FASCE[i]}
+            index={i}
+            unmet={unmetCount(progress, FASCE[i])}
+            selected={open === i}
+            onSelect={setOpen}
+            onOpenWord={setWord}
+            onDrill={startDrill}
+          />
         ))}
       </ul>
 

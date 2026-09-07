@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { clozeExample, toQuestion } from "./question.js";
 import { LEVELS } from "../../data/vocab.js";
+import { FONDAMENTALE } from "../../data/fondamentale.js";
+import { lexiconQuestion } from "../riserva/drill.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
@@ -112,5 +114,27 @@ describe("building a question from a due unit", () => {
     expect(question.alternatives).toEqual(drill.options.filter((o) => o !== drill.answer));
     expect(question.alternatives).not.toContain(drill.answer);
     expect(question.context).toEqual({ it: drill.prompt.replace("___", drill.answer), en: drill.en });
+  });
+
+  // A base-vocabulary word is built by the bench that owns it, not by a
+  // second copy here. La Piazza has no content of its own — it replays other
+  // districts' — so this is one delegation rather than one more shape to keep
+  // in step with modules/riserva/drill.js.
+  it("hands a base-vocabulary word to La Riserva's own builder", () => {
+    const dire = FONDAMENTALE.find((e) => e.it === "dire");
+    const question = toQuestion({ moduleId: "riserva", item: dire });
+
+    expect(question).toEqual(lexiconQuestion(dire));
+    expect(question).toMatchObject({ kind: "lexicon", gloss: dire.en, glossPl: dire.pl, answer: "dire" });
+  });
+
+  // The Polish half is a field of its own rather than text appended to the
+  // English gloss, because one string can only claim one language (WCAG
+  // 3.1.2) — and the other two shapes have to declare it absent rather than
+  // leaving the screen to read an undefined.
+  it("gives every question shape a Polish slot, filled only where there is one", () => {
+    expect(toQuestion({ moduleId: "vocab", item: bene }).glossPl).toBeNull();
+    expect(toQuestion({ moduleId: "grammar", item: drill }).glossPl).toBeNull();
+    expect(toQuestion({ moduleId: "riserva", item: FONDAMENTALE[0] }).glossPl).toBe(FONDAMENTALE[0].pl);
   });
 });

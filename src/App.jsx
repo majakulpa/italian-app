@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BookOpen, MessageCircle, GraduationCap, ScrollText, Signpost, TriangleAlert, Type } from "lucide-react";
+import { BookOpen, Grid3x3, MessageCircle, GraduationCap, ScrollText, Signpost, TriangleAlert, Type } from "lucide-react";
 import { TOKENS, FONTS_IMPORT, THEME_STYLE, CITY_STYLE } from "./shared/theme.js";
 import ThemeToggle from "./shared/ThemeToggle.jsx";
 import NavMenu from "./shared/NavMenu.jsx";
@@ -11,6 +11,7 @@ import ConversationsModule from "./modules/conversations/ConversationsModule.jsx
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
+import RiservaModule from "./modules/riserva/RiservaModule.jsx";
 import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 
@@ -32,6 +33,12 @@ export const MODULES = [
   // the switcher lists every content module, and Mappatura delle parole would otherwise be
   // the one module missing from it.
   { id: "mappe", name: "Mappatura delle parole", lang: "it", icon: Signpost, ready: true },
+  // La Riserva used to be a view rather than a module — a screen that read
+  // progress the other benches wrote and kept none of its own. It is a module
+  // now because it writes: a *fascia* opens onto a typed drill over the base
+  // vocabulary under `riserva:` keys, so it has units to count, a card with a
+  // real fraction on it, and a place in the switcher beside the other benches.
+  { id: "riserva", name: "La Riserva", lang: "it", icon: Grid3x3, ready: true },
   // Gli Articoli is L'Officina's third bench, and in the NavMenu for the same
   // reason Mappatura delle parole is: the switcher lists every content module, and this
   // would otherwise be reachable only two doors into the workshop.
@@ -72,6 +79,7 @@ export default function App() {
         {active === "conversations" && <ConversationsModule onExit={() => setActive(null)} />}
         {active === "stories" && <StoriesModule onExit={() => setActive(null)} />}
         {active === "mappe" && <MappeModule onExit={() => setActive(null)} />}
+        {active === "riserva" && <RiservaModule onExit={() => setActive(null)} />}
         {active === "articoli" && <ArticoliModule onExit={() => setActive(null)} />}
         {active === "falsi-amici" && <FalsiAmiciModule onExit={() => setActive(null)} />}
       </main>

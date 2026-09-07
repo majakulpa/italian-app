@@ -107,7 +107,7 @@ describe("the figures on the benches", () => {
   // La Riserva keeps no progress of its own — it reads what the vocabulary
   // deck wrote, through the same lexiconStates() the screen itself uses, so
   // the bench and the grid cannot disagree.
-  it("counts La Riserva through the lexicon, not through a module of its own", () => {
+  it("counts La Riserva through the lexicon rather than through moduleStats", () => {
     const level = LEVELS.find((l) => l.id === "A1");
     const lemmas = new Set(FONDAMENTALE.map((e) => e.it));
     const category = level.categories.find((c) => c.words.some((w) => lemmas.has(w.it)));
@@ -119,13 +119,18 @@ describe("the figures on the benches", () => {
     expect(card("riserva")).toHaveAccessibleName(
       expect.stringContaining(`1 / ${FONDAMENTALE_TARGET} words`),
     );
-    expect(bench("riserva").module).toBeNull();
+    // It has a module of its own now — the fascia drill writes `riserva:`
+    // keys — but the bench deliberately does not count through moduleStats.
+    // moduleStats would count the 300 entries the file holds; the grid counts
+    // ranks held out of the whole 2,000, and the bench has to agree with the
+    // screen it opens rather than with the file behind it.
+    expect(bench("riserva").module).toBe("riserva");
   });
 
   // Keyed on `count` rather than on `module` or `route`: "has nothing to
-  // count" is the claim being made, and La Riserva is the bench that proved
-  // the other two are different questions — it is a view with no module of
-  // its own and a real, storage-derived figure.
+  // count" is the claim being made, and those are three different questions
+  // — La Riserva counts through the lexicon rather than through the module it
+  // now has, and a shut bench has a name and no figure at all.
   it("puts no counter at all on a bench with nothing behind it", () => {
     render(<OfficinaModule onExit={() => {}} />);
 
@@ -225,8 +230,9 @@ describe("opening a bench", () => {
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 
-  // La Riserva is a view rather than a module, so the hub bench is its only
-  // front door — there is no NavMenu entry behind it as a second way in.
+  // The hub bench is one of La Riserva's two front doors, the other being the
+  // NavMenu entry it gained when the fascia drill made it a module. Coming
+  // back from here must land in the workshop rather than on the map.
   it("opens La Riserva and comes back to the workshop", async () => {
     const user = userEvent.setup();
     render(<OfficinaModule onExit={() => {}} />);

@@ -87,6 +87,7 @@ describe("App", () => {
       "Conversations",
       "Stories",
       "Mappatura delle parole",
+      "La Riserva",
       "Gli Articoli",
       "Falsi Amici",
     ]);
@@ -120,6 +121,23 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Menu" }));
     await user.click(screen.getByRole("menuitem", { name: "Mappatura delle parole" }));
     expect(screen.getByRole("heading", { name: "Mappatura delle parole" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+  });
+
+  // La Riserva gained its switcher entry the day it gained a verb: it kept no
+  // progress of its own until a fascia could be drilled, so it was a view
+  // rather than a module and had exactly one door, in the workshop. It has
+  // the second one now, and it has to behave like the other benches' —
+  // top level, back to the city.
+  it("opens La Riserva from the switcher and returns to the city", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "La Riserva" }));
+    expect(screen.getByRole("heading", { name: "La Riserva" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();

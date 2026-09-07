@@ -53,6 +53,22 @@ describe("FONDAMENTALE", () => {
     expect(new Set(seen).size).toBe(seen.length);
   });
 
+  // La Riserva's drill asks by the glosses and takes the Italian back, so a
+  // gloss that names two entries would be a prompt with two right answers and
+  // one of them marked wrong. modules/riserva/drill.js leans on this holding.
+  //
+  // It is the English gloss that has to be unique, not the pair: a learner
+  // reads the English first, and "two entries share an English gloss but
+  // differ in Polish" is still a prompt she can answer either way.
+  it("gives every entry an English gloss no other entry has", () => {
+    const glosses = FONDAMENTALE.map((w) => w.en.toLowerCase());
+    const seen = new Map();
+    for (const [i, gloss] of glosses.entries()) {
+      seen.set(gloss, [...(seen.get(gloss) ?? []), FONDAMENTALE[i].it]);
+    }
+    expect([...seen.values()].filter((words) => words.length > 1)).toEqual([]);
+  });
+
   it("stores every entry lower-case and untrimmed of nothing", () => {
     for (const word of FONDAMENTALE) {
       expect(word.it, `rank ${word.rank}`).toBe(word.it.trim().toLowerCase());

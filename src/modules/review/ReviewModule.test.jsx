@@ -15,8 +15,12 @@ const a1Vocab = LEVELS.find((l) => l.id === "A1");
 const greetings = a1Vocab.categories.find((c) => c.id === "greetings");
 const word = greetings.words[0]; // ciao — "hi / bye", "Ciao, come stai?"
 const accented = greetings.words.find((w) => w.it === "sì");
+// The one entry in the deck whose answer carries the sentence's own
+// punctuation — "come stai?", gapped out of "Ciao Marco, come stai?".
+const question = greetings.words.find((w) => w.it === "come stai?");
 const WORD_KEY = wordKey(a1Vocab, greetings, word);
 const ACCENTED_KEY = wordKey(a1Vocab, greetings, accented);
+const QUESTION_KEY = wordKey(a1Vocab, greetings, question);
 
 const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const topic = a1Grammar.topics[0];
@@ -184,6 +188,27 @@ describe("La Piazza — a typed item", () => {
     expect(screen.getByText("Right")).toBeInTheDocument();
     expect(screen.getByText(accented.it)).toBeInTheDocument();
     expect(loadProgress().schedule[ACCENTED_KEY].box).toBe(2);
+  });
+
+  // The gap swallowed the question mark — the screen reads `Ciao Marco, ___`
+  // — so demanding it back is asking the learner to guess punctuation nobody
+  // showed her. It used to be marked wrong, located as `come stai` (the whole
+  // answer bar the mark) and demoted to box 1 on the second attempt.
+  it("takes an answer without the closing punctuation the gap swallowed, and spells it back", async () => {
+    const user = userEvent.setup();
+    seedDue({ [QUESTION_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    expect(screen.getByText("Ciao Marco, ___")).toBeInTheDocument();
+    await answer(user, "come stai");
+
+    expect(screen.getByText("Right")).toBeInTheDocument();
+    // Accepted, and still shown with the mark on: the point of forgiving it
+    // is not to teach that it isn't there. And no stray full stop after it.
+    expect(screen.getByText(question.it)).toBeInTheDocument();
+    expect(spoken()).toBe("Correct. Italian writes it come stai?");
+    expect(loadProgress().schedule[QUESTION_KEY].box).toBe(2);
   });
 
   it("locates a wrong first answer, hands nothing over, and gives the input back", async () => {

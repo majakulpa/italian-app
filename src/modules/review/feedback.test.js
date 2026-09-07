@@ -21,7 +21,40 @@ describe("judging a typed review answer", () => {
   // Accepted, and spelled back all the same: accepting `citta` without ever
   // showing `città` would teach the wrong spelling by omission.
   it("takes an answer with the accents left off, and spells it out", () => {
-    expect(judge(q("città"), "citta", FIRST)).toMatchObject({ correct: true, kind: "accents", answer: "città" });
+    expect(judge(q("città"), "citta", FIRST)).toMatchObject({ correct: true, kind: "spelling", answer: "città" });
+  });
+
+  // `come stai?` is a real vocabulary entry. Its cloze is `Ciao Marco, ___`,
+  // so the question mark is inside the gap and the only way to get it right
+  // is to guess it is there. Typing the Italian was marked wrong, handed back
+  // `come stai` as a located fragment, and demoted the word to box 1.
+  it("takes an answer without the closing punctuation the gap swallowed", () => {
+    expect(judge(q("come stai?"), "come stai", FIRST)).toMatchObject({
+      correct: true,
+      kind: "spelling",
+      answer: "come stai?",
+    });
+    expect(judge(q("come stai?"), "Come stai?", FIRST)).toMatchObject({ correct: true, kind: "exact", answer: null });
+    expect(judge(q("davvero!"), "davvero", FIRST)).toMatchObject({ correct: true, answer: "davvero!" });
+  });
+
+  // The mark is folded for the verdict and never for the spelling — the point
+  // of accepting it is not to teach that it isn't there.
+  it("spells the closing punctuation back rather than quietly dropping it", () => {
+    expect(announce(judge(q("come stai?"), "come stai", FIRST))).toBe("Correct. Italian writes it come stai?");
+    expect(reveal(q("come stai?")).answer).toBe("come stai?");
+    expect(announce(reveal(q("come stai?")))).toBe("The answer is come stai?");
+    expect(announce(reveal(q("sorella")))).toBe("The answer is sorella.");
+  });
+
+  // The punctuation goes before the fragment arithmetic too, or the mark
+  // counts as a character the learner got wrong.
+  it("locates against the answer without its closing mark", () => {
+    expect(judge(q("come stai?"), "come stare", FIRST)).toMatchObject({ kind: "ending", shared: "come sta" });
+    // And the mark must not stand in for the character that keeps a span
+    // under the ceiling: judged against `come stai?` this input leaves the
+    // question mark as its "rest" and quotes the whole Italian back.
+    expect(judge(q("come stai?"), "come stai adesso", FIRST)).toMatchObject({ kind: "partial", shared: null });
   });
 
   // The most locatable error in the app, and the whole reason the authored
@@ -214,7 +247,7 @@ describe("announcing a verdict", () => {
     // The two right answers and the reveal have nothing to locate, and the
     // card renders LOCATED[kind] straight, so an entry here would print a
     // location on a correct answer.
-    for (const kind of ["exact", "accents", "revealed"]) {
+    for (const kind of ["exact", "spelling", "revealed"]) {
       expect(LOCATED[kind], kind).toBeUndefined();
     }
   });

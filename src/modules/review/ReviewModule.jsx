@@ -8,7 +8,7 @@ import LiveStatus from "../../shared/LiveStatus.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import { toQuestion } from "./question.js";
-import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./feedback.js";
+import { judge, reveal, announce, fullStopAfter, LOCATED, ATTEMPTS } from "./feedback.js";
 import { solidThisWeek, WEEK_DAYS } from "./week.js";
 
 // La Piazza — the review district, and design screen 18.
@@ -304,9 +304,14 @@ function Verdict({ question, verdict }) {
         {verdict.answer && (
           <>
             <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {/* The full stop is conditional because an answer can bring its
+                  own: `come stai?` is a vocabulary entry, and "The answer is
+                  come stai?." reads as a typo. fullStopAfter is shared with
+                  announce() so the card and the live region agree. */}
               <span>
                 {verdict.correct ? "Italian writes it " : "The answer is "}
-                <b lang="it">{verdict.answer}</b>.
+                <b lang="it">{verdict.answer}</b>
+                {fullStopAfter(verdict.answer)}
               </span>
               <SpeakButton text={verdict.answer} size={16} />
             </p>

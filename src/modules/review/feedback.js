@@ -20,10 +20,13 @@
 // never what it is, and the second attempt happens before anything is
 // revealed:
 //
-//   exact       right.
-//   accents     folded-equal, marks missing. Correct, and spelled back —
-//               accepting `possibilita` without ever showing `possibilità`
-//               teaches the wrong spelling by omission.
+//   exact       right, and written the way Italian writes it.
+//   spelling    right, once the marks the learner was never asked to guess
+//               are folded away — an accent left off, or the closing
+//               punctuation the cloze swallowed (see CLOSING). Correct, and
+//               spelled back all the same: accepting `possibilita` without
+//               ever showing `possibilità` teaches the wrong spelling by
+//               omission.
 //   distractor  what was typed is one of the *other* forms this grammar item
 //               was authored with. The most locatable error there is: the
 //               right word in the wrong form. Naming that is not naming the
@@ -65,6 +68,36 @@ const MEANINGFUL = 2;
 // One or two characters is a verb ending, a plural, an agreement — the things
 // that miss on a form the learner otherwise has.
 const ENDING = 2;
+
+// An answer's closing punctuation belongs to the sentence it was cut out of,
+// not to the Italian the learner has to produce. `come stai?` is a vocabulary
+// entry: its gloss is "how are you?", its example is `Ciao Marco, come stai?`
+// and the gap swallowed the question mark, so the screen reads `Ciao Marco,
+// ___` and the only way to get the mark right is to guess that it is there.
+// Typing `come stai` was marked wrong, handed back `come stai` as a located
+// fragment — the whole answer bar the punctuation — and demoted to box 1.
+//
+// Folded for the verdict, kept for the spelling: the answer is still shown,
+// spoken and read back with the mark on. Terminal only — the apostrophe in
+// `dell'acqua` and any comma inside the answer are Italian and stay.
+//
+// This is deliberately *not* in shared/typedAnswer.js. Its other two callers
+// are Mappatura delle parole and Falsi Amici, and no answer in either data
+// file ends in punctuation, so folding it there would be a widened contract
+// with nothing to show for it rather than an improvement. If a bench ever
+// grows a sentence-shaped answer, that is the moment to lift this.
+const CLOSING = /[?!.]+$/;
+
+function withoutClosing(value) {
+  return value.trim().replace(CLOSING, "").trim();
+}
+
+// Whether a sentence ending in this answer still needs its own full stop.
+// "The answer is come stai?." reads as a typo. Exported because the card and
+// announce() both build that sentence and they have to agree.
+export function fullStopAfter(value) {
+  return CLOSING.test(value) ? "" : ".";
+}
 
 // The mirror of sharedPrefix: how far the two agree from the *back*, folded,
 // returned in the answer's own spelling. Not in typedAnswer.js because
@@ -125,6 +158,11 @@ function quotable(span, rest, answer) {
 
 export function judge(question, input, attempt) {
   const answer = question.answer;
+  // Everything below judges, locates and quotes against `target` — the answer
+  // without the punctuation the cloze swallowed — and every `answer` that
+  // leaves this function is the full spelling. See CLOSING.
+  const target = withoutClosing(answer);
+  const typed = withoutClosing(input);
   const last = attempt >= ATTEMPTS;
   const base = { correct: false, kind: null, spent: true, last, answer: null, shared: null, tail: null };
 
@@ -136,18 +174,21 @@ export function judge(question, input, attempt) {
     return { ...base, kind: "blank", spent: false, last: false };
   }
 
-  if (sameTyped(input, answer)) {
-    const missing = accentsMissing(input, answer);
-    return { ...base, correct: true, kind: missing ? "accents" : "exact", answer: missing ? answer : null };
+  if (sameTyped(typed, target)) {
+    // Written exactly as Italian writes it, or right once a mark she was
+    // never asked to guess is folded away. The second case is still correct
+    // and is still spelled back, or the app teaches the spelling it accepted.
+    const asWritten = sameTyped(input, answer) && !accentsMissing(input, answer);
+    return { ...base, correct: true, kind: asWritten ? "exact" : "spelling", answer: asWritten ? null : answer };
   }
 
-  if (question.alternatives.some((alternative) => sameTyped(input, alternative))) {
+  if (question.alternatives.some((alternative) => sameTyped(typed, withoutClosing(alternative)))) {
     return { ...base, kind: "distractor", answer: last ? answer : null };
   }
 
-  const prefix = sharedPrefix(input, answer);
-  const behind = answer.length - prefix.length;
-  const tail = sharedTail(input, answer);
+  const prefix = sharedPrefix(typed, target);
+  const behind = target.length - prefix.length;
+  const tail = sharedTail(typed, target);
 
   // Ordered, and the order is the argument. A front-anchored match says more
   // than a back-anchored one — Italian inflects at the end — so a real shared
@@ -168,8 +209,8 @@ export function judge(question, input, attempt) {
   const front = kind === "ending" || kind === "partial";
   const back = kind === "stem";
   const span = front ? prefix : tail;
-  const rest = front ? answer.slice(prefix.length) : answer.slice(0, answer.length - tail.length);
-  const quote = (front || back) && quotable(span, rest, answer) ? span.trim() : null;
+  const rest = front ? target.slice(prefix.length) : target.slice(0, target.length - tail.length);
+  const quote = (front || back) && quotable(span, rest, target) ? span.trim() : null;
 
   return {
     ...base,
@@ -212,14 +253,14 @@ export function announce(verdict) {
   if (verdict.kind === "blank") return LOCATED.blank;
 
   if (verdict.correct) {
-    return verdict.answer ? `Correct. Italian writes it ${verdict.answer}.` : "Correct.";
+    return verdict.answer ? `Correct. Italian writes it ${verdict.answer}${fullStopAfter(verdict.answer)}` : "Correct.";
   }
 
-  if (verdict.kind === "revealed") return `The answer is ${verdict.answer}.`;
+  if (verdict.kind === "revealed") return `The answer is ${verdict.answer}${fullStopAfter(verdict.answer)}`;
 
   const parts = [`${LEAD} ${LOCATED[verdict.kind]}`];
   if (verdict.shared) parts.push(`You have ${verdict.shared} right.`);
   if (verdict.tail) parts.push(`Both end ${verdict.tail}.`);
-  parts.push(verdict.answer ? `The answer is ${verdict.answer}.` : "Try once more.");
+  parts.push(verdict.answer ? `The answer is ${verdict.answer}${fullStopAfter(verdict.answer)}` : "Try once more.");
   return parts.join(" ");
 }

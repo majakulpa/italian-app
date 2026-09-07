@@ -36,10 +36,13 @@
 //   blank       nothing was typed. Not an attempt — see judge().
 //   revealed    the learner pressed "show me".
 //
-// The fragments a verdict quotes back (`shared`, `tail`) are always letters
-// the learner typed herself, so quoting them reveals nothing she did not
-// already write. They are taken from the answer's spelling rather than the
-// input's, so an accent she left off comes back with it on.
+// The fragments a verdict quotes back (`shared`, `tail`) are bounded at both
+// ends, and the bound is about what the fragment *leaves* rather than where
+// its letters came from. "She typed those letters herself" is not a defence:
+// what a learner does not know is where the answer ends, and a span that runs
+// to the end of the answer tells her exactly that. MEANINGFUL is the floor,
+// quotable() is the ceiling. They are taken from the answer's spelling rather
+// than the input's, so an accent she left off comes back with it on.
 //
 // Verdicts are data, not sentences: the module composes the markup, because
 // these messages put Italian fragments inside English prose and one string
@@ -69,17 +72,55 @@ const ENDING = 2;
 // against the map's rule, a known string, and this file has no rule to ask
 // against, only the answer's own tail.
 //
-// Never the whole answer: the loop stops one character short, so a tail can
-// narrow the answer down but can't be it.
+// It measures honestly, up to and including the whole answer, and leaves the
+// question of whether that may be *quoted* to quotable(). It used to stop one
+// character short instead, which is the letter of the rule and none of its
+// point: `a occhio e croce` against `un occhio e croce` came back as `occhio
+// e croce`, fourteen characters of sixteen and three words of four.
 function sharedTail(input, answer) {
   const folded = foldTyped(input);
   let tail = "";
-  for (let i = answer.length - 1; i >= 1; i--) {
+  for (let i = answer.length - 1; i >= 0; i--) {
     const grown = answer[i] + tail;
     if (!folded.endsWith(foldTyped(grown))) break;
     tail = grown;
   }
-  return tail.trim();
+  return tail;
+}
+
+function countWords(value) {
+  return foldTyped(value).split(" ").filter(Boolean).length;
+}
+
+// The ceiling on a quoted span, and the one gate both ends go through.
+//
+// MEANINGFUL says when an overlap is too small to be a location. This says
+// when it is too large to be one: a located verdict may never quote a span
+// that is the whole answer, and never one so close to it that what is left is
+// not a real guess. `span` is what the verdict wants to quote, `rest` is the
+// rest of the answer, and `span + rest === answer` at either end.
+//
+// What is left has to be something the learner still has to produce, and
+// there are two ways to measure that because there are two ways an answer is
+// built:
+//
+//   inside a word   a span that stops mid-word leaves a word to finish.
+//                   `parl` of `parlo` is four characters of five and is still
+//                   the most useful verdict this file produces: -o, -i, -a,
+//                   -iamo, -ate and -ano all still fit, so the ending is
+//                   located and not handed over.
+//   whole words     a span that stops on a word edge hands over whole words,
+//                   and then a character count is no measure at all — the two
+//                   characters `a occhio e croce` keeps back are one word of
+//                   four. So at least half the answer's words have to remain.
+//
+// A proportion of characters cannot separate those two cases (80% against
+// 87.5%) and neither can "one character short", which is what shipped. The
+// unit has to be the word, because the word is what the learner produces.
+function quotable(span, rest, answer) {
+  if (rest.trim() === "") return false;
+  const wholeWords = countWords(span) + countWords(rest) === countWords(answer);
+  return !wholeWords || countWords(rest) * 2 >= countWords(answer);
 }
 
 export function judge(question, input, attempt) {
@@ -116,15 +157,25 @@ export function judge(question, input, attempt) {
   // answer plus something else out of "the ending missed", which would be a
   // lie about where the extra is.
   let kind = "other";
-  if (prefix.length >= MEANINGFUL && behind > 0 && behind <= ENDING) kind = "ending";
-  else if (prefix.length >= MEANINGFUL) kind = "partial";
-  else if (tail.length >= MEANINGFUL) kind = "stem";
+  if (prefix.trim().length >= MEANINGFUL && behind > 0 && behind <= ENDING) kind = "ending";
+  else if (prefix.trim().length >= MEANINGFUL) kind = "partial";
+  else if (tail.trim().length >= MEANINGFUL) kind = "stem";
+
+  // The located sentence stands on its own; only the fragment is gated. So an
+  // input that swallows the whole answer still gets "it starts right and then
+  // goes somewhere else" — which is true, and locates it — without the card
+  // spelling out where the answer stopped.
+  const front = kind === "ending" || kind === "partial";
+  const back = kind === "stem";
+  const span = front ? prefix : tail;
+  const rest = front ? answer.slice(prefix.length) : answer.slice(0, answer.length - tail.length);
+  const quote = (front || back) && quotable(span, rest, answer) ? span.trim() : null;
 
   return {
     ...base,
     kind,
-    shared: kind === "ending" || kind === "partial" ? prefix : null,
-    tail: kind === "stem" ? tail : null,
+    shared: front ? quote : null,
+    tail: back ? quote : null,
     answer: last ? answer : null,
   };
 }

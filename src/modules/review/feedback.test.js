@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./feedback.js";
+import { foldTyped } from "../../shared/typedAnswer.js";
+import { LEVELS } from "../../data/vocab.js";
+import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 
 // A question, as question.js builds one. Only the two fields the judge reads.
 const q = (answer, alternatives = []) => ({ answer, alternatives });
@@ -50,21 +53,14 @@ describe("judging a typed review answer", () => {
   });
 
   // Otherwise "you have it right up to the last letters" would be a lie about
-  // where the extra is.
+  // where the extra is. The located sentence still stands; what it may not do
+  // is quote the answer back — see the invariant below.
   it("does not call it an ending when the whole answer is there with more after it", () => {
-    expect(judge(q("conto"), "conto subito", FIRST)).toMatchObject({ kind: "partial", shared: "conto" });
+    expect(judge(q("conto"), "conto subito", FIRST)).toMatchObject({ kind: "partial", shared: null });
   });
 
   it("says the ending landed when the front is what missed", () => {
     expect(judge(WORD, "fratella", FIRST)).toMatchObject({ kind: "stem", tail: "ella", shared: null });
-  });
-
-  // The tail is grown off the answer but stops one character short, so it can
-  // narrow the answer down and never be it.
-  it("never quotes the whole answer back as the shared ending", () => {
-    const verdict = judge(q("conto"), "il conto", FIRST);
-    expect(verdict.kind).toBe("stem");
-    expect(verdict.tail).toBe("onto");
   });
 
   // foldTyped collapses and trims whitespace, so a tail grown across a space
@@ -87,6 +83,94 @@ describe("judging a typed review answer", () => {
 
   it("hands the answer over when the learner asks for it, and calls it wrong", () => {
     expect(reveal(WORD)).toMatchObject({ correct: false, kind: "revealed", last: true, answer: "sorella" });
+  });
+});
+
+// The ceiling on a quoted span, stated as the rule rather than as the
+// behaviour of one input. What shipped first satisfied "stops one character
+// short" and leaked anyway: `sharedPrefix` returns the entire answer whenever
+// the input is the answer plus a suffix, and `sharedTail` stopping one
+// character short of `a occhio e croce` still hands over three words of four.
+//
+// The rule: a verdict may never quote a span that is the whole answer, and
+// where the span stops on a word edge it must leave at least half the
+// answer's words behind. The located sentence is not gated — it locates
+// without quoting — only the fragment is.
+describe("what a verdict may quote", () => {
+  const words = (value) => foldTyped(value).split(" ").filter(Boolean);
+  const quoted = (verdict) => verdict.shared || verdict.tail;
+
+  // Every one of these was a real drill in the shipped data: a learner who
+  // types the answer with a word of her own after it, or in front of it, was
+  // handed the answer on attempt one.
+  const swallowed = [
+    ["parlo", "parlo italiano"],
+    ["sì", "sì certo"],
+    ["il", "il libro"],
+    ["gli", "gli amici"],
+    ["ciao", "ciaone"],
+    ["conto", "il conto"],
+    ["bene", "molto bene"],
+  ];
+
+  it.each(swallowed)("never quotes %s back when the input swallows it whole", (answer, input) => {
+    const verdict = judge(q(answer), input, FIRST);
+    expect({ input, quoted: quoted(verdict) }).toEqual({ input, quoted: null });
+    expect(verdict.answer).toBeNull();
+  });
+
+  // The other end of the same bug. Two characters short of the answer, and
+  // one word of four left to guess, is not a guess.
+  it("never leaves a multi-word answer one word short", () => {
+    const verdict = judge(q("a occhio e croce"), "un occhio e croce", FIRST);
+    expect(verdict.kind).toBe("stem");
+    expect(quoted(verdict)).toBeNull();
+    expect(LOCATED.stem).toBeTruthy();
+  });
+
+  // The ceiling must not eat the verdict it exists to protect. A span that
+  // stops inside a word leaves a word to finish, however few characters that
+  // is: -o, -i, -a, -iamo, -ate and -ano all still fit after `parl`.
+  it("still quotes a span that stops inside a word", () => {
+    expect(judge(q("parlo"), "parla", FIRST).shared).toBe("parl");
+    expect(judge(q("sorella"), "fratella", FIRST).tail).toBe("ella");
+  });
+
+  // And a whole word may be quoted while half the answer's words remain.
+  it("still quotes a whole word when half the answer is left to produce", () => {
+    expect(judge(q("per favore"), "il favore", FIRST).tail).toBe("favore");
+    expect(judge(q("buona sera"), "buona notte", FIRST).shared).toBe("buona");
+  });
+
+  // The sweep the first round of this file did not have: every answer the app
+  // can actually ask, against the two inputs that produced the leak. A single
+  // pinned example cannot catch a rule that is wrong in general.
+  const shipped = [
+    ...LEVELS.flatMap((level) => level.categories.flatMap((category) => category.words.map((w) => w.it))),
+    ...GRAMMAR_LEVELS.flatMap((level) => level.topics.flatMap((topic) => topic.drills.map((d) => d.answer))),
+  ];
+
+  it("leaves something to produce for every shipped answer, whichever side is swallowed", () => {
+    expect(shipped.length).toBeGreaterThan(200);
+
+    for (const answer of shipped) {
+      for (const input of [`${answer} qualcosa`, `qualcosa ${answer}`, `davvero ${answer} qualcosa`]) {
+        const span = quoted(judge(q(answer), input, FIRST));
+        if (span === null) continue;
+
+        // Never the answer itself...
+        expect({ answer, input, span: foldTyped(span) }).not.toEqual({ answer, input, span: foldTyped(answer) });
+
+        // ...and never so many of its words that what is left is not a guess.
+        // Counted in whole words the span hands over, so a fragment of a word
+        // — `parl` of `parlo` — costs nothing and `occhio e croce` of
+        // `a occhio e croce` costs three of four.
+        const inSpan = words(span);
+        const held = words(answer).filter((w) => inSpan.includes(w)).length;
+        const all = words(answer).length;
+        expect({ answer, input, span, enough: (all - held) * 2 >= all }).toMatchObject({ enough: true });
+      }
+    }
   });
 });
 

@@ -62,7 +62,11 @@ export const FONDAMENTALE_TARGET = 2000;
 // in a line of English prose that marks no spans, so an Italian "Fascia 3"
 // there would be unmarked Italian (WCAG 3.1.2). It states the same fact La
 // Riserva's own Italian heading states, and that heading is built on the
-// screen where it can carry `lang="it"`.
+// screen where it can carry `lang="it"` — which a11y.test.jsx now asserts
+// against the DOM ("marks the fascia heading and the drill's posto in La
+// Riserva"), because for one commit it did not: the heading's <Eyebrow>
+// swallowed the prop, and this paragraph was resting on a tag that had never
+// been rendered.
 export const BAND_SIZE = 200;
 
 export const FASCE = Array.from({ length: Math.ceil(FONDAMENTALE_TARGET / BAND_SIZE) }, (_, i) => {

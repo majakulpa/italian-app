@@ -758,6 +758,37 @@ describe("Italian text is marked as Italian", () => {
     expect(italianAncestor(screen.getByText(divano.note))).toBeNull();
   });
 
+  // La Riserva is the one screen whose Italian is *built* rather than read off
+  // the data: `Fascia 1 · posti 1–200` and `posto 1` are composed in JSX, and
+  // fondamentale.js keeps FASCE.label English on the strength of that — "it
+  // states the same fact La Riserva's own Italian heading states, and that
+  // heading is built on the screen where it can carry lang='it'". So this is
+  // the assertion that argument rests on.
+  //
+  // It is also the one kind of missing tag nothing else here would catch. Both
+  // strings live in a local <Eyebrow>, and a component whose signature is
+  // ({ children, style }) swallows a lang prop without a word: the JSX reads
+  // lang="it", the DOM carries no lang at all, and axe passes — axe cannot
+  // tell what language a string is in. That shipped. This asserts against the
+  // DOM rather than against the JSX.
+  it("marks the fascia heading and the drill's posto in La Riserva", async () => {
+    const user = userEvent.setup();
+    render(<RiservaModule onExit={() => {}} />);
+
+    expect(screen.getByText("Fascia 1 · posti 1–200").closest("[lang]")).toHaveAttribute("lang", "it");
+    // The English half of the very same button must not claim to be Italian.
+    expect(italianAncestor(screen.getAllByText(/coverage points/)[0])).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+
+    expect(screen.getByText("posto 1").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("Fascia 1 · posti 1–200").closest("[lang]")).toHaveAttribute("lang", "it");
+    // And the counters either side of them are English.
+    expect(italianAncestor(screen.getByText(/Attempt 1 of 2/))).toBeNull();
+    expect(italianAncestor(screen.getByText("1 / 20"))).toBeNull();
+  });
+
   it("marks the story text and the word gloss in stories", async () => {
     const user = userEvent.setup();
     render(<StoriesModule onExit={() => {}} />);

@@ -32,9 +32,15 @@ const MONO = "'IBM Plex Mono', monospace";
 const SERIF = "'Fraunces', serif";
 const SANS = "'Inter', sans-serif";
 
-function Eyebrow({ children, style }) {
+// `...rest` is load-bearing rather than tidiness. Two of the callers below
+// pass `lang="it"`, and a signature of ({ children, style }) drops it on the
+// floor: the JSX says the string is Italian, the DOM says nothing, and
+// nothing goes red — axe cannot tell what language a string is in. That is
+// exactly what shipped, and a11y.test.jsx now asserts the tag arrives.
+function Eyebrow({ children, style, ...rest }) {
   return (
     <span
+      {...rest}
       style={{
         fontFamily: MONO,
         fontSize: 10,
@@ -131,7 +137,9 @@ function SecondaryButton({ children, onClick }) {
 // The Italian heading for a band. Built here rather than read off the fascia
 // because the fascia's own `label` is English — it has to be, since La Piazza
 // prints it in a line of English prose that marks no spans. This screen can
-// carry `lang="it"`, so it says it in Italian.
+// carry `lang="it"`, so it says it in Italian — and every caller of this has
+// to hand the tag to an element that actually renders it, which is what the
+// `...rest` on <Eyebrow> above is for and what a11y.test.jsx checks.
 export function fasciaLabel(fascia) {
   return `Fascia ${fascia.ordinal} · posti ${fascia.from}–${fascia.to}`;
 }

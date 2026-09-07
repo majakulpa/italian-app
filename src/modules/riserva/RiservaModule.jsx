@@ -95,9 +95,14 @@ const STATE_PAINT = {
 // screen. controlLine is the token that already promises 3:1 on every surface.
 const EMPTY_FILL = TOKENS.paperDeep;
 
-function Eyebrow({ children, style }) {
+// `...rest` carries the `lang="it"` a Band passes for its Italian heading.
+// See DrillRound.jsx's twin for why a component that quietly swallows that
+// prop is worse than an obviously missing tag: the JSX reads correct, the DOM
+// is wrong, and no axe rule can tell the difference.
+function Eyebrow({ children, style, ...rest }) {
   return (
     <span
+      {...rest}
       style={{
         fontFamily: MONO,
         fontSize: 10,

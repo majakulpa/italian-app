@@ -24,9 +24,14 @@ import { LOCATED, fullStopAfter, answered } from "./locatedFeedback.js";
 const MONO = "'IBM Plex Mono', monospace";
 const SANS = "'Inter', sans-serif";
 
-function Eyebrow({ children, style }) {
+// The third copy of this component, and it takes `...rest` for the same
+// reason the two in modules/riserva do: nothing here passes `lang` today, and
+// a signature that silently eats one is a trap the next caller falls into
+// without a single test going red.
+function Eyebrow({ children, style, ...rest }) {
   return (
     <span
+      {...rest}
       style={{
         fontFamily: MONO,
         fontSize: 10,

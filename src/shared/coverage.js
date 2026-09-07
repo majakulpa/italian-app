@@ -76,6 +76,7 @@
 
 import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE } from "../data/fondamentale.js";
 import { MODULE_STATS } from "./stats.js";
+import { lemmaKey } from "./lemma.js";
 import { wordState, WORD_STATES, strongest } from "./wordState.js";
 
 // What the full 2,000 is worth, as a fraction of running text.
@@ -104,16 +105,13 @@ export function rankWeight(rank) {
 // reporting separately rather than letting it read as "unseen".
 const SEEDED = new Set(FONDAMENTALE.map((e) => e.rank));
 
-// The lexicon indexed by a comparable form, so a word the vocab module stores
-// as "chiave" finds the entry stored as "la chiave". Leading articles go,
-// case goes, trailing punctuation goes.
-export function lemmaKey(italian) {
-  return italian
-    .trim()
-    .toLowerCase()
-    .replace(/^(l'|un'|(il|lo|la|i|gli|le|un|uno|una) )/, "")
-    .replace(/[?!.,;:]+$/, "");
-}
+// The rule that says a word the vocab module stores as "chiave" is the entry
+// stored as "la chiave". It lives in shared/lemma.js rather than here, because
+// srs.js collapses the review queue by the very same rule and cannot import
+// this file: coverage → wordState → srs is already a chain, and the other
+// direction would close it. Re-exported so the bridge's own callers still read
+// it off the bridge.
+export { lemmaKey };
 
 const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
 

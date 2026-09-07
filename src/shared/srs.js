@@ -12,6 +12,7 @@
 
 import { markWord, todayISO, addDaysISO } from "./storage.js";
 import { MODULE_STATS } from "./stats.js";
+import { lemmaKey } from "./lemma.js";
 import { shuffle } from "./shuffle.js";
 
 // Days until an item in box N comes round again. Box 1 is 0 days — "later
@@ -53,26 +54,73 @@ function scheduledUnits() {
   );
 }
 
+// What makes two due units the same thing to ask about.
+//
+// Two benches can hold one Italian word. `sì` is rank 44 of the base
+// vocabulary and the first word of the A1 greetings category; study it in the
+// deck and drill it in La Riserva and there are two live scheduler keys,
+// `A1:greetings:sì` and `riserva:sì`, both perfectly valid. Left alone, La
+// Piazza asks for `sì` twice in one round.
+//
+// The right place to fix that is here rather than in either bench. The
+// alternative — having the deck exclude what the Riserva has met, the way the
+// Riserva already excludes what the deck has taught — would mean each module
+// knowing the other's key builders, which is the coupling stats.js exists to
+// avoid, and it would have to be re-done for every pair of benches that ever
+// share a lemma. A queue that asks one word once is a property of the queue.
+//
+// Coverage has already made this call: lexiconEvidence() folds a deck unit and
+// a Riserva unit onto one rank with strongest(). This uses the same lemmaKey,
+// deliberately, so the two cannot drift.
+//
+// A unit with no Italian of its own — a grammar drill is a gapped sentence,
+// not a word — is identified by its key, which is unique by construction. So
+// the default is "distinct", and only a lexical unit can ever collapse.
+function sameWord(unit) {
+  return unit.item.it ? `lemma:${lemmaKey(unit.item.it)}` : unit.key;
+}
+
+// Every unit due today, most overdue first, one per word.
+//
+// The sort runs before the collapse because it decides which of two units for
+// one word survives: the more overdue. Array.sort is stable, so a tie keeps
+// MODULE_STATS' own order — vocab ahead of riserva — which is the rule
+// coverage.js's LEXICON_SOURCES already states and for the same reason. The
+// deck unit has an example sentence behind it, so La Piazza can gap a real
+// sentence instead of showing a bare gloss.
+//
+// It also has to run before the limit is applied, or a session of twenty
+// would quietly be a session of eighteen and two duplicates.
+function dueUnits(progress, today) {
+  const due = scheduledUnits().filter(
+    (unit) => progress.words[unit.key] && isDue(progress.schedule[unit.key], today),
+  );
+
+  due.sort((a, b) => (progress.schedule[a.key]?.due || "").localeCompare(progress.schedule[b.key]?.due || ""));
+
+  const seen = new Set();
+  return due.filter((unit) => {
+    const word = sameWord(unit);
+    if (seen.has(word)) return false;
+    seen.add(word);
+    return true;
+  });
+}
+
 // The queue for a review session: things you've studied at least once and
 // that are due today or overdue. Untouched items are left out — review is for
 // bringing back what you've met, not for meeting new material, which is what
 // the modules themselves are for.
 export function dueItems(progress, today = todayISO(), limit = SESSION_LIMIT) {
-  const due = scheduledUnits().filter(
-    (unit) => progress.words[unit.key] && isDue(progress.schedule[unit.key], today),
-  );
-
-  // Most overdue first so nothing starves, then shuffled within the cut so a
-  // session interleaves vocabulary and grammar instead of marching through
-  // one module and then the other.
-  due.sort((a, b) => (progress.schedule[a.key]?.due || "").localeCompare(progress.schedule[b.key]?.due || ""));
-  return shuffle(due.slice(0, limit));
+  // Shuffled within the cut so a session interleaves vocabulary, grammar and
+  // the reservoir instead of marching through one module and then the next.
+  return shuffle(dueUnits(progress, today).slice(0, limit));
 }
 
+// Counted off the same collapsed list, so the badge on the dashboard and the
+// round it opens can never say different numbers.
 export function dueCount(progress, today = todayISO()) {
-  return scheduledUnits().filter(
-    (unit) => progress.words[unit.key] && isDue(progress.schedule[unit.key], today),
-  ).length;
+  return dueUnits(progress, today).length;
 }
 
 // The single write point for a graded answer: moves the item's box and its

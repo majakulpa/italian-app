@@ -14,7 +14,8 @@ import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
-import { wordKey, drillKey, storyKey, conversationKey } from "./storage.js";
+import { FONDAMENTALE } from "../data/fondamentale.js";
+import { wordKey, drillKey, storyKey, conversationKey, riservaKey } from "./storage.js";
 
 // Dates are passed in rather than read from the clock, so none of this
 // depends on when the suite runs.
@@ -198,6 +199,68 @@ describe("dueItems", () => {
     const progress = progressWith({ [VOCAB_KEYS[0]]: "known", [DRILL_KEY]: "learning" });
 
     expect(dueItems(progress, TODAY).map((u) => u.moduleId).sort()).toEqual(["grammar", "vocab"]);
+  });
+
+  // Two benches can hold the same Italian word. `sì` is rank 44 of the base
+  // vocabulary and it is also the first word of the A1 greetings category, so
+  // studying it in both places writes two live scheduler keys for one word —
+  // and La Piazza would then ask for `sì` twice in a single round.
+  //
+  // Coverage already treats those two units as one word: lexiconEvidence()
+  // folds them onto one rank with strongest(). The queue has to agree, or the
+  // dashboard and the round are counting different things.
+  describe("one word, one place in the queue", () => {
+    const SI_DECK = wordKey(a1Vocab, greetings, greetings.words.find((w) => w.it === "sì"));
+    const SI_RISERVA = riservaKey(FONDAMENTALE.find((e) => e.it === "sì"));
+
+    it("offers a word held on two benches once, not twice", () => {
+      const progress = progressWith({ [SI_DECK]: "known", [SI_RISERVA]: "known" });
+
+      expect(dueItems(progress, TODAY).filter((u) => u.item.it === "sì")).toHaveLength(1);
+      expect(dueCount(progress, TODAY)).toBe(1);
+    });
+
+    // Which of the two survives is not arbitrary. Most overdue wins, and on a
+    // tie the deck does — the same rule coverage.js's LEXICON_SOURCES states,
+    // and for the same reason: the deck unit has an example sentence behind
+    // it, so La Piazza can gap a real sentence rather than show a bare gloss.
+    it("keeps the deck's unit on a tie, and the more overdue one otherwise", () => {
+      const tied = progressWith({ [SI_DECK]: "known", [SI_RISERVA]: "known" });
+      expect(dueItems(tied, TODAY)[0].key).toBe(SI_DECK);
+
+      const riservaOlder = progressWith(
+        { [SI_DECK]: "known", [SI_RISERVA]: "known" },
+        {
+          [SI_DECK]: { box: 2, due: "2026-08-16", last: "2026-08-15" },
+          [SI_RISERVA]: { box: 2, due: "2026-08-02", last: "2026-08-01" },
+        },
+      );
+      expect(dueItems(riservaOlder, TODAY).map((u) => u.key)).toEqual([SI_RISERVA]);
+    });
+
+    // The collapse is by lemma, not by string: the deck stores `madre` and the
+    // lexicon stores `la madre`, and they are the same word.
+    it("collapses two spellings of one lemma, article and all", () => {
+      const family = a1Vocab.categories.find((c) => c.words.some((w) => w.it === "madre"));
+      const deck = wordKey(a1Vocab, family, family.words.find((w) => w.it === "madre"));
+      const lexicon = riservaKey(FONDAMENTALE.find((e) => e.it === "la madre"));
+      const progress = progressWith({ [deck]: "known", [lexicon]: "known" });
+
+      expect(dueCount(progress, TODAY)).toBe(1);
+      expect(dueItems(progress, TODAY)[0].key).toBe(deck);
+    });
+
+    // And the other direction: a word that is only in the reservoir still gets
+    // queued, and two *different* lexicon words are still two items. A dedupe
+    // that swallowed either of those would be worse than the bug it fixes.
+    it("leaves distinct words alone, wherever they were met", () => {
+      const essere = riservaKey(FONDAMENTALE[0]);
+      const di = riservaKey(FONDAMENTALE[1]);
+      const progress = progressWith({ [essere]: "known", [di]: "known", [DRILL_KEY]: "learning" });
+
+      expect(dueCount(progress, TODAY)).toBe(3);
+      expect(dueItems(progress, TODAY).map((u) => u.key).sort()).toEqual([di, essere, DRILL_KEY].sort());
+    });
   });
 });
 

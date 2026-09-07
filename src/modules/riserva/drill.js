@@ -30,9 +30,17 @@
 // divide the work.
 //
 // Met-ness is read through lexiconStates() rather than off the riserva key
-// alone, so a word the *deck* already taught is not offered here as new. The
-// 20 lemmas the deck shares with the base 2,000 are the only overlap today,
-// and this is the line that stops them being asked twice.
+// alone, so a word the *deck* already taught is not offered here as new — the
+// 20 lemmas the deck shares with the base 2,000 are the only overlap today.
+//
+// That guard points one way only, and this comment used to claim it pointed
+// both ("the line that stops them being asked twice"). It stops this bench
+// re-offering a word the deck taught; it cannot stop the deck teaching a word
+// this bench drilled, because the deck excludes nothing. Do both and one lemma
+// carries two live scheduler keys — a real state, and a legitimate one. What
+// must not follow is the *queue* asking for that word twice in one round, and
+// srs.js's dueUnits() is where that is held, by the same lemma rule
+// coverage.js folds the two units with.
 //
 // ── Ranks with no word behind them are not drillable ────────────────────
 // The list is 300 of 2,000. A rank nobody has written down is a claim about

@@ -5,3 +5,7 @@ coverage
 *.local
 .DS_Store
 .claude/settings.local.json
+
+# Agent worktrees. Ephemeral checkouts, never committed — and ignoring them
+# keeps a search from the repo root out of stale copies of src/.
+.claude/worktrees/

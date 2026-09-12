@@ -99,3 +99,24 @@ says which findings it is overruling and why.
 
 Never relay a worker's claim to the owner as if it were checked. Say who ran
 what.
+
+### Read the tree you are standing in
+
+Agent worktrees live under `.claude/worktrees/`, which means the repo root
+holds several complete copies of `src/` at once, some of them weeks old. A
+filename glob or a `find` from the root reaches into all of them and returns
+files that look right and are not. Nothing about the result says which
+checkout it came from.
+
+This is not hypothetical. A scanner reported that `modules/review/question.js`
+and `shared/locatedFeedback.js` "do not exist anywhere in the repo" on a day
+when both were on `main`; it had read a copy predating the two PRs that
+created them, and every line number in its report was internally consistent
+and wrong. A verifier reported a green suite with the test count from a
+snapshot three PRs old.
+
+So: work from paths relative to your own worktree, never absolute paths
+through the repo root, and when a file's contents surprise you, run
+`git log --oneline -1` before you believe them. The orchestrator's half of
+this is that a worker's report about what does *not* exist is the weakest
+claim it can make — verify absence yourself.

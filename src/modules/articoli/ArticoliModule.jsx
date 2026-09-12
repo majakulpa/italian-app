@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Type } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
-import { STRANDS, RULES, ZERO, filled } from "../../data/articoli.js";
+import { STRANDS, RULES, filled } from "../../data/articoli.js";
 import { loadProgress, saveProgress, markWord, articoliKey, strandKnownCount } from "../../shared/storage.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
-import AnswerMark from "../../shared/AnswerMark.jsx";
-import { judge, announce, LOCATED, ATTEMPTS } from "./feedback.js";
+import { judge, announce, ATTEMPTS } from "./feedback.js";
+import { Options, ArticleVerdict, Rule, PolishAnchor } from "./cards.jsx";
 
 // Gli Articoli — L'Officina's third workbench, and design screen 12.
 //
@@ -51,21 +51,6 @@ function Eyebrow({ children, style }) {
       {children}
     </span>
   );
-}
-
-// One article form as it appears in running text. The zero article is drawn
-// as the design draws it — an em dash — which is silence to a screen reader,
-// so it carries a name instead. Everything else is Italian and says so.
-function Form({ form }) {
-  if (form === ZERO) {
-    return (
-      <>
-        <span aria-hidden="true">{ZERO}</span>
-        <span style={SR_ONLY}>no article</span>
-      </>
-    );
-  }
-  return <span lang="it">{form}</span>;
 }
 
 function PrimaryButton({ children, onClick, style }) {
@@ -123,46 +108,6 @@ function Screen({ children }) {
   return (
     <div className="citta" style={{ maxWidth: 560, margin: "0 auto", padding: "24px 20px 60px" }}>
       {children}
-    </div>
-  );
-}
-
-// The Polish anchor, in the design's own pink. Pink means Polish everywhere in
-// L'Officina — it is the Polish road in Mappatura delle parole and the Polish card here —
-// which is why no strand is allowed to paint itself `bubble`.
-function PolishAnchor({ anchor }) {
-  return (
-    <div style={{ ...citySurface("bubble"), padding: "14px 16px", marginTop: 14 }}>
-      <Eyebrow style={{ opacity: 0.85 }}>
-        <span aria-hidden="true">🇵🇱 </span>Why this one is hard
-      </Eyebrow>
-      <p style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 600, margin: "8px 0 0" }} lang="pl">
-        {anchor.pl}
-      </p>
-      <p style={{ fontFamily: SANS, fontSize: 13.5, margin: "6px 0 0", lineHeight: 1.55 }}>{anchor.says}</p>
-    </div>
-  );
-}
-
-// A rule, with its Italian forms marked as Italian and its explanation left
-// in the document's own language. "One of the rules", never "the rule": la
-// mano is filed under `corpo` and is a deceptive-gender noun as well, and a
-// screen that claimed one rule was the whole story would be teaching a
-// simplification the data itself does not believe.
-function Rule({ rule, heading = "One of the rules behind it" }) {
-  return (
-    <div style={{ ...citySurface(), padding: "14px 16px" }}>
-      <Eyebrow style={{ color: TOKENS.inkSoft }}>{heading}</Eyebrow>
-      <p style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 600, margin: "8px 0 0", lineHeight: 1.35, color: TOKENS.ink }}>
-        {rule.forms.map((form, i) => (
-          <React.Fragment key={form}>
-            {i > 0 && <span aria-hidden="true"> · </span>}
-            <span lang="it">{form}</span>
-          </React.Fragment>
-        ))}
-      </p>
-      <p style={{ fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, margin: "4px 0 0", lineHeight: 1.5 }}>{rule.when}</p>
-      <p style={{ fontFamily: SANS, fontSize: 13.5, color: TOKENS.ink, margin: "8px 0 0", lineHeight: 1.55 }}>{rule.says}</p>
     </div>
   );
 }
@@ -303,51 +248,6 @@ function StrandCard({ strand, onBack, onPractise }) {
 
 // ── The drill (design screen 12) ─────────────────────────────────────────
 
-// Every visible sentence of the verdict, as markup. The plain-text twin that
-// goes to the live region is `announce()` in feedback.js — the two say the
-// same things, and the module test checks a screen reader isn't told less
-// than the screen shows.
-//
-// The located sentence is read straight out of feedback.js's LOCATED rather
-// than restated here. It used to be restated, in five sibling paragraphs, and
-// the fusion one had already drifted a comma away from its spoken twin. It is
-// the one part of the verdict with no Italian and no Polish in it, so it can
-// be a plain string; the paragraph below it, which mixes an Italian sentence
-// into English prose, still has to be markup for WCAG 3.1.2.
-function Verdict({ verdict }) {
-  const accent = verdict.correct ? "pistachio" : verdict.kind === "fusion" ? "lemon" : "tomato";
-
-  return (
-    <div style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
-      <Eyebrow style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6 }}>
-        <AnswerMark state={verdict.correct ? "correct" : "incorrect"} size={14} />
-        {verdict.correct ? "Right" : "Not there yet"}
-      </Eyebrow>
-
-      <div style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.55, display: "grid", gap: 6, marginTop: 8 }}>
-        {!verdict.correct && <p style={{ margin: 0 }}>{LOCATED[verdict.kind]}</p>}
-
-        {verdict.sentence && (
-          <p style={{ margin: 0 }}>
-            {verdict.correct ? "Italian writes it " : "The answer is "}
-            {!verdict.correct && (
-              <>
-                <b>
-                  <Form form={verdict.answer} />
-                </b>
-                {". "}
-              </>
-            )}
-            <b lang="it">{verdict.sentence}</b> — {verdict.en}
-          </p>
-        )}
-
-        {!verdict.correct && !verdict.last && <p style={{ margin: 0 }}>Have another go — you get one more.</p>}
-      </div>
-    </div>
-  );
-}
-
 function Drill({ strand, onBack, onDone, onGrade }) {
   const [index, setIndex] = useState(0);
   const [attempt, setAttempt] = useState(1);
@@ -427,48 +327,15 @@ function Drill({ strand, onBack, onDone, onGrade }) {
         <p style={{ fontFamily: SANS, fontSize: 13, margin: "8px 0 0", opacity: 0.9 }}>{item.en}</p>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-        {item.options.map((option) => {
-          const isAnswer = option === item.answer;
-          const wasTried = tried.includes(option);
-          const shown = settled ? isAnswer || wasTried : wasTried;
+      <Options
+        options={item.options}
+        answer={item.answer}
+        tried={tried}
+        settled={settled}
+        onChoose={choose}
+      />
 
-          return (
-            <button
-              key={option}
-              type="button"
-              // Same rule as a shut district on the map and a shut bench in
-              // the workshop: aria-disabled rather than `disabled`, so an
-              // option already ruled out keeps its place in the tab order
-              // instead of vanishing out from under a keyboard user mid-item.
-              aria-disabled={settled || wasTried ? "true" : undefined}
-              onClick={() => choose(option)}
-              style={{
-                ...citySurface(),
-                background: shown && isAnswer ? CITY_ACCENTS.pistachio.fill : shown ? CITY_ACCENTS.tomato.fill : TOKENS.card,
-                color: shown && isAnswer ? CITY_ACCENTS.pistachio.ink : shown ? CITY_ACCENTS.tomato.ink : TOKENS.ink,
-                border: `${CITY_RULES.border}px solid ${shown ? TOKENS.cityInk : TOKENS.controlLine}`,
-                flex: 1,
-                minWidth: 0,
-                padding: "14px 6px",
-                fontFamily: SERIF,
-                fontSize: 20,
-                fontWeight: 600,
-                cursor: settled || wasTried ? "default" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <Form form={option} />
-              {shown && <AnswerMark state={isAnswer ? "correct" : "incorrect"} size={14} />}
-            </button>
-          );
-        })}
-      </div>
-
-      {verdict && <Verdict verdict={verdict} />}
+      {verdict && <ArticleVerdict verdict={verdict} />}
       {verdict && verdict.rule && (
         <div style={{ marginTop: 14 }}>
           <Rule rule={verdict.rule} />

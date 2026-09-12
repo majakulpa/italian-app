@@ -418,7 +418,7 @@ export const FONDAMENTALE = [
   { rank: 332, it: "bianco", en: "white", pl: "biały" },
   { rank: 333, it: "nero", en: "black", pl: "czarny" },
   { rank: 334, it: "marrone", en: "brown", pl: "brązowy" },
-  { rank: 335, it: "rosa", en: "pink", pl: "różowy" },
+  { rank: 335, it: "rosa", en: "pink; rose (flower)", pl: "różowy · róża" },
   { rank: 336, it: "il colore", en: "color", pl: "kolor" },
   { rank: 337, it: "il sole", en: "sun", pl: "słońce" },
   { rank: 338, it: "luna", en: "moon", pl: "księżyc" },

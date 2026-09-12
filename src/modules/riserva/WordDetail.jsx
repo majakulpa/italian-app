@@ -84,6 +84,14 @@ const STATE_LABEL = {
   solid: { label: "solida", lang: "it" },
 };
 
+// Only ever set on an entry whose `it` elides to `l'` — fondamentale.js's
+// `gender` field exists because that elision is the one case the article
+// convention can't carry gender through on its own. Shown here in Italian,
+// like the state pill beside it, because "maschile"/"femminile" are real
+// Italian words a learner benefits from seeing rather than an English "m"/"f"
+// abbreviation standing in for them.
+const GENDER_LABEL = { m: "maschile", f: "femminile" };
+
 // `...rest` for the `lang` the state pill passes — see RiservaModule.jsx's
 // <Eyebrow> for what a component that quietly drops it costs.
 function Pill({ children, accent, style, ...rest }) {
@@ -189,6 +197,7 @@ export default function WordDetail({ entry, state, box, progress, onBack }) {
         {/* Italian, like the drill screen's twin — `posto` is a word, not a
             label, and an English document has to say so. */}
         <Pill lang="it">posto {entry.rank}</Pill>
+        {entry.gender && <Pill lang="it">{GENDER_LABEL[entry.gender]}</Pill>}
         <Pill accent={state === "unseen" ? undefined : "lemon"} lang={STATE_LABEL[state].lang}>
           {STATE_LABEL[state].label}
         </Pill>

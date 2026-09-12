@@ -220,6 +220,32 @@ describe("word detail", () => {
     expect(screen.getByText(/Nowhere yet/)).toBeInTheDocument();
   });
 
+  // The schema addition ranks 301–400 needed: a vowel-initial opaque noun
+  // elides its article to `l'` and stops carrying the gender on its own, so
+  // fondamentale.js gives those entries a real `gender` field — and it is
+  // dead data unless a screen shows it.
+  it("shows the gender of a word that carries one", async () => {
+    const user = userEvent.setup();
+    const elided = FONDAMENTALE.find((e) => e.it.startsWith("l'"));
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, elided);
+
+    const label = elided.gender === "m" ? "maschile" : "femminile";
+    expect(screen.getByText(label)).toHaveAttribute("lang", "it");
+  });
+
+  // And says nothing where there is nothing to say — the pill must not fire
+  // for every word, only the ones the data actually marks.
+  it("shows no gender pill for a word that doesn't carry one", async () => {
+    const user = userEvent.setup();
+    const plain = FONDAMENTALE.find((e) => !e.it.startsWith("l'"));
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, plain);
+
+    expect(screen.queryByText("maschile")).not.toBeInTheDocument();
+    expect(screen.queryByText("femminile")).not.toBeInTheDocument();
+  });
+
   it("goes back to the grid", async () => {
     const user = userEvent.setup();
     render(<RiservaModule onExit={() => {}} />);

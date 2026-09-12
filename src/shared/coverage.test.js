@@ -112,11 +112,14 @@ describe("coverage", () => {
     expect(top300).toBeLessThan(0.7);
   });
 
-  // ...and the link that makes the figure above describe the shipped file:
-  // the seeded entries really are ranks 1–300 and not any 300 ranks.
-  it("has seeded exactly the ranks that two thirds figure is about", () => {
+  // ...and the link that makes the two-thirds figure above describe what the
+  // file used to hold, plus the same check for where the file actually is
+  // now: the seeded entries are ranks 1–400, contiguous from 1, and not any
+  // 400 ranks. fondamentale.test.js owns contiguity as its own invariant;
+  // this is the version that ties it to the ceiling arithmetic.
+  it("has seeded exactly the ranks the ceiling is computed over", () => {
     expect(FONDAMENTALE.map((e) => e.rank)).toEqual(
-      Array.from({ length: 300 }, (_, i) => i + 1),
+      Array.from({ length: 400 }, (_, i) => i + 1),
     );
   });
 });
@@ -164,7 +167,7 @@ describe("coverageBands", () => {
   });
 
   it("reports how much of each band the data file actually holds", () => {
-    expect(bands.map((b) => b.seeded)).toEqual([200, 100, 0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(bands.map((b) => b.seeded)).toEqual([200, 200, 0, 0, 0, 0, 0, 0, 0, 0]);
   });
 
   it("puts a studied word in its own band and leaves the others alone", () => {
@@ -243,26 +246,28 @@ describe("lexiconUnits", () => {
 // the figure by zero however well they were learned, because they are not in
 // the base 2,000, and no amount of study could reach the rest of the list.
 //
-// La Riserva's drill is what moved it. Every entry in fondamentale.js is now
-// a unit under a `riserva:` key, graded through the same reviewItem() as
-// everything else, so the bridge in coverage.js has two sources and every
-// rank with a word written down is reachable. The ceiling is therefore the
-// coverage of the seeded ranks — 1 to 300 — and nothing else:
+// La Riserva's drill is what moved it past that. Every entry in
+// fondamentale.js is a unit under a `riserva:` key, graded through the same
+// reviewItem() as everything else, so the bridge in coverage.js has two
+// sources and every rank with a word written down is reachable. The ceiling
+// is therefore the coverage of the seeded ranks and nothing else — 1 to 300
+// moved it to 66.1%, and ranks 301–400, added for their own sake as content
+// rather than mechanism, moved it again:
 //
-//   66.1%   Σ 1/r over ranks 1–300, normalised so the whole 2,000 comes to
-//           LEXICON_COVERAGE. The same two-thirds figure coverage.js's own
-//           sanity check quotes for the top 300 words, arriving from the
-//           other side.
-//   300     of 2,000 solid. The denominator is a promise the *list* cannot
+//   69.1%   Σ 1/r over ranks 1–400, normalised so the whole 2,000 comes to
+//           LEXICON_COVERAGE. Up from 66.1% at 300 entries — still roughly
+//           two thirds and a bit more, because ranks past 300 are worth less
+//           each but there are 100 more of them.
+//   400     of 2,000 solid. The denominator is a promise the *list* cannot
 //           keep yet, and that is now the only reason it cannot: the
-//           mechanism reaches every entry, and 1,700 ranks have no entry.
+//           mechanism reaches every entry, and 1,600 ranks have no entry.
 //
 // So this stays the tripwire it was, with the failure it catches turned
 // around. Before, it caught the headline being a near-constant nothing could
 // move. Now it catches the headline being *capped by the mechanism again* —
 // if a change narrows the bridge, un-schedules the bench, or drops a source,
-// 66.1 falls and this says so. The other direction is a content change:
-// seeding entry 301 raises both numbers, and the honest thing to do is come
+// 69.1 falls and this says so. The other direction is a content change:
+// seeding entry 401 raises both numbers, and the honest thing to do is come
 // and update them on purpose. What must not happen is either move being
 // silent.
 describe("the ceiling a fully-mastered account reaches", () => {
@@ -317,22 +322,22 @@ describe("the ceiling a fully-mastered account reaches", () => {
     expect(scheduled.every((u) => mastered.schedule[u.key].box === MAX_BOX)).toBe(true);
   });
 
-  it("reaches 66.1% — the worth of every rank that has a word behind it", () => {
-    expect(coverage(mastered).pct).toBe(66.1);
+  it("reaches 69.1% — the worth of every rank that has a word behind it", () => {
+    expect(coverage(mastered).pct).toBe(69.1);
   });
 
   // The other half of the headline. Every seeded rank is drillable, so
-  // "x / 2000 solid" stops at however many entries the file holds — 300 —
+  // "x / 2000 solid" stops at however many entries the file holds — 400 —
   // and the denominator is now a promise only the *list* is short of.
-  it("reaches 300 of the 2,000 solid, which is the length of the list", () => {
+  it("reaches 400 of the 2,000 solid, which is the length of the list", () => {
     expect(coverage(mastered).counts.solid).toBe(FONDAMENTALE.length);
-    expect(coverage(mastered).counts.solid).toBe(300);
+    expect(coverage(mastered).counts.solid).toBe(400);
   });
 
   // Naming the cause, so a failure above is diagnosable. The ceiling is a
   // fact about the file, not about the bridge: the drill reaches every entry,
   // and the arithmetic agrees with a direct sum over the ranks that have one.
-  it("is exactly the coverage of ranks 1 to 300 and nothing else", () => {
+  it("is exactly the coverage of ranks 1 to 400 and nothing else", () => {
     const seeded = FONDAMENTALE.reduce((sum, entry) => sum + rankWeight(entry.rank), 0);
 
     expect(coverage(mastered).pct).toBe(Math.round(seeded * 1000) / 10);
@@ -340,16 +345,18 @@ describe("the ceiling a fully-mastered account reaches", () => {
   });
 
   // And the half that used to *be* the ceiling, kept because it is still the
-  // reason the old number was 1.6: the deck bridges 20 of its 120 words onto
-  // a lemma. That is unchanged. What changed is that it is no longer the only
-  // way in, so it no longer sets the bound.
-  it("still bridges only 20 of the vocabulary module's 120 words onto a lemma", () => {
+  // reason the old number was 1.6: the deck bridges most of its 120 words
+  // onto no lemma at all. What changed with ranks 301–400 is the exact count
+  // — `governo` and `legge` are both deck words that are now also lexicon
+  // entries, so the bridge widened from 20 to 22 — and what stayed the same
+  // is that it is not the only way in, so it does not set the bound.
+  it("still bridges only 22 of the vocabulary module's 120 words onto a lemma", () => {
     const vocab = MODULE_STATS.find((m) => m.id === "vocab");
     const words = vocab.levels.flatMap((l) => vocab.units(l));
     const deckOnly = masterOne("vocab");
 
     expect(words).toHaveLength(120);
-    expect(lexiconStates(deckOnly).size).toBe(20);
+    expect(lexiconStates(deckOnly).size).toBe(22);
     expect(coverage(deckOnly).pct).toBe(1.6);
   });
 });

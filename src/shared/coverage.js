@@ -44,9 +44,11 @@
 // ── The ceiling, and what moved it ──────────────────────────
 // Coverage used to learn that a word is known from exactly one place: the
 // vocabulary module's 120 words, matched onto lemmas by lexiconStates()
-// below. Only 20 of those 120 are in the base 2,000, so a learner who
+// below. Only 20 of those 120 were in the base 2,000 at the time — ranks
+// 301–400 later added `governo` and `legge`, both already deck words, which
+// is why the bridge-only figure below now reads 22 — so a learner who
 // mastered every word, drill, dialogue and story the app shipped saw 1.6% and
-// "20 / 2000 solid", and could not see more. The other 100 vocabulary words
+// "20 / 2000 solid", and could not see more. The other vocabulary words
 // are real Italian and worth learning; they were simply outside the
 // population this figure is a percentage of.
 //
@@ -59,14 +61,17 @@
 // than one, and every rank with a word written down is reachable.
 //
 // The ceiling is therefore the coverage of the ranks that have a word behind
-// them, which today is 1–300: **66.1%, and 300 / 2000 solid.** That is not a
-// coincidence — the sanity check higher up this file says the top 300 words
-// are worth about two thirds of running text, and this is the same figure
-// arriving from the other side.
+// them, which today is 1–400: **69.1%, and 400 / 2000 solid.** Ranks 301–400
+// moved it up from 66.1% and 300 / 2000 — Σ 1/r over 1–400, normalised the
+// same way, comes to 6.5699.../8.1784... × 0.86 ≈ 69.09%, which rounds to
+// 69.1. That is not a coincidence in kind, even though the number moved: the
+// sanity check higher up this file says the top 300 words are worth about two
+// thirds of running text, and the ceiling is always that same sum arriving
+// from the other side, just over however many ranks are seeded.
 //
-// What is left under it is the honest bottleneck, and it is now the one
-// PLAN.md always claimed it was: the list is 300 of a 2,000 target, so 1,700
-// ranks have no word to drill. Raising the ceiling past 66.1% is a content
+// What is left under it is the honest bottleneck, and it is still the one
+// PLAN.md calls the real one: the list is 400 of a 2,000 target, so 1,600
+// ranks have no word to drill. Raising the ceiling past 69.1% is a content
 // job — entries with accurate English and Polish glosses — and no longer an
 // engineering one.
 //
@@ -100,7 +105,7 @@ export function rankWeight(rank) {
   return NORMALISER / rank;
 }
 
-// Ranks that actually have an entry in the file yet — the first 300 of 2,000.
+// Ranks that actually have an entry in the file yet — the first 400 of 2,000.
 // A rank with no entry can't be known by anyone, which is why it is worth
 // reporting separately rather than letting it read as "unseen".
 const SEEDED = new Set(FONDAMENTALE.map((e) => e.rank));

@@ -116,7 +116,7 @@ export const MODULE_STATS = [
     // *for* scheduling this one: a base-vocabulary word is the lexical item.
     scheduled: true,
     // Only the ranks with a word written down. Most bands yield nothing: the
-    // list is 300 of 2,000, and a rank nobody has written down is a fact about
+    // list is 400 of 2,000, and a rank nobody has written down is a fact about
     // the file rather than a word the learner failed to learn, so it is not a
     // unit and cannot be counted, drilled or scheduled.
     units: (fascia) =>

@@ -101,7 +101,7 @@ describe("MODULE_STATS", () => {
     }
   });
 
-  // Only ranks that have a word written down. The list is 300 of 2,000, and
+  // Only ranks that have a word written down. The list is 400 of 2,000, and
   // a rank nobody has written down is a fact about the file rather than a
   // word the learner has failed to learn — so it is not a unit, cannot be
   // counted, and cannot be scheduled.

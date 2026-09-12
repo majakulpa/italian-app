@@ -424,9 +424,25 @@ function Round({ queue, onGrade, onDone, onBack }) {
 
   return (
     <Screen>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      {/* This line is "which level, which module", and how long that is
+          depends entirely on the module: two characters for a CEFR rung,
+          twenty for an article strand — "A1 · Vocabulary" against "The
+          definite article · Articles".
+
+          App.jsx fixes the menu and theme controls at top:16 right:16, two
+          36px buttons and an 8px gap, so they own x 279–359 in the y 16–52
+          band at 375px wide — and this row sits at y 30–45, inside it. The
+          long labels ran straight under them: measured on this branch at
+          375px, the articles' label reached x=352 and La Riserva's *already*
+          reached 337 before this change. So the row reserves that zone and
+          wraps instead, which drops a long label to its own line at the left
+          margin where nothing is over it. Truncating was the other option and
+          is worse: it would hide which strand the item came from. */}
+      <div
+        style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12, paddingRight: 80 }}
+      >
         <BackLink label={<span lang="it">{PIAZZA.name}</span>} onClick={onBack} />
-        <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: TOKENS.inkSoft, margin: 0 }}>
+        <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: TOKENS.inkSoft, margin: 0, minWidth: 0 }}>
           {unit.level.label} · {MODULE_LABEL[unit.moduleId]}
         </p>
       </div>

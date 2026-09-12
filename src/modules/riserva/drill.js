@@ -212,6 +212,11 @@ export function lexiconQuestion(entry) {
     // ...and the one case where a neighbour reaches the judge *through* the
     // accent tolerance rather than past it. See accentIsTheWord above.
     strictAccents: accentIsTheWord(entry.it),
+    // No line-up: a lexicon word is written, not picked. Declared empty rather
+    // than left undefined because it is the field La Piazza branches on to
+    // decide between a text box and three buttons, and the one shape that
+    // fills it is Gli Articoli's. See modules/review/question.js.
+    options: [],
     // A lexicon word has no example sentence to close a gap in, so the
     // context line says the other true thing about where it sits: its place
     // in the reservoir. Repeating the answer and its gloss back under the

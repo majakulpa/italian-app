@@ -132,20 +132,24 @@ export const MODULE_STATS = [
     // permanent strand. levelStats() looks a container up by level id, finds
     // none, and leaves it out of every rung.
     levels: STRANDS,
-    // Out of the review queue, and the blocker that kept it out is gone.
-    // It was the feedback: La Piazza used to answer a wrong pick by painting
+    // In the queue. Two things had to happen first and both have, in that
+    // order. The feedback: La Piazza used to answer a wrong pick by painting
     // the right option green and revealing it on the spot — the standard
     // wrong → red cross → answer pattern PLAN.md names as the weakest shape
-    // available, and the exact pattern this bench was built to replace. That
-    // was written down here as "revisit when La Piazza learns to locate a
-    // wrong answer rather than solve it", and it has.
+    // available, and the exact pattern this bench was built to replace. And
+    // then the question shape: La Piazza asked for typing, and an article
+    // item is a choice between three authored forms, so flipping this flag on
+    // its own would have put an article item in front of a text box. The round
+    // now has a second shape (modules/review/question.js, `options`) that
+    // draws this bench's own three buttons and routes to this bench's own
+    // judge, so the flag is what is left.
     //
-    // What is left is not an argument, it is work: La Piazza asks for typing
-    // and an article item is a choice between three authored forms, so the
-    // queue needs a second question shape before it can carry one. That is a
-    // change of its own rather than a flag flip here, and flipping the flag
-    // without it would put an article item in front of a text box.
-    scheduled: false,
+    // Why this one rather than the other two that are still out: PLAN.md
+    // calls the article system "the one genuinely hard thing", where neither
+    // the learner's Polish nor her English helps and the errors survive into
+    // advanced proficiency. A mistake that does not decay on its own is the
+    // exact thing a spaced-repetition queue is for.
+    scheduled: true,
     units: (strand) => strand.items.map((i) => ({ key: articoliKey(strand, i), item: i, group: strand })),
     doneStatus: "known",
   },

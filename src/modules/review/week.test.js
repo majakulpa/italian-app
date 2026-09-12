@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { solidThisWeek, WEEK_DAYS } from "./week.js";
 import { LEVELS } from "../../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
-import { wordKey, drillKey, addDaysISO } from "../../shared/storage.js";
+import { wordKey, drillKey, articoliKey, addDaysISO } from "../../shared/storage.js";
+import { STRANDS } from "../../data/articoli.js";
 import { MAX_BOX } from "../../shared/srs.js";
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
@@ -49,5 +50,18 @@ describe("what comes back this week", () => {
   // It still turns up in the session; it is just not what this sentence says.
   it("counts words only, not the grammar drills scheduled beside them", () => {
     expect(solidThisWeek(progressWith({ [DRILL_KEY]: at(MAX_BOX, 3) }), TODAY)).toBe(0);
+  });
+
+  // Nor the article items, now that they are scheduled beside them too. An
+  // article item is a gapped sentence and the thing being learned is a choice
+  // between three forms — a card that counted one into a figure labelled
+  // "solid words come back" would be saying something false about the week,
+  // which is the whole reason this file exists rather than the design's own
+  // decay warning.
+  it("counts words only, not the article items scheduled beside them", () => {
+    const strand = STRANDS[0];
+    const schedule = Object.fromEntries(strand.items.map((item) => [articoliKey(strand, item), at(MAX_BOX, 3)]));
+    expect(strand.items.length).toBeGreaterThan(0);
+    expect(solidThisWeek(progressWith(schedule), TODAY)).toBe(0);
   });
 });

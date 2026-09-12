@@ -8,6 +8,12 @@ import LiveStatus from "../../shared/LiveStatus.jsx";
 import { toQuestion } from "./question.js";
 import { judge, reveal, announce, answered, ATTEMPTS } from "../../shared/locatedFeedback.js";
 import Verdict from "../../shared/Verdict.jsx";
+import {
+  judge as judgeArticle,
+  announce as announceArticle,
+  ATTEMPTS as ARTICLE_ATTEMPTS,
+} from "../articoli/feedback.js";
+import { Options, ArticleVerdict, Rule, PolishAnchor } from "../articoli/cards.jsx";
 import { solidThisWeek, WEEK_DAYS } from "./week.js";
 
 // La Piazza — the review district, and design screen 18.
@@ -19,12 +25,21 @@ import { solidThisWeek, WEEK_DAYS } from "./week.js";
 // parole and Gli Articoli both stayed outside the queue rather than be
 // answered that way. So this screen is rebuilt around two changes.
 //
-// **Production, not recognition.** Every item is typed. A grammar item
+// **Production, not recognition.** Almost every item is typed. A grammar item
 // already carries a gapped sentence and one answer, so the gap is the
 // question and its authored `options` are never drawn — they become a
 // feedback signal instead. A vocabulary item is asked by its English gloss,
 // with its own example sentence gapped underneath as disambiguating context.
 // question.js builds both.
+//
+// The exception is Gli Articoli, and it is an exception on purpose. An article
+// item is a choice between three authored forms, one of which can be the zero
+// article; there is no text box that could ask it, because "write the article"
+// with no line-up is asking the learner to guess which of ten forms was in
+// play. So the round has a second question shape — `q.options` non-empty —
+// which draws the strand's own three buttons and routes to the strand's own
+// judge. Both halves are imported from modules/articoli rather than rebuilt:
+// the five located sentences have drifted once already from a second copy.
 //
 // **Located, not solved.** feedback.js judges the typed answer and says where
 // it went rather than what it is, the learner gets a second attempt, and only
@@ -64,7 +79,7 @@ const PIAZZA = districtById("piazza");
 // spans. "La Riserva" is Italian, so what goes here is what the bench is —
 // the base vocabulary — and the district name beside it carries `lang="it"`
 // where it is drawn.
-const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar", riserva: "Base vocabulary" };
+const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar", riserva: "Base vocabulary", articoli: "Articles" };
 
 function Eyebrow({ children, style }) {
   return (
@@ -113,9 +128,14 @@ function BackLink({ label, onClick }) {
   );
 }
 
-function PrimaryButton({ children, onClick, type = "button", style }) {
+// `...rest` for the reason Verdict.jsx's Eyebrow takes it: the round hangs an
+// aria-describedby off this button on an article item, and a signature that
+// silently ate it would leave a keyboard learner told nothing, with no test
+// going red and nothing for axe to see.
+function PrimaryButton({ children, onClick, type = "button", style, ...rest }) {
   return (
     <button
+      {...rest}
       type={type}
       onClick={onClick}
       style={{
@@ -226,11 +246,22 @@ function PiazzaHome({ progress, due, onStart, onExit }) {
         </div>
       )}
 
+      {/* This card describes the round, so it has to keep describing the
+          round. "You write the Italian rather than picking it out of a
+          line-up" was true of every item until Gli Articoli joined the
+          queue, and an article item is three buttons — so the sentence
+          names its own exception rather than quietly becoming false, which
+          is the same rule week.js applies to the card above it.
+
+          One attempt count for both shapes, because the two judges keep
+          their own: ReviewModule.test.jsx pins that they agree, so this
+          sentence can state one number. */}
       <div style={{ ...citySurface(), padding: "14px 16px", marginBottom: 18 }}>
         <Eyebrow style={{ color: TOKENS.inkSoft }}>Produce &mdash; don&rsquo;t recognise</Eyebrow>
         <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.ink, margin: "8px 0 0", lineHeight: 1.55 }}>
-          You write the Italian rather than picking it out of a line-up. Get one wrong and the app says{" "}
-          <i>where</i> it went, then gives it back to you — you get {ATTEMPTS} goes before it tells you anything.
+          You write the Italian rather than picking it out of a line-up &mdash; everywhere except{" "}
+          <span lang="it">Gli Articoli</span>, where the three forms <i>are</i> the question. Get one wrong and the app
+          says <i>where</i> it went, then gives it back to you — you get {ATTEMPTS} goes before it tells you anything.
         </p>
       </div>
 
@@ -276,18 +307,45 @@ function Round({ queue, onGrade, onDone, onBack }) {
   const inputId = useId();
   const verdictId = useId();
   const inputRef = useRef(null);
+  const firstOptionRef = useRef(null);
   const [index, setIndex] = useState(0);
   const [input, setInput] = useState("");
+  const [tried, setTried] = useState([]);
   const [attempt, setAttempt] = useState(1);
   const [verdict, setVerdict] = useState(null);
   const [results, setResults] = useState([]);
 
   const { unit, q } = queue[index];
   const district = districtForModule(unit.moduleId);
+  // Which of the two question shapes this is. The field rather than the module
+  // id, because what the screen needs to know is how the item is answered, and
+  // "it has a line-up" is exactly that — see question.js.
+  const choice = q.options.length > 0;
+  // Each judge keeps its own attempt count on purpose (feedback.js: hoisting
+  // the 2 would couple two drills that have no reason to keep the same number
+  // forever), so the counter reads the one that is judging this item.
+  const attempts = choice ? ARTICLE_ATTEMPTS : ATTEMPTS;
   // A wrong first attempt is not the end of the item: the learner keeps the
-  // located feedback and the input. Only a right answer, a spent second
-  // attempt or "Show me" closes it.
+  // located feedback and the input, or the buttons she has not spent. Only a
+  // right answer, a spent last attempt or "Show me" closes it. Both judges
+  // put the same two fields on a verdict, so this reads either.
   const settled = verdict !== null && (verdict.correct || verdict.last);
+
+  // Focus follows the item. Everything else on this screen keeps its element
+  // across a state change — the typed shape's one button is mounted whatever
+  // the item is doing, and a spent option button is aria-disabled rather than
+  // removed — but advancing replaces the whole item, and the article shape's
+  // "Next" is the control being pressed *and* the one that unmounts. Without
+  // this, that press drops focus to the body and a keyboard learner starts the
+  // next item nowhere.
+  //
+  // The target is whatever the new item is answered with: the box for a typed
+  // item, the first of the three for an article one. It runs on mount too,
+  // which is right — the button that opened the round has just unmounted, so
+  // focus was on the body there as well.
+  useEffect(() => {
+    (inputRef.current ?? firstOptionRef.current)?.focus();
+  }, [index]);
 
   // The single grading point, and the reason the item can't be graded twice:
   // it is only ever called from a branch that also settles the item, and a
@@ -304,14 +362,15 @@ function Round({ queue, onGrade, onDone, onBack }) {
     }
     setIndex(index + 1);
     setInput("");
+    setTried([]);
     setAttempt(1);
     setVerdict(null);
   };
 
-  // One button, whatever state the item is in — swapping a "Check" button for
-  // a separate "Next" one would unmount the element the learner just pressed
-  // and drop focus to the body, which is a keyboard user losing their place
-  // every single answer.
+  // One button, whatever state a *typed* item is in — swapping a "Check"
+  // button for a separate "Next" one would unmount the element the learner
+  // just pressed and drop focus to the body, which is a keyboard user losing
+  // their place every single answer.
   const submit = (event) => {
     event.preventDefault();
     if (settled) {
@@ -332,6 +391,25 @@ function Round({ queue, onGrade, onDone, onBack }) {
       // fix the word that is still sitting in it.
       inputRef.current.focus();
     }
+  };
+
+  // The article shape's answer. No form and no "Check": pressing a form *is*
+  // the answer, so there is nothing left to submit. The promote rule is the
+  // typed one to the character, and deliberately — with three buttons a
+  // second-attempt win is worth even less than it is on a typed answer,
+  // because the app has just ruled one of the three out.
+  //
+  // A spent option is not re-judged. It keeps its place in the tab order
+  // (aria-disabled, not `disabled`, so it does not vanish out from under a
+  // keyboard user mid-item), which means the press still arrives here.
+  const choose = (option) => {
+    if (settled || tried.includes(option)) return;
+
+    const next = judgeArticle(unit.item, option, attempt);
+    setVerdict(next);
+    setTried([...tried, option]);
+    if (next.correct || next.last) settle(next.correct && attempt === 1);
+    else setAttempt(attempt + 1);
   };
 
   const showMe = () => {
@@ -356,14 +434,14 @@ function Round({ queue, onGrade, onDone, onBack }) {
       {/* Mounted for the life of the screen and empty until there is a
           verdict — see LiveStatus.jsx. A region that appears with its text
           already inside may never be announced at all. */}
-      <LiveStatus>{verdict ? announce(verdict) : ""}</LiveStatus>
+      <LiveStatus>{verdict ? (choice ? announceArticle(verdict) : announce(verdict)) : ""}</LiveStatus>
 
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
         <Eyebrow style={{ color: TOKENS.inkSoft }}>
           {index + 1} / {queue.length}
         </Eyebrow>
         <Eyebrow style={{ color: TOKENS.inkSoft }}>
-          Attempt {attempt} of {ATTEMPTS}
+          Attempt {attempt} of {attempts}
         </Eyebrow>
       </div>
 
@@ -409,6 +487,52 @@ function Round({ queue, onGrade, onDone, onBack }) {
         )}
       </div>
 
+      {/* ── The article shape ─────────────────────────────────────────────
+          Three buttons instead of a box, the strand's own judge, and the
+          strand's own cards underneath. The rule and the Polish anchor come
+          with the item rather than staying behind on the bench, for the same
+          reason La Riserva's Polish gloss travels: PLAN.md's "Polish is a
+          first-class layer" is not a property of one screen.
+
+          No "Show me". It is the typed shape's escape hatch from a blank
+          page, and there is no blank page here — three buttons are always
+          pressable, and pressing two of them reveals the answer anyway. */}
+      {choice ? (
+        <>
+          <p style={{ fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 2px" }}>
+            Fill the gap. One of the three is right.
+          </p>
+
+          <Options
+            options={q.options}
+            answer={q.answer}
+            tried={tried}
+            settled={settled}
+            onChoose={choose}
+            firstRef={firstOptionRef}
+          />
+
+          {verdict && <ArticleVerdict id={verdictId} verdict={verdict} />}
+          {verdict?.rule && (
+            <div style={{ marginTop: 14 }}>
+              <Rule rule={verdict.rule} />
+            </div>
+          )}
+          {verdict?.anchor && <PolishAnchor anchor={verdict.anchor} />}
+
+          {/* Mounted only once the item settles, because until then there is
+              nothing to carry forward — and the focus effect above is what
+              catches the press that unmounts it. It describes itself with the
+              verdict card, so a keyboard learner who lands here is told where
+              the answer went rather than only that it went, which is the same
+              thing the typed shape does with its input. */}
+          {settled && (
+            <PrimaryButton onClick={advance} aria-describedby={verdictId} style={{ marginTop: 14 }}>
+              {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />
+            </PrimaryButton>
+          )}
+        </>
+      ) : (
       <form onSubmit={submit}>
         <label htmlFor={inputId} style={{ display: "block", fontFamily: SANS, fontSize: 13, color: TOKENS.inkSoft, marginBottom: 6 }}>
           Write it in Italian
@@ -453,8 +577,9 @@ function Round({ queue, onGrade, onDone, onBack }) {
           {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />
         </PrimaryButton>
       </form>
+      )}
 
-      {!settled && <SecondaryButton onClick={showMe}>Show me</SecondaryButton>}
+      {!choice && !settled && <SecondaryButton onClick={showMe}>Show me</SecondaryButton>}
     </Screen>
   );
 }

@@ -76,12 +76,19 @@ describe("MODULE_STATS", () => {
   });
 
   // Conversations have no wrong answer and a story is read rather than
-  // drilled, so neither belongs in a review queue. The three that do are the
+  // drilled, so neither belongs in a review queue. The four that do are the
   // ones whose unit is a lexical item or a sentence slot: words, grammar
-  // drills, and — since La Riserva gained a typed drill — base-vocabulary
-  // entries. Each `scheduled: false` in stats.js states its own reason.
-  it("schedules vocabulary, grammar and the base vocabulary only", () => {
-    expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual(["vocab", "grammar", "riserva"]);
+  // drills, base-vocabulary entries — since La Riserva gained a typed drill —
+  // and article items, since La Piazza gained a second question shape that
+  // can ask a three-way choice. Each `scheduled: false` in stats.js states
+  // its own reason.
+  it("schedules vocabulary, grammar, the base vocabulary and the articles only", () => {
+    expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual([
+      "vocab",
+      "grammar",
+      "riserva",
+      "articoli",
+    ]);
   });
 
   // La Riserva declares fasce where the other modules declare CEFR levels,

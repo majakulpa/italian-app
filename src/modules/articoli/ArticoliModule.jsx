@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Type } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { STRANDS, RULES, filled } from "../../data/articoli.js";
-import { loadProgress, saveProgress, markWord, articoliKey, strandKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, articoliKey, strandKnownCount } from "../../shared/storage.js";
+import { reviewItem } from "../../shared/srs.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import { judge, announce, ATTEMPTS } from "./feedback.js";
 import { Options, ArticleVerdict, Rule, PolishAnchor } from "./cards.jsx";
@@ -422,10 +423,14 @@ export default function ArticoliModule({ onExit, exitLabel = "All modules" }) {
     saveProgress(progress);
   }, [progress]);
 
-  // markWord rather than reviewItem: Gli Articoli is deliberately outside the
-  // Leitner queue. The reasoning is written down beside `scheduled: false` in
-  // shared/stats.js, because that flag is where anyone would look for it.
-  const onGrade = (key, status) => setProgress((p) => markWord(p, key, status));
+  // Goes through reviewItem rather than markWord, the same as the vocabulary
+  // deck and the grammar drill, so practising a strand here also moves the
+  // item's Leitner box and sets a date it comes back on. Without it every
+  // article the learner has ever answered would have a `words` entry and no
+  // schedule entry, and srs.js reads a missing entry as due *now* — so the
+  // whole bench would pile into La Piazza the moment it was practised and
+  // stay there, which is the opposite of scheduling it.
+  const onGrade = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
 
   if (session === null) {
     return (

@@ -80,6 +80,42 @@ function sameWord(unit) {
   return unit.item.it ? `lemma:${lemmaKey(unit.item.it)}` : unit.key;
 }
 
+// The keys one graded answer settles: the one that was asked, plus every
+// *met* unit the queue would have collapsed onto it.
+//
+// This is the other half of dueUnits() below, and the half that was missing.
+// The collapse drops a word's second key from the round; without a matching
+// write the dropped key is never graded, so a learner could answer all twenty
+// items of a round correctly and find twenty still waiting — the same words,
+// from the other bench. Measured before this existed: 20 lemmas met on both
+// benches, 40 keys, dueCount 20 before the round and 20 after it.
+//
+// Only a met unit travels, because only a met unit can be collapsed —
+// dueUnits() requires progress.words[key] to consider a unit at all. Marking
+// an unmet sibling would complete a deck word the learner has never opened.
+//
+// Each key advances off its *own* box rather than being copied the survivor's.
+// A word can be solid on one bench and new on the other, and copying would
+// demote the solid one; advancing separately means the two agree on direction
+// and the earlier due date wins the next collapse, so the word comes back at
+// the weaker key's pace. That is the safe direction to be wrong in.
+//
+// The alternative was one canonical key — a Riserva unit for a lemma the deck
+// already covers simply not being a unit. It is a cleaner model and it is a
+// bigger change than this one: it moves where those twenty words are counted,
+// so stats.js's per-module fractions and every coverage figure drawn off them
+// shift with it. Writing through keeps each bench counting what it teaches,
+// and makes the scheduler agree with the fold coverage.js already performs
+// with strongest() rather than inventing a second answer to the same question.
+function collapsedKeys(progress, key) {
+  const units = scheduledUnits();
+  const asked = units.find((unit) => unit.key === key);
+  if (!asked) return [key];
+
+  const word = sameWord(asked);
+  return units.filter((u) => u.key === key || (sameWord(u) === word && progress.words[u.key])).map((u) => u.key);
+}
+
 // Every unit due today, most overdue first, one per word.
 //
 // The sort runs before the collapse because it decides which of two units for
@@ -126,10 +162,17 @@ export function dueCount(progress, today = todayISO()) {
 // The single write point for a graded answer: moves the item's box and its
 // known/learning status together. Every vocab and grammar session goes
 // through this, so ordinary study feeds the scheduler as a side effect.
+//
+// "The item" is every key that one answer settled — see collapsedKeys(). A
+// word with a single key is the overwhelmingly common case and gets exactly
+// the write it always did.
 export function reviewItem(progress, key, correct, today = todayISO()) {
-  const withStatus = markWord(progress, key, correct ? "known" : "learning");
-  return {
-    ...withStatus,
-    schedule: { ...withStatus.schedule, [key]: nextSchedule(progress.schedule[key], correct, today) },
-  };
+  const status = correct ? "known" : "learning";
+  return collapsedKeys(progress, key).reduce((acc, settled) => {
+    const withStatus = markWord(acc, settled, status);
+    return {
+      ...withStatus,
+      schedule: { ...withStatus.schedule, [settled]: nextSchedule(acc.schedule[settled], correct, today) },
+    };
+  }, progress);
 }

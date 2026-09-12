@@ -43,7 +43,7 @@ layer](#polish-is-a-first-class-layer).
 |---|---|---|
 | 1 | **The lexicon** — De Mauro `fondamentale`, four word states, frequency-weighted coverage, streak deleted | ✅ merged ([#4](https://github.com/majakulpa/italian-app/pull/4)) |
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
-| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid, the articles strand | ✅ complete |
+| 3 | **L'Officina** — mapping cards, word detail, La Riserva grid + drill, the articles strand | ✅ complete |
 | 4 | **La Piazza** — the review district: typed production, located feedback, a landing screen | ✅ complete |
 | 5 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
 | 6 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
@@ -70,15 +70,22 @@ layer](#polish-is-a-first-class-layer).
   the rule it instances and a Polish anchor of its own.
 - `src/data/falsiAmici.js` — **14 false friends** from two sources: the traps each map
   already declares, reused rather than copied, and the pairs no suffix rule generates.
-- `src/modules/riserva/` — La Riserva (design 10), word detail (design 11), and
-  `traces.js`, which answers "dove l'hai incontrata" from the deck and the story glosses.
+- `src/modules/riserva/` — La Riserva (design 10), word detail (design 11),
+  `traces.js`, which answers "dove l'hai incontrata" from the deck and the story
+  glosses, and the fascia drill (`drill.js`, `DrillRound.jsx`) — typed
+  production over the base vocabulary, graded through `reviewItem` under
+  `riserva:` keys. **This is what raised the coverage ceiling from 1.6% to
+  66.1%**; see open question 2.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on. Three modules judge
   against it now: `modules/mappe/feedback.js`, `modules/falsiAmici/feedback.js`
-  and `modules/review/feedback.js`.
+  and `shared/locatedFeedback.js`, which La Piazza and La Riserva share —
+  it moved out of `modules/review/` the day it got a second caller.
 - `src/modules/review/` — La Piazza (design 18): the landing, the typed round,
-  `feedback.js` (nine verdict kinds), `question.js` (a due unit turned into
-  something to produce) and `week.js` (the one figure the landing states).
+  `question.js` (a due unit turned into something to produce) and `week.js`
+  (the one figure the landing states). The nine verdict kinds are in
+  `shared/locatedFeedback.js` and the card that draws them in
+  `shared/Verdict.jsx`, because La Riserva's drill produces the same verdicts.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
   Everything in L'Officina — the hub, Mappatura delle parole, La Riserva, word detail,
   Gli Articoli and Falsi Amici — and La Piazza are in the new one, per the rule in
@@ -168,10 +175,22 @@ correctly *while in* box 5, which the scheduler can't distinguish. The wording i
 fixed. Whether 7 days is the right bar for "solid" is not — coverage and the
 Cinema gate both lean on it. A real 21-day bar needs a sixth box in `srs.js`.
 
-**2. The lexicon is 300 of 2,000.** Realistic coverage ceiling today is ~1.6%.
-Hand-authoring 1,700 more accurate entries with Polish glosses is the real
-bottleneck in this whole plan, and it is a content problem, not an engineering
-one. Decide whether to grind through it or source De Mauro's list directly.
+**2. The lexicon is 300 of 2,000 — and that is now the only thing capping
+coverage.** This entry used to say the lexicon was the real bottleneck while
+the arithmetic said otherwise: the ceiling was ~1.6%, and it was 1.6% because
+the *bridge* was one module wide, not because the list was short. Seeding
+1,700 entries would have moved the headline by nothing at all.
+
+La Riserva's drill widened the bridge — every entry is a schedulable unit
+under a `riserva:` key — so the ceiling is now exactly the worth of the ranks
+that have a word behind them: **66.1%, and 300 / 2,000 solid**, pinned in
+`coverage.test.js`. The mechanism reaches everything the file holds.
+
+So the sentence is true for the first time: hand-authoring 1,700 more accurate
+entries with Polish glosses is the real bottleneck in this whole plan, it is a
+content problem rather than an engineering one, and every entry added now
+raises the headline. Decide whether to grind through it or source De Mauro's
+list directly.
 
 **3. There is a visual seam.** The city uses the new design system; the four
 module interiors still use the old postcard styling. It closes as each district
@@ -197,8 +216,14 @@ Four workbenches, per screen 07:
   chunk 4. What holds now is the narrower argument beside its
   `scheduled: false` flag in `src/shared/stats.js`: a Leitner box schedules a
   lexical item, and a suffix rule is not one.
-- **La Riserva** — the 2,000-word grid in frequency order, coloured by state.
-  Unblocked: it shows counts and per-band worth, no percentage.
+- **La Riserva** — ✅ built. The 2,000-word grid in frequency order, coloured
+  by state; counts and per-band worth, no percentage. A *fascia* is also the
+  way in to a typed production round over the entries it holds — gloss in
+  English and Polish, you write the Italian, graded through `reviewItem` under
+  `riserva:` keys — which is what made the base vocabulary studiable at all and
+  moved the ceiling from 1.6% to 66.1%. It is the only bench in the Leitner
+  queue, because a base-vocabulary entry is a lexical item and that is what a
+  Leitner box schedules.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
   the errors survive into advanced proficiency, so this never stops appearing.
   Sequenced determinativo → indeterminativo → preposizioni articolate, which
@@ -268,7 +293,8 @@ with the ten *fasce* underneath saying what each is worth. No percentage on it,
 per the settled decision. It draws a rank with no word behind it differently
 from one the learner has not met — the first is a fact about the file, the
 second about her, and the lexicon being 300 of 2,000 is visible rather than
-implied.
+implied. The drill keeps that distinction rather than losing it: a band with
+no word written down offers no round, and a band already met says so.
 
 Word detail is the last screen in this chunk, and its open question is now the
 way in rather than the quantity: the grid is deliberately not two thousand
@@ -277,8 +303,9 @@ buttons, so pressing a cell is not the answer.
 Retrieval rule for every drill here: **produce first, reveal last.** A wrong
 answer gets located, not solved — flag it, say where, allow a second attempt,
 then reveal. The standard wrong→red X→answer pattern is the weakest feedback
-shape available. Mappatura delle parole implements this in `modules/mappe/feedback.js`; reuse
-it rather than re-deciding it.
+shape available. Mappatura delle parole implements this in `modules/mappe/feedback.js`;
+where the item is "a gloss, produce the Italian", `shared/locatedFeedback.js`
+already does it and should be reused rather than forked again.
 
 ---
 
@@ -300,9 +327,11 @@ What it is:
   the 120 words are inflected across their own example and cannot be gapped
   without lemmatising; those get the gloss alone, and a data test pins which
   twelve so a new one cannot fail quietly.
-- **Located, not solved.** `modules/review/feedback.js`, the third sibling of
-  the two feedback files above — same shape, no shared judging logic, all of
-  it built on the four domain-free exports of `shared/typedAnswer.js`.
+- **Located, not solved.** `shared/locatedFeedback.js` — which lived in
+  `modules/review/` until La Riserva's drill turned out to need the same
+  judge to the character. Same shape as the two feedback files above, no
+  judging logic in common with them, all of it built on the four domain-free
+  exports of `shared/typedAnswer.js`.
 - **Only right-first-time promotes.** `srs.js` is untouched and grading stays
   binary. A correct second attempt came after the app said where to look,
   which is scaffolding, and "show me" is wrong by definition. An accent left

@@ -15,6 +15,14 @@
 //            — "well / good" could be `bene` or `buono` — so the word's own
 //            example sentence comes with it, with the word itself gapped out
 //            as disambiguating context.
+//   riserva  a base-vocabulary entry: an English gloss and a Polish one, and
+//            no example sentence anywhere in the file. Its question is built
+//            by modules/riserva/drill.js rather than here, because that is
+//            where the argument about the two glosses lives and a second copy
+//            of it would drift. The import direction is the right way round:
+//            La Piazza has no content of its own, it replays other districts'.
+
+import { lexiconQuestion } from "../riserva/drill.js";
 
 const GAP = "___";
 
@@ -54,20 +62,41 @@ export function clozeExample(word) {
 // but typing one of them is the most locatable error in the app, so the
 // judge is given them.
 //
+// `neighbours` is the sibling field: other whole *items* the learner might
+// have been reaching for instead. Empty on both shapes built here and filled
+// only by La Riserva, and that is a fact about the content rather than an
+// omission. A base-vocabulary entry sits in a closed list of 300 words the
+// learner is working through, so "that is another word from this list" is a
+// true and useful thing to say; a deck word's siblings are its category, and
+// a grammar drill's are sentences, and neither would make that sentence true.
+//
+// `strictAccents` is the sibling of that field and false here for the same
+// reason it is empty here. It says the answer is one of two entries a *list*
+// tells apart by an accent alone, so a missing accent would mark the other one
+// right; with no list there is no other one, and a deck word judged against
+// itself can only ever be a missing accent. La Riserva derives it (see
+// drill.js); the judge needs it on every shape, so it is stated rather than
+// left undefined.
+//
 // `context` is the gap closed: the sentence in full, once the item is
 // settled, so the answer arrives in the place it came from rather than as a
 // loose word. `recap` is the one-line form the end-of-round list wants, where
 // the word itself is the thing being listed.
 export function toQuestion(unit) {
+  if (unit.moduleId === "riserva") return lexiconQuestion(unit.item);
+
   if (unit.moduleId === "vocab") {
     return {
       kind: "vocab",
       gloss: unit.item.en,
+      glossPl: null,
       cloze: clozeExample(unit.item),
       prompt: null,
       hint: null,
       answer: unit.item.it,
       alternatives: [],
+      neighbours: [],
+      strictAccents: false,
       context: { it: unit.item.ex, en: unit.item.exEn },
       recap: { primary: unit.item.it, secondary: unit.item.en },
     };
@@ -77,11 +106,14 @@ export function toQuestion(unit) {
   return {
     kind: "grammar",
     gloss: null,
+    glossPl: null,
     cloze: null,
     prompt: unit.item.prompt,
     hint: unit.item.hint,
     answer: unit.item.answer,
     alternatives: unit.item.options.filter((option) => option !== unit.item.answer),
+    neighbours: [],
+    strictAccents: false,
     context: { it: filled, en: unit.item.en },
     recap: { primary: filled, secondary: unit.item.en },
   };

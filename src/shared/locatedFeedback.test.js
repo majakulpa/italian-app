@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./feedback.js";
-import { foldTyped } from "../../shared/typedAnswer.js";
-import { LEVELS } from "../../data/vocab.js";
-import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./locatedFeedback.js";
+import { foldTyped } from "./typedAnswer.js";
+import { LEVELS } from "../data/vocab.js";
+import { GRAMMAR_LEVELS } from "../data/grammar.js";
 
-// A question, as question.js builds one. Only the two fields the judge reads.
-const q = (answer, alternatives = []) => ({ answer, alternatives });
+// A question, as question.js builds one. Only the three fields the judge reads.
+const q = (answer, alternatives = [], neighbours = []) => ({ answer, alternatives, neighbours });
 
 const WORD = q("sorella");
 const DRILL = q("parlo", ["parli", "parla", "parlano"]);
@@ -63,6 +63,72 @@ describe("judging a typed review answer", () => {
     const verdict = judge(DRILL, "parli", FIRST);
     expect(verdict).toMatchObject({ correct: false, kind: "distractor", answer: null, shared: null });
     expect(LOCATED.distractor).not.toContain("parlo");
+  });
+
+  // The sibling verdict, and the reason it is a kind of its own rather than
+  // more `alternatives`: a distractor is another *form of this item*, and a
+  // neighbour is another *item*. Saying "one of the other forms this item was
+  // written with" about a word that was never written with it would be false.
+  it("names a typed neighbour as another item from the same list", () => {
+    const strada = q("strada", [], ["via", "il ponte"]);
+
+    expect(judge(strada, "via", FIRST)).toMatchObject({ kind: "neighbour", correct: false, answer: null });
+    expect(judge(strada, "via", LAST).answer).toBe("strada");
+    expect(announce(judge(strada, "via", FIRST))).toContain(LOCATED.neighbour);
+    expect(LOCATED.neighbour).not.toContain("strada");
+  });
+
+  // The ordering is the argument. A neighbour that happens to share a front
+  // with the answer is still a neighbour: `parola` against `parlare` starts
+  // `par` and is not a misspelling of it, so "it starts right and then goes
+  // somewhere else" would be confident and wrong about the kind of error.
+  it("prefers the neighbour verdict to the spelling one it would outrank", () => {
+    expect(judge(q("parlare", [], ["parola"]), "parola", FIRST).kind).toBe("neighbour");
+    // And an authored form of the item itself still beats both.
+    expect(judge(q("parlo", ["parli"], ["parli"]), "parli", FIRST).kind).toBe("distractor");
+  });
+
+  // And the guard on that preference, which is the difference between locating
+  // an error and inventing one. A one-character slip that happens to land on
+  // another entry is a slip: `ragazzo` for `ragazza` is the commonest wrong
+  // answer the app can receive, and "it belongs to a different entry, read the
+  // gloss again" is false about it — she had the word and missed the gender.
+  it("keeps a one-edit slip a spelling verdict even when it lands on a neighbour", () => {
+    expect(judge(q("ragazza", [], ["ragazzo"]), "ragazzo", FIRST)).toMatchObject({
+      kind: "ending",
+      shared: "ragazz",
+    });
+    expect(judge(q("alto", [], ["altro"]), "altro", FIRST).kind).toBe("ending");
+    expect(judge(q("mondo", [], ["modo"]), "modo", FIRST).kind).toBe("partial");
+  });
+
+  // The guard is one-sided: a neighbour verdict may always replace `other`,
+  // however close the two words are. `other` already claims "a different word
+  // rather than a near miss", and the neighbour verdict says the same thing
+  // with a fact behind it — that the word she wrote is one the list holds. It
+  // is strictly more true, so there is nothing to protect. `di` for `da` is
+  // the pair La Riserva's drill was built around and it is one edit apart.
+  it("still names a one-edit neighbour that the spelling analysis cannot place", () => {
+    expect(judge(q("da", [], ["di"]), "di", FIRST).kind).toBe("neighbour");
+    expect(judge(q("da", [], []), "di", FIRST).kind).toBe("other");
+  });
+
+  // Accents are forgiven everywhere — `citta` above — except where forgiving
+  // one marks a *different word* right. Two entries that fold to the same
+  // string are told apart by the accent and nothing else, so on those the
+  // accent is the word. Case and whitespace stay forgiven: they never
+  // distinguish two entries.
+  it("holds the accent exact where the accent is the only thing telling two entries apart", () => {
+    const si = { ...q("si", [], ["sì"]), strictAccents: true };
+
+    expect(judge(si, "sì", FIRST)).toMatchObject({ kind: "neighbour", correct: false, answer: null });
+    expect(judge(si, "sì", LAST).answer).toBe("si");
+    expect(judge(si, "si", FIRST)).toMatchObject({ correct: true, kind: "exact" });
+    expect(judge(si, "  SI ", FIRST)).toMatchObject({ correct: true, kind: "exact" });
+  });
+
+  it("leaves a word that is in neither list where it was", () => {
+    expect(judge(q("strada", [], ["via"]), "xilofono", FIRST).kind).toBe("other");
   });
 
   it("holds the answer back until the attempts are spent", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FONDAMENTALE, FONDAMENTALE_TARGET } from "./fondamentale.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET, glossSenses } from "./fondamentale.js";
 
 const ARTICLES = ["il", "lo", "la", "i", "gli", "le"];
 
@@ -53,9 +53,92 @@ describe("FONDAMENTALE", () => {
     expect(new Set(seen).size).toBe(seen.length);
   });
 
+  // La Riserva's drill asks by the glosses and takes the Italian back, so a
+  // gloss that names two entries would be a prompt with two right answers and
+  // one of them marked wrong. modules/riserva/drill.js leans on this holding.
+  //
+  // It is the English gloss that has to be unique, not the pair: a learner
+  // reads the English first, and "two entries share an English gloss but
+  // differ in Polish" is still a prompt she can answer either way.
+  it("gives every entry an English gloss no other entry has", () => {
+    const glosses = FONDAMENTALE.map((w) => w.en.toLowerCase());
+    const seen = new Map();
+    for (const [i, gloss] of glosses.entries()) {
+      seen.set(gloss, [...(seen.get(gloss) ?? []), FONDAMENTALE[i].it]);
+    }
+    expect([...seen.values()].filter((words) => words.length > 1)).toEqual([]);
+  });
+
+  // The other half of that, and the half the drill screen got wrong: the
+  // Polish gloss is *not* a key, and nothing in this file makes it one.
+  //
+  // Twenty-four Polish senses in the first 300 entries are carried by two
+  // entries or more — `mówić` by dire and parlare, `uczyć się` by studiare and
+  // imparare, `głowa` by testa and capo — and three entries share their whole
+  // Polish set with another: `non`/`no`, `a`/`in`, and `strada`/`via`, which
+  // sit at adjacent ranks and so land in the same drill round.
+  //
+  // This is asserted rather than merely known because a screen was telling the
+  // learner the opposite. DrillRound's note on a split entry claimed the Polish
+  // senses "all point at the same Italian one"; on these they point at two.
+  // The division of labour the drill actually has is the one above — English
+  // disambiguates, Polish corroborates — and it only holds while this is true.
+  //
+  // If a lexicographer ever does make the Polish unique, this goes red, and
+  // that is the moment the screen may say something stronger.
+  it("does not make the Polish gloss a key, and the drill must not treat it as one", () => {
+    const bySense = new Map();
+    for (const word of FONDAMENTALE) {
+      for (const sense of word.pl.split(" · ").map((s) => s.trim())) {
+        bySense.set(sense, [...(bySense.get(sense) ?? []), word.it]);
+      }
+    }
+    const shared = [...bySense].filter(([, words]) => words.length > 1);
+
+    expect(shared.length).toBeGreaterThan(0);
+    expect(Object.fromEntries(shared)).toMatchObject({
+      "mówić": ["dire", "parlare"],
+      "droga": ["strada", "via"],
+      "ulica": ["strada", "via"],
+    });
+
+    // And an entry whose whole Polish set is another entry's, so the Polish
+    // alone cannot pick between them at all.
+    const strada = FONDAMENTALE.find((w) => w.it === "strada");
+    const via = FONDAMENTALE.find((w) => w.it === "via");
+    const set = (word) => word.pl.split(" · ").map((s) => s.trim()).sort().join("|");
+    expect(set(strada)).toBe(set(via));
+    expect(strada.en).not.toBe(via.en);
+  });
+
   it("stores every entry lower-case and untrimmed of nothing", () => {
     for (const word of FONDAMENTALE) {
       expect(word.it, `rank ${word.rank}`).toBe(word.it.trim().toLowerCase());
+    }
+  });
+});
+
+// " · " is this file's own separator, so the function that splits on it lives
+// here rather than in either of the two screens that read a gloss. It was
+// exported from WordDetail.jsx, which pulled a React component module into
+// drill.js and from there into La Piazza's question.js import path, to reach
+// one string split.
+describe("glossSenses", () => {
+  it("splits on the separator the lexicon actually uses", () => {
+    expect(glossSenses("pytać · prosić o")).toEqual(["pytać", "prosić o"]);
+    expect(glossSenses("być")).toEqual(["być"]);
+  });
+
+  // Every gloss in the file goes through it, so a stray separator — a bare
+  // "·" with no spaces, a trailing one — would silently produce an empty
+  // sense and a screen that renders " · " with nothing after it.
+  it("yields no empty sense anywhere in the list", () => {
+    for (const word of FONDAMENTALE) {
+      for (const gloss of [word.en, word.pl]) {
+        const parts = glossSenses(gloss);
+        expect(parts.length, `${word.it}: ${gloss}`).toBeGreaterThan(0);
+        for (const part of parts) expect(part, `${word.it}: ${gloss}`).not.toBe("");
+      }
     }
   });
 });

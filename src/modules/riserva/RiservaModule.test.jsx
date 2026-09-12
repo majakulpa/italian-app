@@ -4,11 +4,13 @@ import userEvent from "@testing-library/user-event";
 import RiservaModule from "./RiservaModule.jsx";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
-import { saveProgress } from "../../shared/storage.js";
+import { saveProgress, riservaKey } from "../../shared/storage.js";
 
-// The bridge from the vocabulary deck is the only thing that puts a state on a
-// lexicon rank (coverage.js says so at length), so a test that wants a word
-// "known" has to write the key the vocab module would have written.
+// Two things put a state on a lexicon rank now — the vocabulary deck and the
+// fascia drill — and these tests use the deck, which is the harder of the two
+// to get right: it bridges by matching Italian strings through lemmaKey. A
+// test that wants a word "known" that way has to write the key the vocab
+// module would have written.
 const vocab = MODULE_STATS.find((m) => m.id === "vocab");
 const lexiconLemmas = new Set(FONDAMENTALE.map((e) => e.it));
 
@@ -141,6 +143,37 @@ describe("La Riserva", () => {
 
     expect(worth("Fascia 1 ")).toBeGreaterThan(worth("Fascia 10 ") * 5);
     expect(container).toBeTruthy();
+  });
+
+  // The cross-tab race: the band list was drawn from one read of storage and
+  // the queue is built from another, so another tab finishing the band between
+  // the two leaves the screen offering a round that has nothing in it. The
+  // queue must not open — and the press must not vanish in silence, which is
+  // what it did. The button that was pressed is removed, and without this
+  // focus lands on <body> with nothing said about why.
+  it("says so and keeps the learner's place when another tab has drained the band", async () => {
+    const user = userEvent.setup();
+    render(<RiservaModule onExit={() => {}} />);
+
+    const band = screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ });
+    await user.click(band);
+    const drill = screen.getByRole("button", { name: /Drill the next/ });
+
+    // The other tab, finishing every word band 1 holds.
+    saveProgress({
+      version: 2,
+      words: Object.fromEntries(
+        FONDAMENTALE.filter((e) => e.rank <= 200).map((e) => [riservaKey(e), "known"]),
+      ),
+      schedule: {},
+    });
+
+    await user.click(drill);
+
+    expect(screen.queryByRole("button", { name: /Drill the next/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/You have met every word written down in this band/)).toBeInTheDocument();
+    expect(screen.getByRole("status").textContent).toContain("no round left to open");
+    expect(document.activeElement).toBe(band);
   });
 
   it("goes back the way it was opened", async () => {

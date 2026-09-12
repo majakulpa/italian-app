@@ -44,6 +44,37 @@
 
 export const FONDAMENTALE_TARGET = 2000;
 
+// ── The fasce ────────────────────────────────────────────────────────────
+// La Riserva draws the reservoir in bands of 200 — "Fascia 3 · posti
+// 401–600" — and PLAN.md settles that a *fascia* is the door: the grid is
+// deliberately not two thousand buttons, so a band is what opens.
+//
+// This lives here rather than in shared/coverage.js, where BAND_SIZE used to
+// sit, because it is now two things at once. It was a way of slicing the
+// coverage arithmetic; it is also the container the base vocabulary is
+// *studied* in, which is what shared/stats.js enumerates a Riserva unit from.
+// stats.js cannot take it from coverage.js — coverage.js imports MODULE_STATS
+// back out of stats.js, and the cycle would leave one of the two reading an
+// uninitialised binding — so the shape of the reservoir sits with the
+// reservoir.
+//
+// `label` is English on purpose. It is what La Piazza prints above a due item,
+// in a line of English prose that marks no spans, so an Italian "Fascia 3"
+// there would be unmarked Italian (WCAG 3.1.2). It states the same fact La
+// Riserva's own Italian heading states, and that heading is built on the
+// screen where it can carry `lang="it"` — which a11y.test.jsx now asserts
+// against the DOM ("marks the fascia heading and the drill's posto in La
+// Riserva"), because for one commit it did not: the heading's <Eyebrow>
+// swallowed the prop, and this paragraph was resting on a tag that had never
+// been rendered.
+export const BAND_SIZE = 200;
+
+export const FASCE = Array.from({ length: Math.ceil(FONDAMENTALE_TARGET / BAND_SIZE) }, (_, i) => {
+  const from = i * BAND_SIZE + 1;
+  const to = Math.min((i + 1) * BAND_SIZE, FONDAMENTALE_TARGET);
+  return { id: `fascia-${i + 1}`, ordinal: i + 1, from, to, label: `Ranks ${from}–${to}` };
+});
+
 export const FONDAMENTALE = [
   { rank: 1, it: "essere", en: "to be", pl: "być" },
   { rank: 2, it: "di", en: "of, from", pl: "z · od" },
@@ -351,3 +382,20 @@ export const FONDAMENTALE = [
   { rank: 299, it: "la gente", en: "people", pl: "ludzie" },
   { rank: 300, it: "libro", en: "book", pl: "książka" },
 ];
+
+// The entries actually written down inside one band, in rank order. Usually
+// none: the list is 300 of 2,000, and a rank with no word behind it is a fact
+// about the file rather than about the learner, so a band of empty ranks has
+// nothing to study and must not present as one.
+export function fasciaWords(fascia) {
+  return FONDAMENTALE.filter((entry) => entry.rank >= fascia.from && entry.rank <= fascia.to);
+}
+
+// A gloss split into its senses. " · " is this file's own separator, which is
+// why the function lives beside the data rather than in either of the two
+// screens that read it — it was exported from WordDetail.jsx, and pulling a
+// React component module into drill.js (and so into La Piazza's question.js
+// import path) to reach one string split was the wrong direction entirely.
+export function glossSenses(gloss) {
+  return gloss.split(" · ").map((sense) => sense.trim());
+}

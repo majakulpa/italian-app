@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { coverage, coverageBands, lexiconStates, rankWeight, LEXICON_COVERAGE, BAND_SIZE } from "./coverage.js";
-import { FONDAMENTALE, FONDAMENTALE_TARGET } from "../data/fondamentale.js";
+import { coverage, coverageBands, lexiconStates, lexiconUnits, rankWeight, LEXICON_COVERAGE } from "./coverage.js";
+import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE } from "../data/fondamentale.js";
 import { LEVELS } from "../data/vocab.js";
 import { wordKey, markWord } from "./storage.js";
 import { reviewItem } from "./srs.js";
@@ -210,20 +210,61 @@ describe("coverageBands", () => {
   });
 });
 
+// The bridge feeds three readers and they do not want the same subset. This
+// one is the deck alone, because its caller answers "where did you meet this
+// word" — a place, in a category, inside an example sentence — and a Riserva
+// unit is the lexicon asking about itself.
+describe("lexiconUnits", () => {
+  it("reports the deck units behind a rank and never the Riserva's own", () => {
+    const rank = rankOf("bene");
+    const units = lexiconUnits(rank);
+
+    expect(units.length).toBeGreaterThan(0);
+    expect(units.every((u) => u.moduleId === "vocab")).toBe(true);
+    expect(units.every((u) => u.item.ex)).toBe(true);
+  });
+
+  it("reports nothing for a rank with no word written down", () => {
+    expect(FONDAMENTALE.length).toBeLessThan(FONDAMENTALE_TARGET);
+    expect(lexiconUnits(FONDAMENTALE.length + 1)).toEqual([]);
+  });
+
+  it("reports nothing for a lexicon word the deck never teaches", () => {
+    expect(lexiconUnits(rankOf("il problema"))).toEqual([]);
+  });
+});
+
 // ── The ceiling ─────────────────────────────────────────────────────────
 //
-// The headline is bounded by the content that ships, and the bound is low.
-// Coverage learns that a word is known from one place — the vocabulary
-// module's 120 words — and only 20 of those 120 normalise onto a
-// FONDAMENTALE lemma. The other 100 move the figure by exactly zero, no
-// matter how well they are learned, because they are not in the base 2,000.
+// The headline is bounded by the content that ships, and this pins where the
+// bound is. It used to be 1.6% and 20 words, because coverage learned that a
+// word was known from exactly one place — the vocabulary module's 120 words,
+// of which only 20 normalise onto a FONDAMENTALE lemma. The other 100 moved
+// the figure by zero however well they were learned, because they are not in
+// the base 2,000, and no amount of study could reach the rest of the list.
 //
-// So this is the tripwire the reviewer asked for: it pins what a learner who
-// has mastered *everything the app contains* actually sees. If the headline
-// is ever again a near-constant that no amount of study can move, one of
-// these numbers changes and this test says so. Raising them is the point —
-// seed more of the lexicon, or widen the bridge, and come update this test on
-// purpose. What must not happen is the ceiling moving silently.
+// La Riserva's drill is what moved it. Every entry in fondamentale.js is now
+// a unit under a `riserva:` key, graded through the same reviewItem() as
+// everything else, so the bridge in coverage.js has two sources and every
+// rank with a word written down is reachable. The ceiling is therefore the
+// coverage of the seeded ranks — 1 to 300 — and nothing else:
+//
+//   66.1%   Σ 1/r over ranks 1–300, normalised so the whole 2,000 comes to
+//           LEXICON_COVERAGE. The same two-thirds figure coverage.js's own
+//           sanity check quotes for the top 300 words, arriving from the
+//           other side.
+//   300     of 2,000 solid. The denominator is a promise the *list* cannot
+//           keep yet, and that is now the only reason it cannot: the
+//           mechanism reaches every entry, and 1,700 ranks have no entry.
+//
+// So this stays the tripwire it was, with the failure it catches turned
+// around. Before, it caught the headline being a near-constant nothing could
+// move. Now it catches the headline being *capped by the mechanism again* —
+// if a change narrows the bridge, un-schedules the bench, or drops a source,
+// 66.1 falls and this says so. The other direction is a content change:
+// seeding entry 301 raises both numbers, and the honest thing to do is come
+// and update them on purpose. What must not happen is either move being
+// silent.
 describe("the ceiling a fully-mastered account reaches", () => {
   // Built through the modules' own write paths — reviewItem for the two graded
   // modules, markWord for the two that are only ever finished — so this is a
@@ -248,6 +289,22 @@ describe("the ceiling a fully-mastered account reaches", () => {
     return progress;
   }
 
+  // The same walk over one module, so a test can ask what a single source is
+  // worth on its own — which is how the old 1.6% ceiling is still checkable
+  // after the bridge stopped being one module wide.
+  function masterOne(moduleId) {
+    let progress = EMPTY;
+    const mod = MODULE_STATS.find((m) => m.id === moduleId);
+
+    for (const level of mod.levels) {
+      for (const unit of mod.units(level)) {
+        for (let i = 0; i < MAX_BOX; i += 1) progress = reviewItem(progress, unit.key, true, "2026-08-23");
+      }
+    }
+
+    return progress;
+  }
+
   const mastered = masterEverything();
 
   // Sanity: the blob really does have everything at the top of the ladder,
@@ -260,24 +317,39 @@ describe("the ceiling a fully-mastered account reaches", () => {
     expect(scheduled.every((u) => mastered.schedule[u.key].box === MAX_BOX)).toBe(true);
   });
 
-  it("cannot get the headline above 1.6%, however much the learner studies", () => {
-    expect(coverage(mastered).pct).toBe(1.6);
+  it("reaches 66.1% — the worth of every rank that has a word behind it", () => {
+    expect(coverage(mastered).pct).toBe(66.1);
   });
 
-  // The other half of the headline. 20 of 120 vocabulary words are in the base
-  // 2,000, so "x / 2000 solid" stops at 20 — the denominator is a promise the
-  // shipped content cannot come close to keeping.
-  it("cannot get the solid count above 20 of the 2,000", () => {
-    expect(coverage(mastered).counts.solid).toBe(20);
+  // The other half of the headline. Every seeded rank is drillable, so
+  // "x / 2000 solid" stops at however many entries the file holds — 300 —
+  // and the denominator is now a promise only the *list* is short of.
+  it("reaches 300 of the 2,000 solid, which is the length of the list", () => {
+    expect(coverage(mastered).counts.solid).toBe(FONDAMENTALE.length);
+    expect(coverage(mastered).counts.solid).toBe(300);
   });
 
-  // Naming the cause, so a failure above is diagnosable: it is the bridge from
-  // vocabulary to lexicon that is narrow, not the scheduler or the weighting.
-  it("bridges only 20 of the vocabulary module's 120 words onto a lemma", () => {
+  // Naming the cause, so a failure above is diagnosable. The ceiling is a
+  // fact about the file, not about the bridge: the drill reaches every entry,
+  // and the arithmetic agrees with a direct sum over the ranks that have one.
+  it("is exactly the coverage of ranks 1 to 300 and nothing else", () => {
+    const seeded = FONDAMENTALE.reduce((sum, entry) => sum + rankWeight(entry.rank), 0);
+
+    expect(coverage(mastered).pct).toBe(Math.round(seeded * 1000) / 10);
+    expect(lexiconStates(mastered).size).toBe(FONDAMENTALE.length);
+  });
+
+  // And the half that used to *be* the ceiling, kept because it is still the
+  // reason the old number was 1.6: the deck bridges 20 of its 120 words onto
+  // a lemma. That is unchanged. What changed is that it is no longer the only
+  // way in, so it no longer sets the bound.
+  it("still bridges only 20 of the vocabulary module's 120 words onto a lemma", () => {
     const vocab = MODULE_STATS.find((m) => m.id === "vocab");
     const words = vocab.levels.flatMap((l) => vocab.units(l));
+    const deckOnly = masterOne("vocab");
 
     expect(words).toHaveLength(120);
-    expect(lexiconStates(mastered).size).toBe(20);
+    expect(lexiconStates(deckOnly).size).toBe(20);
+    expect(coverage(deckOnly).pct).toBe(1.6);
   });
 });

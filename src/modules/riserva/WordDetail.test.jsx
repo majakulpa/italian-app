@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RiservaModule from "./RiservaModule.jsx";
-import { senses } from "./WordDetail.jsx";
-import { FONDAMENTALE } from "../../data/fondamentale.js";
+
+import { FONDAMENTALE, glossSenses } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, boxInterval } from "../../shared/srs.js";
 import { saveProgress, storyKey } from "../../shared/storage.js";
@@ -53,12 +53,6 @@ beforeEach(() => {
   vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
 });
 
-describe("senses", () => {
-  it("splits on the separator the lexicon actually uses", () => {
-    expect(senses("pytać · prosić o")).toEqual(["pytać", "prosić o"]);
-    expect(senses("być")).toEqual(["być"]);
-  });
-});
 
 describe("word detail", () => {
   it("opens from a fascia rather than from the grid", async () => {
@@ -78,8 +72,8 @@ describe("word detail", () => {
     render(<RiservaModule onExit={() => {}} />);
     await openWord(user, divides);
 
-    expect(screen.getByText(senses(divides.en).join(" · "))).toBeInTheDocument();
-    expect(screen.getByText(senses(divides.pl).join(" · "))).toHaveAttribute("lang", "pl");
+    expect(screen.getByText(glossSenses(divides.en).join(" · "))).toBeInTheDocument();
+    expect(screen.getByText(glossSenses(divides.pl).join(" · "))).toHaveAttribute("lang", "pl");
     expect(screen.getByRole("button", { name: `Pronounce "${divides.it}"` })).toBeInTheDocument();
   });
 

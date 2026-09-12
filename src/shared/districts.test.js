@@ -63,9 +63,12 @@ function allDone(moduleId) {
   return Object.fromEntries(mod.levels.flatMap((level) => mod.units(level).map((unit) => [unit.key, mod.doneStatus])));
 }
 
-// The app cannot currently reach 600 solid words: only 20 of the vocabulary
-// module's 120 words are inside the base 2,000, and coverage.js pins that
-// ceiling on purpose. So the far side of Il Cinema's gate can only be reached
+// The app cannot currently reach 600 solid words, and the reason changed with
+// La Riserva. It used to be that only 20 of the vocabulary module's 120 words
+// were inside the base 2,000; now every seeded rank is drillable and the wall
+// is the list itself — 300 entries of a 2,000 target, so 300 solid is the most
+// there is. coverage.js pins that ceiling on purpose, at 66.1% and 300 words.
+// So the far side of Il Cinema's gate can only be reached
 // by standing in for the coverage figure — stated outright rather than hidden
 // behind a fixture name, because "unreachable with the content that ships" is
 // itself the interesting fact. The tests that don't need 600 use real study.

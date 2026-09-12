@@ -13,7 +13,17 @@ import { STORY_LEVELS } from "../data/stories.js";
 import { MAPS } from "../data/mappe.js";
 import { STRANDS } from "../data/articoli.js";
 import { TRAP_SETS } from "../data/falsiAmici.js";
-import { wordKey, drillKey, conversationKey, storyKey, mappeKey, articoliKey, trapKey } from "./storage.js";
+import { FASCE, fasciaWords } from "../data/fondamentale.js";
+import {
+  wordKey,
+  drillKey,
+  conversationKey,
+  storyKey,
+  mappeKey,
+  articoliKey,
+  trapKey,
+  riservaKey,
+} from "./storage.js";
 
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
@@ -85,6 +95,32 @@ export const MODULE_STATS = [
     // is no longer the objection — only the rule/word argument above is.
     scheduled: false,
     units: (map) => map.drills.map((d) => ({ key: mappeKey(map, d), item: d, group: map })),
+    doneStatus: "known",
+  },
+  {
+    id: "riserva",
+    // Fasce where the other modules put CEFR levels, for the same reason
+    // Mappatura delle parole puts maps there: a band of the base vocabulary is
+    // not A1 or B2. Frequency is its own ladder and it cuts across the CEFR
+    // one — `essere` and `il problema` are both in the first 300. A fascia id
+    // can never collide with a level id, so levelStats() looks one up, finds
+    // nothing, and leaves La Riserva out of every rung, which is the right
+    // answer rather than a gap.
+    levels: FASCE,
+    // In the queue, and this is the change the bench was built for. Every
+    // other flag in this file says why its bench stays *out*; this one is a
+    // typed production item over a lexical unit, which is exactly what a
+    // Leitner box schedules and exactly what La Piazza now asks for. The
+    // objection that kept Mappatura delle parole out — "a Leitner box
+    // schedules a lexical item and a suffix rule is not one" — is an argument
+    // *for* scheduling this one: a base-vocabulary word is the lexical item.
+    scheduled: true,
+    // Only the ranks with a word written down. Most bands yield nothing: the
+    // list is 300 of 2,000, and a rank nobody has written down is a fact about
+    // the file rather than a word the learner failed to learn, so it is not a
+    // unit and cannot be counted, drilled or scheduled.
+    units: (fascia) =>
+      fasciaWords(fascia).map((entry) => ({ key: riservaKey(entry), item: entry, group: fascia })),
     doneStatus: "known",
   },
   {

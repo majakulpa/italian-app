@@ -191,6 +191,21 @@ export function trapsCaughtCount(progress, traps) {
   return traps.filter((trap) => isTrapCaught(progress, trap)).length;
 }
 
+// La Riserva drills the base vocabulary itself: a gloss, and you type the
+// Italian. Its own namespace again, so a save written before the bench had a
+// verb in it simply has no "riserva:" keys and loads unchanged.
+//
+// Keyed by the Italian form rather than by the rank, and the choice matters
+// because the two go stale in opposite directions. The rank is presentation —
+// fondamentale.js says up front that its ordering is "an approximation of the
+// published frequency order", so inserting a word at rank 50 would renumber
+// every entry behind it and orphan 250 saves. The written form is the thing
+// being learned, it is already the identity coverage.js indexes on through
+// lemmaKey(), and fondamentale.test.js pins that no two entries share one.
+export function riservaKey(entry) {
+  return `riserva:${entry.it}`;
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

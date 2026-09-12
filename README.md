@@ -45,6 +45,8 @@ src/
     districts.js                 The five districts of the city map, their routes, and the locks that state their condition
     speech.js, SpeakButton.jsx   Pronunciation playback (browser SpeechSynthesis API)
     typedAnswer.js               Accent-tolerant matching for typed answers, and the shared-prefix arithmetic behind "where it went wrong"
+    locatedFeedback.js           Judges a typed answer against the one that was wanted and says *where* it went wrong
+    Verdict.jsx                  The card that renders one of those verdicts, shared by the two screens that produce them
     useThemeMode.js, ThemeToggle.jsx  Light/dark preference, stored and applied as `data-theme`
     NavMenu.jsx                  The module switcher, rendered from the MODULES registry
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx,
@@ -52,7 +54,7 @@ src/
                                   Small presentational/utility pieces shared across modules
   data/
     vocab.js                     Vocabulary word lists (levels > categories > words)
-    fondamentale.js              De Mauro's base vocabulary in rank order, with English + Polish glosses
+    fondamentale.js              De Mauro's base vocabulary in rank order, with English + Polish glosses, and the ten fasce it is studied in
     grammar.js                   Grammar topics (levels > topics > explanation + drills)
     conversations.js             Guided dialogues (levels > dialogues > steps > options)
     stories.js                   Graded readers (levels > stories > paragraphs + questions)
@@ -73,11 +75,12 @@ src/
     falsiAmici/feedback.js             Judges a typed answer and tells a near-miss from walking into the trap
     riserva/RiservaModule.jsx          The 2,000 as a grid in frequency order, and what each band of 200 is worth (done)
     riserva/WordDetail.jsx             One word: both glosses, where Polish splits it, and where it sits in the scheduler
+    riserva/drill.js                   Which words a fascia hands you, and one entry as something to produce
+    riserva/DrillRound.jsx             The typed round behind a fascia, and what it says at the end
     riserva/traces.js                  Where you met a word: the deck's example sentence, and the stories that glossed it
     officina/OfficinaModule.jsx        L'Officina's hub — the five benches, and the route into each (done)
     officina/benches.js                The benches as data, and the rule that a figure is measured or absent
     review/ReviewModule.jsx            La Piazza: the landing, and the typed review round (a route, not a MODULES entry)
-    review/feedback.js                 Judges a typed review answer and says *where* it went wrong
     review/question.js                 Turns a due vocab word or grammar drill into something to produce
     review/week.js                     Which solid words come back inside the next seven days
 public/
@@ -230,6 +233,25 @@ categories/dialogues/stories each, and four grammar topics.
   each saying what it is worth in coverage points — the first band alone
   carries more of a page than the last five together.
 
+  **It has a verb.** Opening a *fascia* offers a typed production round over
+  the entries it holds — the English gloss and the Polish one, and you write
+  the Italian — in frequency order, capped at twenty a sitting. The answers go
+  through `reviewItem` like every other graded answer in the app, under
+  `riserva:` keys of their own, so one write puts a word in the Leitner queue
+  and in the coverage figure at the same time. A word is offered here once:
+  this bench meets it, and La Piazza is what brings it back.
+
+  That is what raised the coverage ceiling from **1.6% to 66.1%** — see
+  Coverage below.
+
+  A wrong answer is **located, not solved**, judged by the very code La Piazza
+  judges with (`src/shared/locatedFeedback.js`, which moved out of
+  `modules/review/` when this became its second caller). Both glosses are
+  shown, every sense, exactly as `fondamentale.js` writes them: 87 of the
+  first 300 entries split in Polish, the file cannot say whether a split is
+  two senses or two aspects, and going gloss → Italian a split is extra
+  evidence for one answer rather than ambiguity between two.
+
   **It shows no percentage**, and that is a decision rather than an omission.
   A share of running text reads like a share of the language and the two
   diverge worst where a beginner is standing: a learner with a hundred words
@@ -239,7 +261,10 @@ categories/dialogues/stories each, and four grammar topics.
   It also distinguishes a rank with **no word written down yet** from one the
   learner has not met — a claim about the file against a claim about her — so
   the lexicon being 300 of a 2,000 target is visible on the grid instead of
-  reading as 1,700 words she failed to learn. And the grid is a picture, not
+  reading as 1,700 words she failed to learn. The drill keeps that
+  distinction: a band with no word behind its ranks offers no round rather
+  than a drill of nothing, and a band whose words have all been met says so
+  instead. And the grid is a picture, not
   two thousand buttons: it is `aria-hidden` with its facts given as text, and
   the ten bands are the real controls, because two thousand focusable cells is
   a trap rather than a tab order.
@@ -282,13 +307,23 @@ categories/dialogues/stories each, and four grammar topics.
   `coverageBands` splits the reservoir into ten bands of 200 for the screen
   that will draw it.
 
-  The figure is capped low by the content that ships, which is worth knowing
-  before reading anything into it: coverage learns that a word is known only
-  from the vocabulary module's 120 words, and just 20 of those are in the base
-  2,000. Master every word, drill, dialogue and story in the app and the
-  headline reads **1.6%** and **20 / 2000 solid** — that is the ceiling, and
-  `coverage.test.js` pins it so it cannot drift or flatline unnoticed. Raising
-  it means seeding more of the lexicon or widening what feeds the bridge.
+  The figure is capped by the content that ships, and where the cap sits is
+  worth knowing before reading anything into it. It used to be very low:
+  coverage learned that a word was known from one place, the vocabulary
+  module's 120 words, and just 20 of those are in the base 2,000 — so
+  mastering every word, drill, dialogue and story in the app read **1.6%** and
+  **20 / 2000 solid**, and nothing could move it.
+
+  La Riserva's drill widened the bridge. Every entry in `fondamentale.js` is a
+  unit of its own now, so the ceiling is the worth of the ranks that have a
+  word behind them — **66.1%** and **300 / 2000 solid**, which is the same
+  "top 300 words are worth about two thirds of running text" the weighting
+  predicts, arriving from the other side. `coverage.test.js` pins it so it
+  cannot move, or fail to move, unnoticed.
+
+  What is left under the cap is the honest bottleneck: 1,700 ranks have no
+  word to drill. Raising it past 66.1% is a content job — accurate entries
+  with English and Polish glosses — and no longer an engineering one.
 - **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
   (boxes 3–4) or `solid` (the top box, reached by answering right at the end of
   box 4's 7-day interval). All four are derived from the Leitner box in
@@ -331,8 +366,8 @@ categories/dialogues/stories each, and four grammar topics.
   which twelve, so a new word that silently fails to gap is a test failure.
 
   A wrong answer is **located, not solved**, the same as Mappatura delle
-  parole and Gli Articoli, and `modules/review/feedback.js` is the third
-  sibling of those two rather than a lift into `shared/`: it says the typed
+  parole and Gli Articoli, and `src/shared/locatedFeedback.js` does the
+  judging: it says the typed
   form is one of the *other* forms this item was written with, or that the
   word is right up to its last letters, or how far a shared prefix got, or —
   where there is nothing to locate — that plainly, rather than inventing a
@@ -355,16 +390,17 @@ categories/dialogues/stories each, and four grammar topics.
   which solid words come back inside the next seven days — or says nothing
   at all when that is zero.
 
-- **Spaced repetition** — a five-box Leitner scheduler over vocabulary and
-  grammar. Getting an item right promotes it one box and pushes it further out
+- **Spaced repetition** — a five-box Leitner scheduler over vocabulary,
+  grammar and the base vocabulary. Getting an item right promotes it one box and pushes it further out
   (same day, 1, 3, 7, 21 days); getting it wrong drops it straight back to box
-  1 whatever box it was in. Every vocab and grammar answer already goes through
-  `reviewItem` in `src/shared/srs.js`, so ordinary study feeds the queue
-  without any extra step. When something is due the dashboard shows a Review
-  band, and starting it opens one mixed session (capped at 20 items, most
-  overdue first) drawing from both modules. Conversations and stories are
+  1 whatever box it was in. Every vocabulary, grammar and Riserva answer goes
+  through `reviewItem` in `src/shared/srs.js`, so ordinary study feeds the
+  queue without any extra step. When something is due the dashboard shows a
+  Review band, and starting it opens one mixed session (capped at 20 items,
+  most overdue first) drawing from all three. Conversations and stories are
   deliberately out of it: a dialogue has no wrong answer by design, and a story
-  is read rather than drilled. Schedule data lives in its own `progress.schedule`
+  is read rather than drilled. Each of L'Officina's other benches states its
+  own reason beside its `scheduled: false` flag in `src/shared/stats.js`. Schedule data lives in its own `progress.schedule`
   map, so a save from before the scheduler existed loads unchanged — those
   items simply count as due the first time round.
 
@@ -397,17 +433,18 @@ categories/dialogues/stories each, and four grammar topics.
    flashcard and drill sessions still shuffle a whole category. Ordering each
    deck by what's due would make every session, not just Review, benefit from
    it.
-4. **Typed recall / production, everywhere else** — Mappatura delle parole and
-   La Piazza both type now, and `src/shared/typedAnswer.js` is the reusable
-   half of it. The vocabulary and grammar sessions themselves are still
-   recognition.
-5. **Bringing the benches into the queue** — La Piazza no longer answers a
-   wrong pick by revealing the right one, which was the stated reason Gli
-   Articoli stayed out of it, and it no longer asks for a pick at all, which
-   was the reason Mappatura delle parole and Falsi Amici did. What is left is
-   a question shape: an article item is a choice between three authored forms
-   and the queue asks for typing. Each `scheduled: false` in
-   `src/shared/stats.js` says what its own bench is now waiting on.
+4. **Typed recall / production, everywhere else** — Mappatura delle parole,
+   La Piazza and La Riserva all type now, and `src/shared/typedAnswer.js` and
+   `src/shared/locatedFeedback.js` are the reusable halves of it. The
+   vocabulary and grammar sessions themselves are still recognition.
+5. **Bringing the rest of the benches into the queue** — La Riserva is in it
+   now: a base-vocabulary entry is a lexical item, which is exactly what a
+   Leitner box schedules, and its drill types. What is left is a question
+   shape for Gli Articoli — a choice between three authored forms where the
+   queue asks for typing — and, for Mappatura delle parole and Falsi Amici, an
+   argument rather than work: a suffix rule is not a lexical item, and a trap
+   is a collision rather than a word you are trying to remember. Each
+   `scheduled: false` in `src/shared/stats.js` says which it is.
 
 ## Accessibility
 

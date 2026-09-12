@@ -2,13 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ReviewModule from "./ReviewModule.jsx";
-import { LOCATED } from "./feedback.js";
+import { LOCATED } from "../../shared/locatedFeedback.js";
 import { LEVELS } from "../../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
-import { wordKey, drillKey, loadProgress, saveProgress, todayISO, addDaysISO } from "../../shared/storage.js";
+import { wordKey, drillKey, riservaKey, loadProgress, saveProgress, todayISO, addDaysISO } from "../../shared/storage.js";
+import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, SESSION_LIMIT } from "../../shared/srs.js";
-import { DISTRICTS } from "../../shared/districts.js";
+import { DISTRICTS, districtForModule } from "../../shared/districts.js";
 import * as speech from "../../shared/speech.js";
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
@@ -490,14 +491,61 @@ describe("La Piazza — the round", () => {
   });
 });
 
+// A base-vocabulary word met on La Riserva's bench comes back here like
+// anything else — that is the whole reason the drill goes through reviewItem
+// rather than keeping a scheduler of its own. What it must not lose on the
+// way is its Polish half.
+describe("a word from La Riserva", () => {
+  // `dire` is rank 17 and splits in Polish: "mówić · powiedzieć".
+  const dire = FONDAMENTALE.find((e) => e.it === "dire");
+
+  it("arrives in the queue under L'Officina, with both glosses", async () => {
+    const user = userEvent.setup();
+    seedDue({ [riservaKey(dire)]: "known" });
+    renderReview();
+    await startRound(user);
+
+    expect(screen.getByText(/Base vocabulary/)).toBeInTheDocument();
+    expect(screen.getByText("L'Officina")).toBeInTheDocument();
+    expect(screen.getByText(dire.en)).toBeInTheDocument();
+    expect(screen.getByText(dire.pl)).toHaveAttribute("lang", "pl");
+  });
+
+  it("grades through the same judge and promotes on a first-time answer", async () => {
+    const user = userEvent.setup();
+    seedDue({ [riservaKey(dire)]: "known" });
+    renderReview();
+    await startRound(user);
+    await answer(user, "dire");
+
+    expect(loadProgress().schedule[riservaKey(dire)].box).toBe(2);
+  });
+});
+
 // The item card takes its colour and its label from the district the item
-// came from, looked up by module id. A scheduled module with no district
-// would be a crash rather than a missing colour, so the assumption is pinned
-// here rather than guarded with a branch nothing could cover.
+// came from, resolved by module id through districts.js. A scheduled module
+// that resolved to nothing would be a crash rather than a missing colour, so
+// the assumption is pinned here rather than guarded with a branch nothing
+// could cover.
 describe("what the screen assumes about the map", () => {
-  it("gives every scheduled module exactly one district", () => {
+  it("resolves every scheduled module to exactly one district", () => {
     for (const mod of MODULE_STATS.filter((m) => m.scheduled)) {
-      expect(DISTRICTS.filter((d) => d.module === mod.id), mod.id).toHaveLength(1);
+      expect(districtForModule(mod.id), mod.id).toBeTruthy();
     }
+  });
+
+  // Two of the three name their own district. La Riserva is a bench inside
+  // L'Officina, whose tile counts the vocabulary deck, so it resolves through
+  // the walls it sits in rather than through a district invented for a
+  // workbench — and it has to land in L'Officina, not just somewhere.
+  it("puts a base-vocabulary item under L'Officina", () => {
+    expect(DISTRICTS.filter((d) => d.module === "riserva")).toHaveLength(0);
+    expect(districtForModule("riserva").id).toBe("officina");
+  });
+
+  // And a module id nothing knows about resolves to nothing, rather than to
+  // whichever district happens to be first.
+  it("resolves an unknown module to no district", () => {
+    expect(districtForModule("nope")).toBeUndefined();
   });
 });

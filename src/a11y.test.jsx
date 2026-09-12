@@ -22,7 +22,8 @@ import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
 import { STRANDS, ZERO } from "./data/articoli.js";
 import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
-import { saveProgress, wordKey, drillKey, trapCaughtKey } from "./shared/storage.js";
+import { saveProgress, wordKey, drillKey, trapCaughtKey, riservaKey } from "./shared/storage.js";
+import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
 
@@ -353,6 +354,26 @@ describe("La Riserva", () => {
     await expectNoViolations(container);
   });
 
+  // The band list after a press of "Drill the next N words" that opened
+  // nothing — another tab having finished the band between the screen painting
+  // and the press. It is a screen state of its own: the control that was
+  // pressed has been removed, focus has been moved back to the band's toggle,
+  // and the screen's live region is no longer empty.
+  it("stays accessible when a fascia turns out to have no round left", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    saveProgress({
+      version: 2,
+      words: Object.fromEntries(FONDAMENTALE.filter((e) => e.rank <= 200).map((e) => [riservaKey(e), "known"])),
+      schedule: {},
+    });
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+
+    await expectNoViolations(container);
+  });
+
   // Word detail's way in is the fascia, so the axe pass has to reach it the
   // way a learner does rather than by rendering the screen in isolation.
   it("has an accessible word detail behind a fascia", async () => {
@@ -361,6 +382,46 @@ describe("La Riserva", () => {
 
     await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
     await user.click(screen.getByRole("button", { name: FONDAMENTALE[0].it }));
+    await expectNoViolations(container);
+  });
+
+  // The drill is the other thing behind a fascia, and it is three screen
+  // states rather than one: the prompt, the prompt with a verdict card open
+  // under an invalid field, and the summary. The middle one is where the
+  // interesting markup is — a live region, an aria-describedby pointing at a
+  // card that was not there a moment ago, and a Polish string inside an
+  // English page.
+  it("has an accessible drill behind a fascia", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+    await expectNoViolations(container);
+
+    await user.type(screen.getByLabelText("Write it in Italian"), "sbagliato");
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible drill summary", async () => {
+    const user = userEvent.setup();
+    // Everything in band 1 met bar the first word, so one answer finishes the
+    // round and the summary is two clicks away rather than twenty.
+    let progress = { version: 2, words: {}, schedule: {} };
+    for (const entry of FONDAMENTALE.filter((e) => e.rank > 1 && e.rank <= 200)) {
+      progress = reviewItem(progress, riservaKey(entry), true, "2026-09-01");
+    }
+    saveProgress(progress);
+
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+    await user.type(screen.getByLabelText("Write it in Italian"), "sbagliato");
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await user.click(screen.getByRole("button", { name: /^Check again/ }));
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
+
     await expectNoViolations(container);
   });
 });
@@ -715,6 +776,60 @@ describe("Italian text is marked as Italian", () => {
     const parenti = FALSI_AMICI.find((t) => t.id === "parenti");
     expect(screen.getAllByText(parenti.lookalike)[0].closest("[lang]")).toBeNull();
     expect(italianAncestor(screen.getByText(divano.note))).toBeNull();
+  });
+
+  // La Riserva is the one screen whose Italian is *built* rather than read off
+  // the data: `Fascia 1 · posti 1–200` and `posto 1` are composed in JSX, and
+  // fondamentale.js keeps FASCE.label English on the strength of that — "it
+  // states the same fact La Riserva's own Italian heading states, and that
+  // heading is built on the screen where it can carry lang='it'". So this is
+  // the assertion that argument rests on.
+  //
+  // It is also the one kind of missing tag nothing else here would catch. Both
+  // strings live in a local <Eyebrow>, and a component whose signature is
+  // ({ children, style }) swallows a lang prop without a word: the JSX reads
+  // lang="it", the DOM carries no lang at all, and axe passes — axe cannot
+  // tell what language a string is in. That shipped. This asserts against the
+  // DOM rather than against the JSX.
+  it("marks the fascia heading and the drill's posto in La Riserva", async () => {
+    const user = userEvent.setup();
+    render(<RiservaModule onExit={() => {}} />);
+
+    expect(screen.getByText("Fascia 1 · posti 1–200").closest("[lang]")).toHaveAttribute("lang", "it");
+    // The English half of the very same button must not claim to be Italian.
+    expect(italianAncestor(screen.getAllByText(/coverage points/)[0])).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+
+    expect(screen.getByText("posto 1").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("Fascia 1 · posti 1–200").closest("[lang]")).toHaveAttribute("lang", "it");
+    // And the counters either side of them are English.
+    expect(italianAncestor(screen.getByText(/Attempt 1 of 2/))).toBeNull();
+    expect(italianAncestor(screen.getByText("1 / 20"))).toBeNull();
+  });
+
+  // The mirror of that bug, on the same screen: the four word-state labels are
+  // three Italian words and one English phrase, and the legend used to wrap
+  // all four in lang="it" — so "not started" was handed to a screen reader as
+  // Italian. Marking English as Italian is the same WCAG 3.1.2 failure as
+  // leaving Italian unmarked, and axe cannot see either.
+  it("marks only the Italian word-state labels, in the legend and on a word", async () => {
+    const user = userEvent.setup();
+    render(<RiservaModule onExit={() => {}} />);
+
+    expect(screen.getByText("in corso").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("solida").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(italianAncestor(screen.getByText("not started"))).toBeNull();
+    expect(italianAncestor(screen.getByText("not written down yet"))).toBeNull();
+
+    // And the same label again on word detail, where it is a pill rather than
+    // a legend row. `essere` has never been studied here, so it reads English.
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    await user.click(screen.getByRole("button", { name: "essere" }));
+
+    expect(screen.getByText("posto 1").closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(italianAncestor(screen.getByText("not started"))).toBeNull();
   });
 
   it("marks the story text and the word gloss in stories", async () => {

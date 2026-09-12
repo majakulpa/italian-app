@@ -125,6 +125,21 @@ export function districtById(id) {
   return byId.get(id);
 }
 
+// L'Officina's benches that are modules in their own right but are not the
+// one its tile counts. The tile names `vocab` because "N / M words" is what a
+// district shows, and a district row can only name one module — so a second
+// scheduled module living inside the same walls needs saying here rather than
+// inventing a district of its own for a workbench.
+const BENCH_DISTRICT = { riserva: "officina" };
+
+// Which district an item belongs to, by the module it came from. La Piazza
+// uses it to colour and label a due item, so every scheduled module has to
+// resolve — ReviewModule.test.jsx pins that, which is why the screen carries
+// no "no district" branch.
+export function districtForModule(moduleId) {
+  return DISTRICTS.find((district) => district.module === moduleId) ?? byId.get(BENCH_DISTRICT[moduleId]);
+}
+
 function plural(n, word) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }

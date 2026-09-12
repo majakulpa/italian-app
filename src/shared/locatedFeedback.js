@@ -1,16 +1,26 @@
-// Judging one typed answer in a review session.
+// Judging one typed answer against the answer that was wanted.
 //
-// The third of these files, and deliberately a sibling of modules/mappe and
-// modules/articoli rather than a lift into shared/. What the three have in
-// common is a *shape* — two attempts, a verdict that is data rather than a
-// sentence, one announce() that builds the plain text for the live region,
-// and nothing revealed until the item is settled. What they do not have in
-// common is judging logic: Mappatura delle parole measures a typed answer
+// This was modules/review/feedback.js, and its header argued at length that
+// it was "deliberately a sibling of modules/mappe and modules/articoli rather
+// than a lift into shared/": the three share a *shape* — two attempts, a
+// verdict that is data rather than a sentence, one announce() building the
+// plain text for the live region, nothing revealed until the item is settled
+// — but not judging logic. Mappatura delle parole measures a typed answer
 // against a suffix rule, Gli Articoli classifies a chosen option along two
 // categorical dimensions, and this file has neither a rule nor a set of
-// options — only an answer and whatever the learner typed. The four exports of
-// shared/typedAnswer.js are the domain-free half, and they are what this is
-// built on.
+// options, only an answer and whatever the learner typed.
+//
+// That argument was right about those two and it is what moved this file: La
+// Riserva's drill has neither a rule nor a set of options either. It shows a
+// gloss and takes the Italian, which is the same judging problem to the
+// character, so the choice was one shared judge or a fourth copy of it. The
+// two callers are La Piazza (modules/review) and La Riserva
+// (modules/riserva/drill.js); the four exports of shared/typedAnswer.js are
+// still the domain-free half underneath.
+//
+// What did *not* move is the screen. Each bench composes its own markup
+// around this, the way mappe, articoli and falsiAmici already do — the
+// verdicts are data precisely so that stays possible.
 //
 // ── Located, not solved, with nothing but the answer to go on ────────────
 // PLAN.md names the standard wrong → red cross → answer pattern as the
@@ -31,6 +41,17 @@
 //               was authored with. The most locatable error there is: the
 //               right word in the wrong form. Naming that is not naming the
 //               answer, and this never says which form was wanted.
+//   neighbour   what was typed is a different *item from the same list* —
+//               `via` when the answer is `strada`. Not another form of this
+//               item, so not `distractor`, and emphatically not `other`: it
+//               is real Italian, from the vocabulary being studied, aimed at
+//               the wrong entry. Only La Riserva fills this in (see
+//               drill.js); a deck word and a grammar drill have no list of
+//               siblings the learner could have been reaching for instead.
+//               It is the one verdict that has to beat another to be said, so
+//               it is guarded twice: NEIGHBOUR_EDITS keeps it off a
+//               one-character slip, and `strictAccents` is what lets it fire
+//               on a word that folds onto the answer.
 //   ending      the answer is right up to its last letter or two.
 //   partial     it starts right and diverges further in than that.
 //   stem        it ends the way the answer ends and starts differently.
@@ -54,7 +75,7 @@
 // renders the very same strings rather than keeping a second copy that can
 // drift.
 
-import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "../../shared/typedAnswer.js";
+import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "./typedAnswer.js";
 
 export const ATTEMPTS = 2;
 
@@ -68,6 +89,48 @@ const MEANINGFUL = 2;
 // One or two characters is a verb ending, a plural, an agreement — the things
 // that miss on a form the learner otherwise has.
 const ENDING = 2;
+
+// How far from the answer a real list word has to be before "you reached for a
+// different entry" outranks what the spelling analysis found.
+//
+// Two, because one is a slip. One edit is a gender ending (`ragazzo` for
+// `ragazza`, `figlio` for `figlia`, `nonno` for `nonna`), an agreement
+// (`primo` for `prima`), a dropped letter (`modo` for `mondo`) or a thumb on
+// the wrong key — and 71 pairs of the 300 written down are within one edit of
+// each other, overwhelmingly the short function words a phone typo lands on.
+// Told "it belongs to a different entry, read the English gloss again", a
+// learner who simply missed the gender is sent to re-read a gloss she had
+// right, and the one verdict that would have named her actual error is the one
+// she does not get.
+//
+// Two edits is not a slip in a 300-word list. `parola` for `parlare` is three
+// and is the case this verdict exists for: it shares `par` at the front and
+// none of the mistake, so "it starts right and then goes somewhere else" is
+// confident and wrong about the kind of error. Those two bracket the
+// threshold, and `da`/`di` — one edit, and the pair La Riserva's drill was
+// built around — is why the guard is one-sided rather than a floor: see judge.
+const NEIGHBOUR_EDITS = 2;
+
+// Levenshtein distance over the folded strings, so an accent or a capital is
+// not an edit. Not in shared/typedAnswer.js for the reason sharedTail below is
+// not: nothing else wants it. Mappatura delle parole and Falsi Amici measure a
+// typed answer against a rule and a pair, and neither has a list of other
+// words to be near.
+function editDistance(input, answer) {
+  const a = foldTyped(input);
+  const b = foldTyped(answer);
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) {
+      next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    row = next;
+  }
+
+  return row[b.length];
+}
 
 // An answer's closing punctuation belongs to the sentence it was cut out of,
 // not to the Italian the learner has to produce. `come stai?` is a vocabulary
@@ -174,11 +237,42 @@ export function judge(question, input, attempt) {
     return { ...base, kind: "blank", spent: false, last: false };
   }
 
+  // Whether what she typed is another whole item the question knows about.
+  // Declared up here because two very different branches below ask it, and
+  // called rather than computed because one of them is on the path a *correct*
+  // answer takes: La Riserva hands every question 299 neighbours, and walking
+  // them to accept `libro` for `libro` is work for no verdict.
+  const typedIsNeighbour = () => question.neighbours.some((word) => sameTyped(typed, withoutClosing(word)));
+
   if (sameTyped(typed, target)) {
     // Written exactly as Italian writes it, or right once a mark she was
     // never asked to guess is folded away. The second case is still correct
     // and is still spelled back, or the app teaches the spelling it accepted.
     const asWritten = sameTyped(input, answer) && !accentsMissing(input, answer);
+
+    // The one place accent tolerance is not forgiveness. Where two entries of
+    // one list fold to the same string — `si` (rank 42, "oneself; one,
+    // people") and `sì` (rank 44, "yes") — the accent is the only thing that
+    // tells them apart, so folding it away marks one entry right for the
+    // other: the card would say "Correct. Italian writes it si", and a box
+    // would be promoted on a word she did not produce.
+    //
+    // `strictAccents` says the answer is one of those, and it is derived from
+    // the list rather than named here (see modules/riserva/drill.js). The
+    // tolerance itself is untouched everywhere else — `possibilita` for
+    // `possibilità` is the behaviour Le Mappe was built on, and so is the
+    // `citta` case in this file's tests. Case and whitespace stay forgiven
+    // even here: neither has ever distinguished two entries.
+    //
+    // `neighbour` is the third condition rather than a redundant one. What she
+    // typed has to actually be the twin entry for the app to say she reached
+    // for a different word; an accent that belongs to neither entry (`sí`) is
+    // a mis-accented spelling of this one, which is exactly what the tolerance
+    // is for.
+    if (question.strictAccents && !asWritten && typedIsNeighbour()) {
+      return { ...base, kind: "neighbour", answer: last ? answer : null };
+    }
+
     return { ...base, correct: true, kind: asWritten ? "exact" : "spelling", answer: asWritten ? null : answer };
   }
 
@@ -202,6 +296,29 @@ export function judge(question, input, attempt) {
   else if (prefix.trim().length >= MEANINGFUL) kind = "partial";
   else if (tail.trim().length >= MEANINGFUL) kind = "stem";
 
+  // The neighbour verdict, after the spelling analysis rather than before it,
+  // and it wins on either of two grounds.
+  //
+  // It may always replace `other`, at any distance. `other` already says "a
+  // different word rather than a near miss"; the neighbour verdict says the
+  // same thing with a fact behind it — that the word she wrote is one the list
+  // holds — so it is strictly more true and there is nothing to protect. This
+  // is the half that carries `di` for `da`, `mi` for `ti`, `a` for `in`: pairs
+  // one edit apart whose glosses overlap so heavily that no gloss separates
+  // them, which is what the verdict was added for.
+  //
+  // It may override a *located* verdict only from NEIGHBOUR_EDITS away. Closer
+  // in, the spelling analysis has found something true and specific and the
+  // neighbour verdict would talk over it — see the constant for the arithmetic
+  // and the pairs that bracket it.
+  //
+  // This ordering replaced running the check first with no distance guard at
+  // all, which reported every one-character gender slip that happened to land
+  // on another entry as a semantic error.
+  if (typedIsNeighbour() && (kind === "other" || editDistance(typed, target) >= NEIGHBOUR_EDITS)) {
+    return { ...base, kind: "neighbour", answer: last ? answer : null };
+  }
+
   // The located sentence stands on its own; only the fragment is gated. So an
   // input that swallows the whole answer still gets "it starts right and then
   // goes somewhere else" — which is true, and locates it — without the card
@@ -221,6 +338,18 @@ export function judge(question, input, attempt) {
   };
 }
 
+// Whether the verdict is about something the learner actually wrote. An empty
+// box and a "show me" are not: there is no answer of hers to mark right or
+// wrong. The tick/cross and aria-invalid both follow this rather than
+// `!correct`, so neither tells her she got something wrong when she typed
+// nothing (WCAG 1.4.1 for the first, 3.3.1 for the second).
+//
+// It lives beside the verdicts rather than in a screen because it is a fact
+// about a verdict, and both screens that render one need it.
+export function answered(verdict) {
+  return verdict.kind !== "blank" && verdict.kind !== "revealed";
+}
+
 // "Show me" — a deliberate second choice, and wrong by definition: the item
 // is settled, the answer is handed over, and nothing about it promotes.
 export function reveal(question) {
@@ -234,6 +363,13 @@ export function reveal(question) {
 export const LOCATED = {
   distractor:
     "That is one of the other forms this item was written with — the right word, in a form the sentence does not want. Which one does it want?",
+  // "this list" had nothing to point at. La Riserva draws the band being
+  // drilled, so there the phrase read; La Piazza draws one item and no list at
+  // all, and a base-vocabulary word reaches it through question.js. So the
+  // sentence names the list instead of gesturing at it, which is true on both
+  // screens — riserva units are the only ones that carry neighbours.
+  neighbour:
+    "That is another word from the base vocabulary, not the one being asked for. Read the English gloss again — which word does it want?",
   ending: "You have the word right up to its last letters. It is the ending that missed.",
   partial: "It starts right and then goes somewhere else.",
   stem: "It ends the way the answer ends. What comes in front of that does not.",

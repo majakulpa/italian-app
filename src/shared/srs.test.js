@@ -14,7 +14,9 @@ import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
-import { wordKey, drillKey, storyKey, conversationKey } from "./storage.js";
+import { FONDAMENTALE } from "../data/fondamentale.js";
+import { wordKey, drillKey, storyKey, conversationKey, riservaKey } from "./storage.js";
+import { lemmaKey } from "./lemma.js";
 
 // Dates are passed in rather than read from the clock, so none of this
 // depends on when the suite runs.
@@ -199,6 +201,68 @@ describe("dueItems", () => {
 
     expect(dueItems(progress, TODAY).map((u) => u.moduleId).sort()).toEqual(["grammar", "vocab"]);
   });
+
+  // Two benches can hold the same Italian word. `sì` is rank 44 of the base
+  // vocabulary and it is also the first word of the A1 greetings category, so
+  // studying it in both places writes two live scheduler keys for one word —
+  // and La Piazza would then ask for `sì` twice in a single round.
+  //
+  // Coverage already treats those two units as one word: lexiconEvidence()
+  // folds them onto one rank with strongest(). The queue has to agree, or the
+  // dashboard and the round are counting different things.
+  describe("one word, one place in the queue", () => {
+    const SI_DECK = wordKey(a1Vocab, greetings, greetings.words.find((w) => w.it === "sì"));
+    const SI_RISERVA = riservaKey(FONDAMENTALE.find((e) => e.it === "sì"));
+
+    it("offers a word held on two benches once, not twice", () => {
+      const progress = progressWith({ [SI_DECK]: "known", [SI_RISERVA]: "known" });
+
+      expect(dueItems(progress, TODAY).filter((u) => u.item.it === "sì")).toHaveLength(1);
+      expect(dueCount(progress, TODAY)).toBe(1);
+    });
+
+    // Which of the two survives is not arbitrary. Most overdue wins, and on a
+    // tie the deck does — the same rule coverage.js's LEXICON_SOURCES states,
+    // and for the same reason: the deck unit has an example sentence behind
+    // it, so La Piazza can gap a real sentence rather than show a bare gloss.
+    it("keeps the deck's unit on a tie, and the more overdue one otherwise", () => {
+      const tied = progressWith({ [SI_DECK]: "known", [SI_RISERVA]: "known" });
+      expect(dueItems(tied, TODAY)[0].key).toBe(SI_DECK);
+
+      const riservaOlder = progressWith(
+        { [SI_DECK]: "known", [SI_RISERVA]: "known" },
+        {
+          [SI_DECK]: { box: 2, due: "2026-08-16", last: "2026-08-15" },
+          [SI_RISERVA]: { box: 2, due: "2026-08-02", last: "2026-08-01" },
+        },
+      );
+      expect(dueItems(riservaOlder, TODAY).map((u) => u.key)).toEqual([SI_RISERVA]);
+    });
+
+    // The collapse is by lemma, not by string: the deck stores `madre` and the
+    // lexicon stores `la madre`, and they are the same word.
+    it("collapses two spellings of one lemma, article and all", () => {
+      const family = a1Vocab.categories.find((c) => c.words.some((w) => w.it === "madre"));
+      const deck = wordKey(a1Vocab, family, family.words.find((w) => w.it === "madre"));
+      const lexicon = riservaKey(FONDAMENTALE.find((e) => e.it === "la madre"));
+      const progress = progressWith({ [deck]: "known", [lexicon]: "known" });
+
+      expect(dueCount(progress, TODAY)).toBe(1);
+      expect(dueItems(progress, TODAY)[0].key).toBe(deck);
+    });
+
+    // And the other direction: a word that is only in the reservoir still gets
+    // queued, and two *different* lexicon words are still two items. A dedupe
+    // that swallowed either of those would be worse than the bug it fixes.
+    it("leaves distinct words alone, wherever they were met", () => {
+      const essere = riservaKey(FONDAMENTALE[0]);
+      const di = riservaKey(FONDAMENTALE[1]);
+      const progress = progressWith({ [essere]: "known", [di]: "known", [DRILL_KEY]: "learning" });
+
+      expect(dueCount(progress, TODAY)).toBe(3);
+      expect(dueItems(progress, TODAY).map((u) => u.key).sort()).toEqual([di, essere, DRILL_KEY].sort());
+    });
+  });
 });
 
 describe("reviewItem", () => {
@@ -242,5 +306,128 @@ describe("reviewItem", () => {
   it("keeps an item due today when it's answered wrong", () => {
     const before = progressWith({ [VOCAB_KEYS[0]]: "known" });
     expect(dueCount(reviewItem(before, VOCAB_KEYS[0], false, TODAY), TODAY)).toBe(1);
+  });
+});
+
+// The collapse in dueUnits() and the write in reviewItem() are one mechanism,
+// and checking either on its own is what let a stuck queue through: the
+// collapse tests above all passed while a perfect round left the backlog
+// exactly where it started. So these run the whole cycle — due, served,
+// graded, due again — because that is the property a learner can see.
+describe("the round trip over a word held on two benches", () => {
+  const SI_DECK = wordKey(a1Vocab, greetings, greetings.words.find((w) => w.it === "sì"));
+  const SI_RISERVA = riservaKey(FONDAMENTALE.find((e) => e.it === "sì"));
+
+  // Every deck word whose lemma is also a lexicon entry, met on both benches.
+  // Twenty lemmas overlap today, and the whole overlap is used rather than a
+  // hand-picked pair because the bug scaled with it: 40 keys, a round of 20,
+  // and 20 still due after answering every one of them correctly.
+  function metOnBothBenches() {
+    const byLemma = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
+    const words = {};
+    let pairs = 0;
+    for (const level of LEVELS) {
+      for (const cat of level.categories) {
+        for (const w of cat.words) {
+          const entry = byLemma.get(lemmaKey(w.it));
+          if (!entry) continue;
+          pairs += 1;
+          words[wordKey(level, cat, w)] = "known";
+          words[riservaKey(entry)] = "known";
+        }
+      }
+    }
+    return { progress: progressWith(words), pairs };
+  }
+
+  function answerEveryServedItem(progress) {
+    return dueItems(progress, TODAY).reduce((p, unit) => reviewItem(p, unit.key, true, TODAY), progress);
+  }
+
+  it("empties the queue when every served item is answered right", () => {
+    const { progress, pairs } = metOnBothBenches();
+    expect(pairs).toBe(20);
+    expect(Object.keys(progress.words)).toHaveLength(pairs * 2);
+    expect(dueCount(progress, TODAY)).toBe(pairs);
+    expect(dueItems(progress, TODAY)).toHaveLength(pairs);
+
+    const after = answerEveryServedItem(progress);
+
+    expect(dueCount(after, TODAY)).toBe(0);
+    expect(dueItems(after, TODAY)).toEqual([]);
+  });
+
+  // One pair, spelled out: the sibling the queue dropped moves with the one it
+  // served, up one box from wherever it was rather than onto the survivor's
+  // box. A word that is solid on one bench must not be demoted for being newer
+  // on the other, and the earlier of the two due dates is what the collapse
+  // reads next time — so the word comes back at the weaker key's pace, which
+  // is the safe direction to be wrong in.
+  it("moves the dropped sibling's box and status, not just the survivor's", () => {
+    const progress = progressWith(
+      { [SI_DECK]: "known", [SI_RISERVA]: "learning" },
+      {
+        [SI_DECK]: { box: 3, due: "2026-08-10", last: "2026-08-03" },
+        [SI_RISERVA]: { box: 1, due: "2026-08-15", last: "2026-08-15" },
+      },
+    );
+    expect(dueItems(progress, TODAY).map((u) => u.key)).toEqual([SI_DECK]);
+
+    const after = reviewItem(progress, SI_DECK, true, TODAY);
+
+    expect(after.schedule[SI_DECK]).toEqual({ box: 4, due: "2026-08-24", last: TODAY });
+    expect(after.schedule[SI_RISERVA]).toEqual({ box: 2, due: "2026-08-18", last: TODAY });
+    expect(after.words[SI_RISERVA]).toBe("known");
+    expect(dueCount(after, TODAY)).toBe(0);
+  });
+
+  // And the wrong answer travels too, or a word the learner has just failed
+  // stays solid on the bench the round did not serve.
+  it("sends both keys back to box 1 on a wrong answer", () => {
+    const progress = progressWith(
+      { [SI_DECK]: "known", [SI_RISERVA]: "known" },
+      {
+        [SI_DECK]: { box: 3, due: "2026-08-10", last: "2026-08-03" },
+        [SI_RISERVA]: { box: 5, due: "2026-08-11", last: "2026-08-03" },
+      },
+    );
+
+    const after = reviewItem(progress, SI_DECK, false, TODAY);
+
+    expect(after.schedule[SI_DECK].box).toBe(1);
+    expect(after.schedule[SI_RISERVA].box).toBe(1);
+    expect(after.words[SI_RISERVA]).toBe("learning");
+  });
+
+  // The write follows the collapse exactly: only a unit the learner has met
+  // can be collapsed, so only a met unit may be moved. Marking an untouched
+  // deck word known would complete a category she has never opened.
+  it("leaves a sibling the learner has never met alone", () => {
+    const progress = progressWith({ [SI_RISERVA]: "known" });
+    const after = reviewItem(progress, SI_RISERVA, true, TODAY);
+
+    expect(after.words[SI_DECK]).toBeUndefined();
+    expect(after.schedule[SI_DECK]).toBeUndefined();
+  });
+
+  // Two different words stay two words. A write-through that walked the wrong
+  // set would quietly grade half the queue off one answer, which is the same
+  // failure as the stuck queue pointed the other way.
+  it("moves nothing else when a word has no sibling", () => {
+    const progress = progressWith({ [VOCAB_KEYS[0]]: "known", [VOCAB_KEYS[1]]: "known" });
+    const after = reviewItem(progress, VOCAB_KEYS[0], true, TODAY);
+
+    expect(after.schedule[VOCAB_KEYS[1]]).toBeUndefined();
+    expect(dueCount(after, TODAY)).toBe(1);
+  });
+
+  // A key that belongs to no scheduled unit still grades — there is simply
+  // nothing for it to be collapsed with. reviewItem is the single write point
+  // and nothing stops a caller handing it a key from an unscheduled module.
+  it("grades a key that is not a scheduled unit at all", () => {
+    const after = reviewItem(EMPTY, STORY_KEY, true, TODAY);
+
+    expect(after.words[STORY_KEY]).toBe("known");
+    expect(after.schedule[STORY_KEY]).toEqual({ box: 2, due: "2026-08-18", last: TODAY });
   });
 });

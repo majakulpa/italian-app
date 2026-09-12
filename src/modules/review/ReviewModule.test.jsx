@@ -704,6 +704,47 @@ describe("an article item in the queue", () => {
     expect(spoken()).toBe(announceArticle({ correct: false, kind: "definiteness", answer: null, rule: null }));
   });
 
+  // The cost of keeping a ruled-out option in the tab order: it is still a
+  // live button, so the press still arrives and the guard is what stops it
+  // being an answer. Pressing the same wrong form twice must not burn the
+  // second attempt — that would mark dexterity rather than Italian, the same
+  // reason an empty box is not an attempt on the typed shape.
+  it("does not spend an attempt on an option already ruled out", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+    expect(screen.getByText("Attempt 2 of 2")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "un your answer, incorrect" }));
+
+    expect(screen.getByText("Attempt 2 of 2")).toBeInTheDocument();
+    expect(screen.getByText(ARTICLE_LOCATED.definiteness)).toBeInTheDocument();
+    expect(loadProgress().schedule[CAFFE_KEY]).toBeUndefined();
+  });
+
+  // And the other half: a settled item's buttons are still mounted, so a
+  // second press would grade it twice — and a second grade after a right
+  // answer would demote the box the answer had just earned.
+  it("grades a settled article item once, whatever else is pressed", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, caffe.answer);
+    expect(loadProgress().schedule[CAFFE_KEY].box).toBe(2);
+
+    await pick(user, "un");
+
+    expect(loadProgress().schedule[CAFFE_KEY].box).toBe(2);
+    // Still the same item, still settled: nothing was re-judged.
+    expect(screen.getByText("1 / 1")).toBeInTheDocument();
+    expect(screen.getByText("Right")).toBeInTheDocument();
+  });
+
   // "Show me" is the typed shape's escape hatch from a blank page. There is no
   // blank page here: three buttons are always pressable, and pressing two of
   // them reveals the answer anyway.

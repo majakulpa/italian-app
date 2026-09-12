@@ -319,9 +319,10 @@ describe("the round trip over a word held on two benches", () => {
   const SI_RISERVA = riservaKey(FONDAMENTALE.find((e) => e.it === "sì"));
 
   // Every deck word whose lemma is also a lexicon entry, met on both benches.
-  // Twenty lemmas overlap today, and the whole overlap is used rather than a
-  // hand-picked pair because the bug scaled with it: 40 keys, a round of 20,
-  // and 20 still due after answering every one of them correctly.
+  // Twenty-two lemmas overlap today — ranks 301–400 added `governo` and
+  // `legge`, both already deck words — and the whole overlap is used rather
+  // than a hand-picked pair because the bug scaled with it: 44 keys, a round
+  // of 22, and 22 still due after answering every one of them correctly.
   function metOnBothBenches() {
     const byLemma = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]));
     const words = {};
@@ -344,17 +345,24 @@ describe("the round trip over a word held on two benches", () => {
     return dueItems(progress, TODAY).reduce((p, unit) => reviewItem(p, unit.key, true, TODAY), progress);
   }
 
-  it("empties the queue when every served item is answered right", () => {
+  // 22 pairs is now more than SESSION_LIMIT (20), so a single served round
+  // no longer clears the whole backlog — that cap is real behaviour a learner
+  // sees, not an artefact of the fixture, so the test sessions rather than
+  // asserting one round reaches everything.
+  it("empties the queue when every served item is answered right, one capped session at a time", () => {
     const { progress, pairs } = metOnBothBenches();
-    expect(pairs).toBe(20);
+    expect(pairs).toBe(22);
     expect(Object.keys(progress.words)).toHaveLength(pairs * 2);
     expect(dueCount(progress, TODAY)).toBe(pairs);
-    expect(dueItems(progress, TODAY)).toHaveLength(pairs);
+    expect(dueItems(progress, TODAY)).toHaveLength(SESSION_LIMIT);
 
-    const after = answerEveryServedItem(progress);
+    const afterFirst = answerEveryServedItem(progress);
+    expect(dueCount(afterFirst, TODAY)).toBe(pairs - SESSION_LIMIT);
 
-    expect(dueCount(after, TODAY)).toBe(0);
-    expect(dueItems(after, TODAY)).toEqual([]);
+    const afterSecond = answerEveryServedItem(afterFirst);
+
+    expect(dueCount(afterSecond, TODAY)).toBe(0);
+    expect(dueItems(afterSecond, TODAY)).toEqual([]);
   });
 
   // One pair, spelled out: the sibling the queue dropped moves with the one it

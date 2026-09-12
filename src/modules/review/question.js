@@ -65,7 +65,7 @@ export function clozeExample(word) {
 // `neighbours` is the sibling field: other whole *items* the learner might
 // have been reaching for instead. Empty on both shapes built here and filled
 // only by La Riserva, and that is a fact about the content rather than an
-// omission. A base-vocabulary entry sits in a closed list of 300 words the
+// omission. A base-vocabulary entry sits in a closed list of 400 words the
 // learner is working through, so "that is another word from this list" is a
 // true and useful thing to say; a deck word's siblings are its category, and
 // a grammar drill's are sentences, and neither would make that sentence true.

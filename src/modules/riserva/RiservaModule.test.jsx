@@ -33,7 +33,7 @@ describe("La Riserva", () => {
   it("draws one cell per word of the target, not per word written down", () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
 
-    // 2,000 cells even though the list holds 300 — the grid is the shape of
+    // 2,000 cells even though the list holds 400 — the grid is the shape of
     // the target, and the gap is the point rather than an omission.
     expect(cells(container)).toHaveLength(FONDAMENTALE_TARGET);
     expect(FONDAMENTALE.length).toBeLessThan(FONDAMENTALE_TARGET);

@@ -14,7 +14,7 @@ import { foldTyped } from "../../shared/typedAnswer.js";
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
 const BAND_1 = FASCE[0];
-// Ranks 601–800 — well past the 300 that are written down, so this band has
+// Ranks 601–800 — well past the 400 that are written down, so this band has
 // no words in it at all and must not offer a round.
 const EMPTY_BAND = FASCE[3];
 
@@ -67,7 +67,7 @@ describe("drillRound", () => {
 
   // And the cross-source half of it: met-ness is read through lexiconStates,
   // so a word the vocabulary deck already taught is not offered here as new.
-  // Twenty lemmas overlap; without this they would be asked twice.
+  // Twenty-two lemmas overlap; without this they would be asked twice.
   it("skips a word the vocabulary deck already taught", () => {
     const bene = entryFor("bene");
     expect(drillRound(states(EMPTY), BAND_1).concat(FONDAMENTALE.slice(0, 60)).map((e) => e.it)).toContain("bene");
@@ -95,11 +95,16 @@ describe("drillRound", () => {
     expect(drillRound(states(progress), BAND_1)).toEqual([]);
   });
 
-  // Band 2 is half written down (ranks 201–300 of 201–400), which is the
-  // partial case: it drills what exists and counts what exists.
+  // Band 2 used to be half written down (ranks 201–300 of 201–400) and this
+  // test asked FASCE[1] directly. Ranks 301–400 filled the rest of it, so no
+  // real fascia straddles the seeded/unseeded boundary any more — the boundary
+  // sits exactly on a band edge now. drillRound and unmetCount only ever read
+  // `from`/`to` off whatever they're given, so the partial case is rebuilt
+  // directly with a synthetic band rather than losing the coverage of it.
   it("drills only the written-down half of a partly seeded band", () => {
-    expect(unmetCount(states(EMPTY), FASCE[1])).toBe(100);
-    expect(drillRound(states(EMPTY), FASCE[1]).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
+    const straddling = { id: "test-straddle", from: 351, to: 450 };
+    expect(unmetCount(states(EMPTY), straddling)).toBe(50);
+    expect(drillRound(states(EMPTY), straddling).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
   });
 });
 

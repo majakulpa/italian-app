@@ -59,12 +59,12 @@ import LiveStatus from "../../shared/LiveStatus.jsx";
 // "press one of two thousand things".
 //
 // ── Seeded is not the same as unseen ────────────────────────────────────
-// The lexicon is 300 entries of a 2,000 target (PLAN.md, the open question on
+// The lexicon is 400 entries of a 2,000 target (PLAN.md, the open question on
 // the size of the lexicon), so
 // most ranks have no word behind them yet. A rank nobody has written down
 // cannot be unseen — "unseen" is a claim about the learner and this is a claim
 // about the file — so the grid draws those differently and says so. It makes
-// the honest shape of the list visible instead of implying 1,700 words the
+// the honest shape of the list visible instead of implying 1,600 words the
 // learner has merely failed to learn.
 
 const MONO = "'IBM Plex Mono', monospace";
@@ -91,8 +91,8 @@ const STATE_PAINT = {
 
 // A rank with no word behind it has to *recede*, and the first version of this
 // got it exactly backwards: it drew the empty ranks as a hollow square with a
-// hairline and the real ones as a dark fill, so at 7px the 1,700 words nobody
-// has written down read brighter than the 300 that exist. Both states are
+// hairline and the real ones as a dark fill, so at 7px the 1,600 words nobody
+// has written down read brighter than the 400 that exist. Both states are
 // solid fills now and no borders.
 //
 // `unseen` is painted with controlLine rather than line, and the reason is a

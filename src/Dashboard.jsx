@@ -65,14 +65,16 @@ export default function Dashboard({ onSelect }) {
 // occurs (shared/coverage.js), beside the count of solid words the
 // percentage is made of.
 //
-// Both numbers are capped by the content that ships, and the cap has moved.
-// It was 1.6% and 20 solid, because coverage learned that a word was known
-// from the vocabulary deck alone and only 20 of its 120 words are inside the
-// base 2,000. La Riserva's drill made every seeded rank reachable, so the
-// ceiling is now what those ranks are worth: 66.1%, and 300 of 2,000 solid.
+// Both numbers are capped by the content that ships, and the cap has moved
+// twice. It was 1.6% and 20 solid, because coverage learned that a word was
+// known from the vocabulary deck alone and only 20 of its 120 words are
+// inside the base 2,000. La Riserva's drill made every seeded rank reachable,
+// which moved the ceiling to what those ranks were worth — 66.1% at 300
+// seeded — and ranks 301–400 moved it again on their own: 69.1%, and 400 of
+// 2,000 solid.
 //
 // This card still reads 0,0% for a real day-one learner, and it still cannot
-// pass 66.1% — the list is 300 of a 2,000 target, which is a property of the
+// pass 69.1% — the list is 400 of a 2,000 target, which is a property of the
 // seeded lexicon rather than of the arithmetic. coverage.js explains it at
 // length and coverage.test.js pins the ceiling.
 function CoverageCard({ progress }) {

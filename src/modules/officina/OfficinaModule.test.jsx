@@ -121,7 +121,7 @@ describe("the figures on the benches", () => {
     );
     // It has a module of its own now — the fascia drill writes `riserva:`
     // keys — but the bench deliberately does not count through moduleStats.
-    // moduleStats would count the 300 entries the file holds; the grid counts
+    // moduleStats would count the 400 entries the file holds; the grid counts
     // ranks held out of the whole 2,000, and the bench has to agree with the
     // screen it opens rather than with the file behind it.
     expect(bench("riserva").module).toBe("riserva");

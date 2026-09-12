@@ -26,8 +26,8 @@ const legalArticle = (article, noun) => {
 };
 
 describe("FONDAMENTALE", () => {
-  it("ships the first 300 of a 2,000-word target", () => {
-    expect(FONDAMENTALE).toHaveLength(300);
+  it("ships the first 400 of a 2,000-word target", () => {
+    expect(FONDAMENTALE).toHaveLength(400);
     expect(FONDAMENTALE_TARGET).toBe(2000);
     expect(FONDAMENTALE.length).toBeLessThanOrEqual(FONDAMENTALE_TARGET);
   });
@@ -160,19 +160,29 @@ describe("FONDAMENTALE — the article convention", () => {
   // actually warns about: a bare `chiave`. Nothing in { rank, it, en, pl }
   // says which entries are nouns, so the check works by exclusion — every
   // bare entry with an opaque ending has to be a declared non-noun or an
-  // infinitive. The list below is 50 words for the first 300 and barely grows
-  // after that, because function words all live at the top of a frequency
-  // list; adding one is the cost of keeping the convention enforced instead
-  // of merely documented.
+  // infinitive. The list below was 50 words for the first 300, mostly
+  // function words that live at the top of a frequency list — but ranks
+  // 301–400 grew it by 13 in one pass, all numerals (`due`, `sei`, `dieci`...)
+  // and a handful of -e adjectives (`blu`, `felice`, `triste`), because a
+  // content batch further down the list can still land a run of opaque-ending
+  // non-nouns; adding one is the cost of keeping the convention enforced
+  // instead of merely documented.
   const NON_NOUNS = new Set([
     "di", "che", "e", "il", "non", "un", "in", "per", "con", "come", "tu", "se", "su", "anche", "più",
     "lui", "lei", "noi", "voi", "mi", "ti", "ci", "si", "ne", "sì", "perché", "dove", "chi", "bene",
     "già", "sempre", "mai", "poi", "oggi", "ieri", "domani", "qui", "là", "così", "ogni", "qualche",
     "niente", "grande", "giovane", "breve", "facile", "difficile", "importante", "possibile", "uguale",
+    // Ranks 301–400 added numerals and a few more -e/-i adjectives, none of
+    // which are nouns either — the same cost the comment above already names.
+    "due", "tre", "cinque", "sei", "sette", "nove", "dieci", "mille",
+    "blu", "verde", "marrone", "felice", "triste",
   ]);
 
   it("leaves no noun with an opaque ending standing bare", () => {
-    const bare = FONDAMENTALE.filter((w) => !ARTICLES.includes(w.it.split(" ")[0]));
+    // A vowel-initial opaque noun elides to `l'` and is not "bare" in the
+    // sense this test means — it carries an article, just not a spaced one —
+    // so it is excluded here and checked on its own terms below.
+    const bare = FONDAMENTALE.filter((w) => !ARTICLES.includes(w.it.split(" ")[0]) && !w.it.startsWith("l'"));
     const opaque = bare.filter(
       (w) => !/[oa]$/.test(w.it) && !/(are|ere|ire)$/.test(w.it) && !NON_NOUNS.has(w.it),
     );
@@ -192,6 +202,35 @@ describe("FONDAMENTALE — the article convention", () => {
     const seen = FONDAMENTALE.map((w) => w.it);
     for (const noun of ["tavolo", "letto", "sedia", "porta"]) {
       expect(seen, noun).toContain(noun);
+    }
+  });
+});
+
+// The limit the header names: a vowel-initial opaque noun elides `il`/`la` to
+// `l'`, which stops carrying the gender on its own. Rank 352 (`l'animale`) is
+// the first entry to hit it, so those entries carry a real `gender` field
+// instead — required exactly there, and nowhere else, so the convention
+// cannot quietly start leaning on it for a word that doesn't need it.
+describe("FONDAMENTALE — vowel-initial nouns and their gender field", () => {
+  const elided = FONDAMENTALE.filter((w) => w.it.startsWith("l'"));
+
+  it("has at least one elided entry to test the rule against", () => {
+    expect(elided.length).toBeGreaterThan(0);
+  });
+
+  it("only elides to l' when the stem is actually vowel-initial", () => {
+    for (const word of elided) {
+      expect(VOWEL.test(word.it.slice(2)), word.it).toBe(true);
+    }
+  });
+
+  it("requires gender on every elided entry, and forbids it everywhere else", () => {
+    for (const word of FONDAMENTALE) {
+      if (word.it.startsWith("l'")) {
+        expect(["m", "f"], word.it).toContain(word.gender);
+      } else {
+        expect(word.gender, word.it).toBeUndefined();
+      }
     }
   });
 });

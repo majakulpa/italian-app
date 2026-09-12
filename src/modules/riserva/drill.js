@@ -43,7 +43,7 @@
 // coverage.js folds the two units with.
 //
 // ── Ranks with no word behind them are not drillable ────────────────────
-// The list is 300 of 2,000. A rank nobody has written down is a claim about
+// The list is 400 of 2,000. A rank nobody has written down is a claim about
 // the file, not about the learner — La Riserva's grid has drawn that
 // distinction since it shipped — so an empty band yields an empty round and
 // the screen says so rather than opening a drill of nothing.
@@ -53,7 +53,7 @@ import { SESSION_LIMIT } from "../../shared/srs.js";
 import { foldTyped } from "../../shared/typedAnswer.js";
 
 // Every word written down in the list, for the `neighbour` verdict below.
-// Built once: it is the same 300 strings whichever entry is being asked.
+// Built once: it is the same 400 strings whichever entry is being asked.
 const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
 
 // The entries that another entry folds onto — where the accent is the only
@@ -68,8 +68,8 @@ const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
 // "Correct. Italian writes it si" while a Leitner box climbs on the wrong word.
 //
 // Derived rather than named, because the pair that needs this is a property of
-// the list and the list is 300 of 2,000. `si`/`sì` is the only one today and
-// drill.test.js pins that; the next 1,700 entries will bring more, and they
+// the list and the list is 400 of 2,000. `si`/`sì` is the only one today and
+// drill.test.js pins that; the next 1,600 entries will bring more, and they
 // will be covered the day they are written down rather than the day somebody
 // notices. Folded with the judge's own foldTyped, so the set can only ever
 // contain exactly the pairs the judge would confuse.

@@ -33,10 +33,12 @@
 //   plural-only word (`i soldi`), and the nouns whose ending actively lies —
 //   `la mano` is feminine, `il problema` is masculine.
 //
-// One known limit: for a vowel-initial opaque noun the article elides to `l'`
-// and stops carrying the gender (`l'amore`, `l'arte`). None of the first 300
-// are vowel-initial, so it doesn't bite yet; past that, these entries want a
-// real `gender` field rather than a convention.
+// One known limit, and it bit at rank 352: for a vowel-initial opaque noun
+// the article elides to `l'` and stops carrying the gender on its own
+// (`l'amore`, `l'arte`). Those entries carry a real `gender` field —
+// `"m"` or `"f"` — instead of leaning on the convention, and it is required
+// exactly there: every entry whose `it` starts with `l'` has one, and no
+// other entry does. fondamentale.test.js checks both directions.
 //
 // Glosses are English *and* Polish because the learner is a Polish native who
 // also speaks English, and the two languages carve meaning differently often
@@ -381,10 +383,112 @@ export const FONDAMENTALE = [
   { rank: 298, it: "il problema", en: "problem", pl: "problem" },
   { rank: 299, it: "la gente", en: "people", pl: "ludzie" },
   { rank: 300, it: "libro", en: "book", pl: "książka" },
+
+  { rank: 301, it: "uno", en: "one", pl: "jeden" },
+  { rank: 302, it: "due", en: "two", pl: "dwa" },
+  { rank: 303, it: "tre", en: "three", pl: "trzy" },
+  { rank: 304, it: "quattro", en: "four", pl: "cztery" },
+  { rank: 305, it: "cinque", en: "five", pl: "pięć" },
+  { rank: 306, it: "sei", en: "six", pl: "sześć" },
+  { rank: 307, it: "sette", en: "seven", pl: "siedem" },
+  { rank: 308, it: "otto", en: "eight", pl: "osiem" },
+  { rank: 309, it: "nove", en: "nine", pl: "dziewięć" },
+  { rank: 310, it: "dieci", en: "ten", pl: "dziesięć" },
+  { rank: 311, it: "cento", en: "hundred", pl: "sto" },
+  { rank: 312, it: "mille", en: "thousand", pl: "tysiąc" },
+  { rank: 313, it: "caldo", en: "hot", pl: "gorący · ciepły" },
+  { rank: 314, it: "freddo", en: "cold", pl: "zimny" },
+  { rank: 315, it: "pieno", en: "full", pl: "pełny" },
+  { rank: 316, it: "vuoto", en: "empty", pl: "pusty" },
+  { rank: 317, it: "aperto", en: "open", pl: "otwarty" },
+  { rank: 318, it: "chiuso", en: "closed", pl: "zamknięty" },
+  { rank: 319, it: "pulito", en: "clean", pl: "czysty" },
+  { rank: 320, it: "sporco", en: "dirty", pl: "brudny" },
+  { rank: 321, it: "stanco", en: "tired", pl: "zmęczony" },
+  { rank: 322, it: "malato", en: "sick", pl: "chory" },
+  { rank: 323, it: "sano", en: "healthy", pl: "zdrowy" },
+  { rank: 324, it: "ricco", en: "rich", pl: "bogaty" },
+  { rank: 325, it: "povero", en: "poor", pl: "biedny" },
+  { rank: 326, it: "felice", en: "happy", pl: "szczęśliwy" },
+  { rank: 327, it: "triste", en: "sad", pl: "smutny" },
+  { rank: 328, it: "rosso", en: "red", pl: "czerwony" },
+  { rank: 329, it: "blu", en: "blue", pl: "niebieski" },
+  { rank: 330, it: "verde", en: "green", pl: "zielony" },
+  { rank: 331, it: "giallo", en: "yellow", pl: "żółty" },
+  { rank: 332, it: "bianco", en: "white", pl: "biały" },
+  { rank: 333, it: "nero", en: "black", pl: "czarny" },
+  { rank: 334, it: "marrone", en: "brown", pl: "brązowy" },
+  { rank: 335, it: "rosa", en: "pink; rose (flower)", pl: "różowy · róża" },
+  { rank: 336, it: "il colore", en: "color", pl: "kolor" },
+  { rank: 337, it: "il sole", en: "sun", pl: "słońce" },
+  { rank: 338, it: "luna", en: "moon", pl: "księżyc" },
+  { rank: 339, it: "stella", en: "star", pl: "gwiazda" },
+  { rank: 340, it: "cielo", en: "sky", pl: "niebo" },
+  { rank: 341, it: "il mare", en: "sea", pl: "morze" },
+  { rank: 342, it: "montagna", en: "mountain", pl: "góra" },
+  { rank: 343, it: "il fiume", en: "river", pl: "rzeka" },
+  { rank: 344, it: "lago", en: "lake", pl: "jezioro" },
+  { rank: 345, it: "albero", en: "tree", pl: "drzewo" },
+  { rank: 346, it: "il fiore", en: "flower", pl: "kwiat" },
+  { rank: 347, it: "erba", en: "grass", pl: "trawa" },
+  { rank: 348, it: "pioggia", en: "rain", pl: "deszcz" },
+  { rank: 349, it: "la neve", en: "snow", pl: "śnieg" },
+  { rank: 350, it: "vento", en: "wind", pl: "wiatr" },
+
+  { rank: 351, it: "nuvola", en: "cloud", pl: "chmura" },
+  { rank: 352, it: "l'animale", en: "animal", pl: "zwierzę", gender: "m" },
+  { rank: 353, it: "il cane", en: "dog", pl: "pies" },
+  { rank: 354, it: "gatto", en: "cat", pl: "kot" },
+  { rank: 355, it: "cavallo", en: "horse", pl: "koń" },
+  { rank: 356, it: "uccello", en: "bird", pl: "ptak" },
+  { rank: 357, it: "primavera", en: "spring (season)", pl: "wiosna" },
+  { rank: 358, it: "l'estate", en: "summer", pl: "lato", gender: "f" },
+  { rank: 359, it: "autunno", en: "autumn", pl: "jesień" },
+  { rank: 360, it: "inverno", en: "winter", pl: "zima" },
+  { rank: 361, it: "il sangue", en: "blood", pl: "krew" },
+  { rank: 362, it: "medico", en: "doctor", pl: "lekarz" },
+  { rank: 363, it: "malattia", en: "illness", pl: "choroba" },
+  { rank: 364, it: "la salute", en: "health", pl: "zdrowie" },
+  { rank: 365, it: "il dolore", en: "pain", pl: "ból" },
+  { rank: 366, it: "l'ospedale", en: "hospital", pl: "szpital", gender: "m" },
+  { rank: 367, it: "l'amore", en: "love", pl: "miłość", gender: "m" },
+  { rank: 368, it: "idea", en: "idea", pl: "pomysł · idea" },
+  { rank: 369, it: "paura", en: "fear", pl: "strach" },
+  { rank: 370, it: "la felicità", en: "happiness", pl: "szczęście" },
+  { rank: 371, it: "gioia", en: "joy", pl: "radość" },
+  { rank: 372, it: "rabbia", en: "anger", pl: "złość" },
+  { rank: 373, it: "sorpresa", en: "surprise", pl: "niespodzianka" },
+  { rank: 374, it: "speranza", en: "hope", pl: "nadzieja" },
+  { rank: 375, it: "coraggio", en: "courage", pl: "odwaga" },
+  { rank: 376, it: "l'errore", en: "mistake, error", pl: "błąd", gender: "m" },
+  { rank: 377, it: "la verità", en: "truth", pl: "prawda" },
+  { rank: 378, it: "l'arte", en: "art", pl: "sztuka", gender: "f" },
+  { rank: 379, it: "la legge", en: "law", pl: "prawo" },
+  { rank: 380, it: "guerra", en: "war", pl: "wojna" },
+  { rank: 381, it: "la pace", en: "peace", pl: "pokój" },
+  { rank: 382, it: "governo", en: "government", pl: "rząd" },
+  { rank: 383, it: "la nazione", en: "nation", pl: "naród" },
+  { rank: 384, it: "chiesa", en: "church", pl: "kościół" },
+  { rank: 385, it: "dio", en: "god", pl: "bóg" },
+  { rank: 386, it: "la religione", en: "religion", pl: "religia" },
+  { rank: 387, it: "vestito", en: "dress, suit", pl: "sukienka · garnitur" },
+  { rank: 388, it: "scarpa", en: "shoe", pl: "but" },
+  { rank: 389, it: "cappello", en: "hat", pl: "kapelusz" },
+  { rank: 390, it: "camicia", en: "shirt", pl: "koszula" },
+  { rank: 391, it: "telefono", en: "telephone", pl: "telefon" },
+  { rank: 392, it: "il giornale", en: "newspaper", pl: "gazeta" },
+  { rank: 393, it: "lettera", en: "letter (mail)", pl: "list" },
+  { rank: 394, it: "musica", en: "music", pl: "muzyka" },
+  { rank: 395, it: "la canzone", en: "song", pl: "piosenka" },
+  { rank: 396, it: "storia", en: "story, history", pl: "historia" },
+  { rank: 397, it: "crescere", en: "to grow", pl: "rosnąć" },
+  { rank: 398, it: "toccare", en: "to touch", pl: "dotykać" },
+  { rank: 399, it: "sorridere", en: "to smile", pl: "uśmiechać się" },
+  { rank: 400, it: "sposare", en: "to marry", pl: "poślubić · brać ślub" },
 ];
 
 // The entries actually written down inside one band, in rank order. Usually
-// none: the list is 300 of 2,000, and a rank with no word behind it is a fact
+// none: the list is 400 of 2,000, and a rank with no word behind it is a fact
 // about the file rather than about the learner, so a band of empty ranks has
 // nothing to study and must not present as one.
 export function fasciaWords(fascia) {

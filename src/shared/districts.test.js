@@ -41,7 +41,7 @@ function solidify(progress, keys) {
 
 // One vocab key per distinct lexicon lemma — the only words that can move the
 // solid count at all, since coverage.js bridges from the vocabulary deck by
-// matching Italian strings. There are 20 of them in the whole app.
+// matching Italian strings. There are 22 of them in the whole app.
 const LEXICON_KEYS = (() => {
   const ranked = new Map(FONDAMENTALE.map((entry) => [entry.it, entry.rank]));
   const byRank = new Map();
@@ -66,8 +66,8 @@ function allDone(moduleId) {
 // The app cannot currently reach 600 solid words, and the reason changed with
 // La Riserva. It used to be that only 20 of the vocabulary module's 120 words
 // were inside the base 2,000; now every seeded rank is drillable and the wall
-// is the list itself — 300 entries of a 2,000 target, so 300 solid is the most
-// there is. coverage.js pins that ceiling on purpose, at 66.1% and 300 words.
+// is the list itself — 400 entries of a 2,000 target, so 400 solid is the most
+// there is. coverage.js pins that ceiling on purpose, at 69.1% and 400 words.
 // So the far side of Il Cinema's gate can only be reached
 // by standing in for the coverage figure — stated outright rather than hidden
 // behind a fixture name, because "unreachable with the content that ships" is

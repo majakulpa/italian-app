@@ -240,8 +240,9 @@ export function judge(question, input, attempt) {
   // Whether what she typed is another whole item the question knows about.
   // Declared up here because two very different branches below ask it, and
   // called rather than computed because one of them is on the path a *correct*
-  // answer takes: La Riserva hands every question 299 neighbours, and walking
-  // them to accept `libro` for `libro` is work for no verdict.
+  // answer takes: La Riserva hands every question one neighbour per other
+  // entry in the list (399 today), and walking them to accept `libro` for
+  // `libro` is work for no verdict.
   const typedIsNeighbour = () => question.neighbours.some((word) => sameTyped(typed, withoutClosing(word)));
 
   if (sameTyped(typed, target)) {

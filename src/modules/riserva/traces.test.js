@@ -44,17 +44,22 @@ describe("the two sources", () => {
     expect(traces[1].level.id).toBe("A1");
   });
 
-  // Most of the list is ahead of the lessons — 300 lexicon entries against
+  // Most of the list is ahead of the lessons — 400 lexicon entries against
   // 120 deck words and ten stories — so "nowhere yet" is the common answer
   // and the screen has to be able to say it.
   it("finds nothing at all for a word no lesson has reached", () => {
     expect(wordTraces(EMPTY, entry("essere"))).toEqual([]);
   });
 
+  // Ranks 301–400 raised this from 59 to 78 on their own — ordinary
+  // everyday words like `governo` and `la legge` turned out to already be
+  // deck words, and `il sole`, `gatto`, `storia` and others turned out to be
+  // glossed somewhere in a story — without either being sought out on
+  // purpose. That is the traces bridge doing exactly what it is for.
   it("leaves most of the shipped lexicon with no trace, and that is the honest count", () => {
     const traced = FONDAMENTALE.filter((e) => wordTraces(EMPTY, e).length > 0);
-    expect(traced).toHaveLength(59);
-    expect(FONDAMENTALE).toHaveLength(300);
+    expect(traced).toHaveLength(78);
+    expect(FONDAMENTALE).toHaveLength(400);
   });
 
   // A lemma glossed in two different stories is two places you met it, and

@@ -5,12 +5,24 @@ import ReviewModule from "./ReviewModule.jsx";
 import { LOCATED } from "../../shared/locatedFeedback.js";
 import { LEVELS } from "../../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
-import { wordKey, drillKey, riservaKey, loadProgress, saveProgress, todayISO, addDaysISO } from "../../shared/storage.js";
+import {
+  wordKey,
+  drillKey,
+  riservaKey,
+  articoliKey,
+  loadProgress,
+  saveProgress,
+  todayISO,
+  addDaysISO,
+} from "../../shared/storage.js";
 import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, SESSION_LIMIT } from "../../shared/srs.js";
 import { DISTRICTS, districtForModule } from "../../shared/districts.js";
 import * as speech from "../../shared/speech.js";
+import { STRANDS, RULES, filled } from "../../data/articoli.js";
+import { LOCATED as ARTICLE_LOCATED, announce as announceArticle, ATTEMPTS as ARTICLE_ATTEMPTS } from "../articoli/feedback.js";
+import { ATTEMPTS } from "../../shared/locatedFeedback.js";
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
 const greetings = a1Vocab.categories.find((c) => c.id === "greetings");
@@ -27,6 +39,16 @@ const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const topic = a1Grammar.topics[0];
 const drill = topic.drills[0]; // "Io ___ italiano ogni giorno." — parlo
 const DRILL_KEY = drillKey(a1Grammar, topic, drill);
+
+const determinativo = STRANDS.find((s) => s.id === "determinativo");
+// "Bevo ___ caffè ogni mattina." — il / un / —, and the one item the design
+// itself picked to make the Polish point.
+const caffe = determinativo.items.find((i) => i.id === "caffe");
+// "Ieri ___ studente è arrivato tardi." — il / lo / l', a second article item
+// for the tests that need a round of two.
+const studente = determinativo.items.find((i) => i.id === "studente");
+const CAFFE_KEY = articoliKey(determinativo, caffe);
+const STUDENTE_KEY = articoliKey(determinativo, studente);
 
 // Seeds items as studied-but-unscheduled, which srs.js treats as due now.
 function seedDue(words, schedule = {}) {
@@ -56,6 +78,11 @@ const answer = async (user, text) => {
 };
 
 const spoken = () => document.querySelector('[role="status"]').textContent;
+
+// The article shape's answer: press one of the three. The zero article is
+// drawn as an em dash and named "no article", so a test asks for it the way a
+// screen reader would.
+const pick = async (user, form) => user.click(screen.getByRole("button", { name: form === "—" ? "no article" : form }));
 
 describe("La Piazza — the landing", () => {
   it("says nothing is due when the queue is empty, and goes back to the city", async () => {
@@ -519,6 +546,314 @@ describe("a word from La Riserva", () => {
     await answer(user, "dire");
 
     expect(loadProgress().schedule[riservaKey(dire)].box).toBe(2);
+  });
+});
+
+// The round's second question shape. An article item is a choice between
+// three authored forms, so it arrives as three buttons and is judged by Gli
+// Articoli's own judge rather than by the typed one — which is the whole
+// reason the strand could join the queue at all.
+describe("an article item in the queue", () => {
+  it("arrives as three buttons under L'Officina, with no box to type in", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "known" });
+    renderReview();
+    await startRound(user);
+
+    expect(screen.getByText("Bevo ___ caffè ogni mattina.")).toBeInTheDocument();
+    expect(screen.getByText(caffe.en)).toBeInTheDocument();
+    expect(screen.getByText(/Articles/)).toBeInTheDocument();
+    expect(screen.getByText("L'Officina")).toBeInTheDocument();
+
+    for (const option of caffe.options) expect(screen.getByRole("button", { name: option === "—" ? "no article" : option })).toBeInTheDocument();
+    // No box, and nothing to submit into one.
+    expect(screen.queryByLabelText("Write it in Italian")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Check/ })).not.toBeInTheDocument();
+  });
+
+  // The trap the brief warned about, and the reason this reads the DOM rather
+  // than trusting the JSX: a `lang` attribute has vanished into a wrapper's
+  // destructure in this repo before, and axe cannot see that class of bug.
+  // The em dash is the exception — it is not a word in any language, which is
+  // why it carries a name instead.
+  it("marks each Italian form as Italian, and names the one that is not a word", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "known" });
+    renderReview();
+    await startRound(user);
+
+    for (const form of ["il", "un"]) {
+      const button = screen.getByRole("button", { name: form });
+      expect(button.querySelector('[lang="it"]')?.textContent, form).toBe(form);
+    }
+    expect(screen.getByText("Bevo ___ caffè ogni mattina.").closest('[lang="it"]')).not.toBeNull();
+    // The English under the gap is English and must not claim otherwise.
+    expect(screen.getByText(caffe.en).closest('[lang="it"]')).toBeNull();
+
+    const zero = screen.getByRole("button", { name: "no article" });
+    expect(zero.querySelector('[lang="it"]')).toBeNull();
+  });
+
+  it("promotes a pick that was right first time out of today's queue", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, caffe.answer);
+
+    expect(screen.getByText("Right")).toBeInTheDocument();
+    const saved = loadProgress();
+    expect(saved.words[CAFFE_KEY]).toBe("known");
+    expect(saved.schedule[CAFFE_KEY].box).toBe(2);
+    expect(saved.schedule[CAFFE_KEY].due).not.toBe(todayISO());
+  });
+
+  // Located, not solved, with three buttons: the verdict names the dimension
+  // the pick went wrong on and never the answer, and the two forms she has
+  // not spent are still there to press.
+  it("locates a wrong pick, hands nothing over, and leaves the other two live", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+
+    expect(screen.getByText("Not there yet")).toBeInTheDocument();
+    expect(screen.getByText(ARTICLE_LOCATED.definiteness)).toBeInTheDocument();
+    // Nothing revealed: not the answer, not the rule, not the anchor.
+    expect(screen.queryByText(/The answer is/)).not.toBeInTheDocument();
+    expect(screen.queryByText(RULES[caffe.rule].says)).not.toBeInTheDocument();
+    expect(screen.queryByText(caffe.anchor.pl)).not.toBeInTheDocument();
+    expect(screen.getByText("Attempt 2 of 2")).toBeInTheDocument();
+    expect(loadProgress().schedule[CAFFE_KEY]).toBeUndefined();
+
+    // The spent one keeps its place in the tab order rather than vanishing
+    // out from under a keyboard user mid-item; the other two are untouched.
+    // Its name has grown a cross by now — and the cross carries words, so the
+    // wrongness is not left to colour alone (WCAG 1.4.1).
+    const spent = screen.getByRole("button", { name: "un your answer, incorrect" });
+    expect(spent).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "il" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("button", { name: "no article" })).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("reveals the answer once the second pick is spent, and does not promote", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+    await pick(user, "—");
+
+    expect(screen.getByText(filled(caffe))).toBeInTheDocument();
+    const saved = loadProgress();
+    expect(saved.words[CAFFE_KEY]).toBe("learning");
+    expect(saved.schedule[CAFFE_KEY]).toEqual({ box: 1, due: todayISO(), last: todayISO() });
+  });
+
+  // The same bar as the typed shape, and with three buttons it is worth more
+  // than it is there: a second pick comes after the app has ruled one of the
+  // three out, so a right answer on it is a narrowed field rather than recall.
+  it("settles a right second pick without promoting it", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+    await pick(user, caffe.answer);
+
+    expect(screen.getByText("Right")).toBeInTheDocument();
+    expect(loadProgress().schedule[CAFFE_KEY].box).toBe(1);
+  });
+
+  // The rule and the Polish anchor travel with the item rather than staying
+  // behind on the bench — PLAN.md's "Polish is a first-class layer" is not a
+  // property of one screen. Both are withheld until the item settles, because
+  // naming the rule for an item whose answer is `lo` is giving the answer.
+  it("brings the rule and the Polish anchor with the item, once it settles", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, caffe.answer);
+
+    expect(screen.getByText(RULES[caffe.rule].says)).toBeInTheDocument();
+    const polish = screen.getByText(caffe.anchor.pl);
+    expect(polish).toHaveAttribute("lang", "pl");
+    expect(screen.getByText(caffe.anchor.says)).toBeInTheDocument();
+  });
+
+  it("says the same thing to a screen reader as it draws on the card", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    expect(spoken()).toBe("");
+    await pick(user, "un");
+
+    expect(spoken()).toContain(ARTICLE_LOCATED.definiteness);
+    expect(spoken()).toContain("Try once more.");
+    // The spoken twin is the strand's own announce(), not the typed one — a
+    // typed verdict would have no sentence for `definiteness` at all.
+    expect(spoken()).toBe(announceArticle({ correct: false, kind: "definiteness", answer: null, rule: null }));
+  });
+
+  // The cost of keeping a ruled-out option in the tab order: it is still a
+  // live button, so the press still arrives and the guard is what stops it
+  // being an answer. Pressing the same wrong form twice must not burn the
+  // second attempt — that would mark dexterity rather than Italian, the same
+  // reason an empty box is not an attempt on the typed shape.
+  it("does not spend an attempt on an option already ruled out", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+    expect(screen.getByText("Attempt 2 of 2")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "un your answer, incorrect" }));
+
+    expect(screen.getByText("Attempt 2 of 2")).toBeInTheDocument();
+    expect(screen.getByText(ARTICLE_LOCATED.definiteness)).toBeInTheDocument();
+    expect(loadProgress().schedule[CAFFE_KEY]).toBeUndefined();
+  });
+
+  // And the other half: a settled item's buttons are still mounted, so a
+  // second press would grade it twice — and a second grade after a right
+  // answer would demote the box the answer had just earned.
+  it("grades a settled article item once, whatever else is pressed", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, caffe.answer);
+    expect(loadProgress().schedule[CAFFE_KEY].box).toBe(2);
+
+    await pick(user, "un");
+
+    expect(loadProgress().schedule[CAFFE_KEY].box).toBe(2);
+    // Still the same item, still settled: nothing was re-judged.
+    expect(screen.getByText("1 / 1")).toBeInTheDocument();
+    expect(screen.getByText("Right")).toBeInTheDocument();
+  });
+
+  // "Show me" is the typed shape's escape hatch from a blank page. There is no
+  // blank page here: three buttons are always pressable, and pressing two of
+  // them reveals the answer anyway.
+  it("offers no Show me on an article item", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    expect(screen.queryByRole("button", { name: "Show me" })).not.toBeInTheDocument();
+  });
+
+  // The card the button describes is the one that says *where* the pick went,
+  // so a keyboard learner who lands on "Next" is told that rather than only
+  // that something happened.
+  it("describes the carry-forward button with the verdict it follows", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    expect(screen.queryByRole("button", { name: /See how it went/ })).not.toBeInTheDocument();
+    await pick(user, "un");
+    await pick(user, "—");
+
+    const forward = screen.getByRole("button", { name: /See how it went/ });
+    expect(document.getElementById(forward.getAttribute("aria-describedby"))).toHaveTextContent(filled(caffe));
+  });
+
+  // The hole the article shape opens and the typed one never had: the button
+  // that carries the item forward is the button that unmounts when it is
+  // pressed, so without somewhere to send focus a keyboard learner starts the
+  // next item on the body. The target is whatever the new item is answered
+  // with — the first of three here, the box on a typed item.
+  it("puts focus on the next item's first control rather than nowhere", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning", [STUDENTE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    const first = screen.getByText(/^Bevo|^Ieri/).textContent.startsWith("Bevo") ? caffe : studente;
+    await pick(user, first.answer);
+    await user.click(screen.getByRole("button", { name: /^Next/ }));
+
+    const second = first === caffe ? studente : caffe;
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: second.options[0] === "—" ? "no article" : second.options[0] }),
+    );
+  });
+
+  it("puts focus in the box when the next item is a typed one", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning", [WORD_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    // Whichever shape came first, settle it and carry on.
+    if (screen.queryByLabelText("Write it in Italian")) {
+      await answer(user, word.it);
+      await user.click(screen.getByRole("button", { name: /^Next/ }));
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "il" }));
+    } else {
+      await pick(user, caffe.answer);
+      await user.click(screen.getByRole("button", { name: /^Next/ }));
+      expect(document.activeElement).toBe(screen.getByLabelText("Write it in Italian"));
+    }
+  });
+
+  // An article is only ever an answer to the noun it stands in front of, so a
+  // bare `il` in the end-of-round list would be the one part of the item that
+  // says nothing on its own.
+  it("lists an article item as the sentence with its gap closed", async () => {
+    const user = userEvent.setup();
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    await pick(user, "un");
+    await pick(user, "—");
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
+
+    expect(screen.getByText("Worth another look")).toBeInTheDocument();
+    expect(screen.getByText(filled(caffe))).toBeInTheDocument();
+    expect(screen.getByText(caffe.en, { exact: false })).toBeInTheDocument();
+  });
+
+  // The landing states one attempt count for a round that now runs two judges,
+  // and the two keep their own on purpose (feedback.js: hoisting the 2 would
+  // couple drills that have no reason to keep the same number forever). So the
+  // sentence is only true while they agree, and this is what says so.
+  it("keeps the two judges' attempt counts in step, so the landing can state one", () => {
+    expect(ARTICLE_ATTEMPTS).toBe(ATTEMPTS);
+
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+    expect(screen.getByText(new RegExp(`you get ${ATTEMPTS} goes`))).toBeInTheDocument();
+  });
+
+  // The landing's own claim about the round. "You write the Italian rather
+  // than picking it out of a line-up" was true of every item until this
+  // change, and a card that keeps saying it would be exactly the unbacked
+  // figure week.js sits above it to refuse.
+  it("says on the landing that the articles are the shape that is picked", () => {
+    seedDue({ [CAFFE_KEY]: "learning" });
+    renderReview();
+
+    expect(screen.getByText(/the three forms/)).toBeInTheDocument();
+    expect(screen.getByText("Gli Articoli")).toHaveAttribute("lang", "it");
   });
 });
 

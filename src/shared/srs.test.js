@@ -15,7 +15,8 @@ import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { FONDAMENTALE } from "../data/fondamentale.js";
-import { wordKey, drillKey, storyKey, conversationKey, riservaKey } from "./storage.js";
+import { STRANDS } from "../data/articoli.js";
+import { wordKey, drillKey, storyKey, conversationKey, riservaKey, articoliKey } from "./storage.js";
 import { lemmaKey } from "./lemma.js";
 
 // Dates are passed in rather than read from the clock, so none of this
@@ -261,6 +262,39 @@ describe("dueItems", () => {
 
       expect(dueCount(progress, TODAY)).toBe(3);
       expect(dueItems(progress, TODAY).map((u) => u.key).sort()).toEqual([di, essere, DRILL_KEY].sort());
+    });
+
+    // The collapse keys off `unit.item.it`, and an article item has no `it` —
+    // it is a gapped sentence, not a word — so it must fall through to its own
+    // key the way a grammar drill does. If it did not, every article item in
+    // the app would share one undefined lemma, sixteen items would arrive as
+    // one, and grading that one would settle the other fifteen unanswered.
+    //
+    // Sixteen out of sixteen is the assertion rather than "more than one",
+    // because a partial collapse is the failure that would survive a looser
+    // test.
+    it("never folds article items onto one another, having no word to fold on", () => {
+      const articles = STRANDS.flatMap((strand) =>
+        strand.items.map((item) => articoliKey(strand, item)),
+      );
+      const progress = progressWith(Object.fromEntries(articles.map((key) => [key, "known"])));
+
+      expect(articles.length).toBeGreaterThan(1);
+      expect(dueCount(progress, TODAY)).toBe(articles.length);
+      expect(dueItems(progress, TODAY, articles.length).map((u) => u.key).sort()).toEqual([...articles].sort());
+    });
+
+    // ...and the write follows: one graded article settles one key. A collapse
+    // here would be the worse half of the same bug — the round would look
+    // right and fifteen items the learner never saw would silently advance.
+    it("settles one key when an article item is graded", () => {
+      const strand = STRANDS[0];
+      const [first, second] = strand.items.map((item) => articoliKey(strand, item));
+      const progress = progressWith({ [first]: "known", [second]: "known" });
+
+      const after = reviewItem(progress, first, true, TODAY);
+      expect(after.schedule[first].box).toBe(2);
+      expect(after.schedule[second]).toEqual(progress.schedule[second]);
     });
   });
 });

@@ -6,7 +6,7 @@
 // stayed out of the queue rather than be answered by a red cross and the
 // answer handed over.
 //
-// The two scheduled modules arrive in different shapes:
+// The scheduled modules arrive in different shapes:
 //
 //   grammar  already a gapped sentence with one authored answer. The gap is
 //            the question; its `options` are *not* shown — they become a
@@ -21,8 +21,15 @@
 //            where the argument about the two glosses lives and a second copy
 //            of it would drift. The import direction is the right way round:
 //            La Piazza has no content of its own, it replays other districts'.
+//   articoli the one shape that is not typed, and the reason `options` exists
+//            below. Everything above has an answer space the learner writes
+//            into; an article item is a choice between three authored forms,
+//            one of which may be the zero article, and asking it any other
+//            way would mean asking the learner to guess which three of the
+//            ten article forms Italian was choosing between here.
 
 import { lexiconQuestion } from "../riserva/drill.js";
+import { filled } from "../../data/articoli.js";
 
 const GAP = "___";
 
@@ -82,8 +89,51 @@ export function clozeExample(word) {
 // settled, so the answer arrives in the place it came from rather than as a
 // loose word. `recap` is the one-line form the end-of-round list wants, where
 // the word itself is the thing being listed.
+//
+// `options` is the field that says how the item is *answered* rather than what
+// it is answered with, and it is the one the screen branches on: empty means a
+// text box, three forms mean three buttons. It is declared empty on the typed
+// shapes rather than left undefined, the same discipline `alternatives` and
+// `glossPl` already follow — a screen reading `q.options.length` must not have
+// to know which shape it is holding first.
+//
+// It is emphatically not `alternatives` under another name. `alternatives` is
+// the forms an item was authored with that are *never drawn* and exist to feed
+// the judge a `distractor` verdict; `options` is the line-up. A grammar drill
+// has both and they are different sets: its options stay out of sight.
 export function toQuestion(unit) {
   if (unit.moduleId === "riserva") return lexiconQuestion(unit.item);
+
+  // The gapped sentence, the English under it, and the three forms — which is
+  // what Gli Articoli's own bench draws, minus the strand chrome around it.
+  // `hint` is where the English goes because `hint` is the small line under
+  // the prompt, and the English *is* the hint here in the strict sense: it is
+  // as often a trap as a help, since English drops the article in exactly the
+  // places Italian keeps it. `Bevo il caffè` is `I drink coffee`.
+  if (unit.moduleId === "articoli") {
+    return {
+      kind: "articoli",
+      gloss: null,
+      glossPl: null,
+      cloze: null,
+      prompt: `${unit.item.before} ${GAP} ${unit.item.after}`,
+      hint: unit.item.en,
+      answer: unit.item.answer,
+      // The judge this shape routes to (modules/articoli/feedback.js) reasons
+      // about what the forms *are*, not about a string it was handed, so it
+      // takes the item itself and has no use for either of these two.
+      alternatives: [],
+      neighbours: [],
+      strictAccents: false,
+      options: unit.item.options,
+      context: { it: filled(unit.item), en: unit.item.en },
+      // The sentence with its gap closed, which is what Gli Articoli's own
+      // summary lists. A bare `il` in the "worth another look" list would be
+      // the one thing about the item that is useless on its own: the article
+      // is only ever an answer to the noun it sits in front of.
+      recap: { primary: filled(unit.item), secondary: unit.item.en },
+    };
+  }
 
   if (unit.moduleId === "vocab") {
     return {
@@ -97,12 +147,18 @@ export function toQuestion(unit) {
       alternatives: [],
       neighbours: [],
       strictAccents: false,
+      options: [],
       context: { it: unit.item.ex, en: unit.item.exEn },
       recap: { primary: unit.item.it, secondary: unit.item.en },
     };
   }
 
-  const filled = unit.item.prompt.replace(GAP, unit.item.answer);
+  // `closed`, not `filled`: data/articoli.js exports a function by that name
+  // and this branch is inside the same function scope as the article one, so a
+  // local `filled` would shadow the import across both and leave the article
+  // branch calling a const in its temporal dead zone. It did, and
+  // question.test.js caught it.
+  const closed = unit.item.prompt.replace(GAP, unit.item.answer);
   return {
     kind: "grammar",
     gloss: null,
@@ -114,7 +170,12 @@ export function toQuestion(unit) {
     alternatives: unit.item.options.filter((option) => option !== unit.item.answer),
     neighbours: [],
     strictAccents: false,
-    context: { it: filled, en: unit.item.en },
-    recap: { primary: filled, secondary: unit.item.en },
+    // Authored with three forms and asked with none of them on screen: the gap
+    // is the question, and the other two are the `distractor` verdict's
+    // evidence. This is the shape that makes `options` and `alternatives` two
+    // fields rather than one.
+    options: [],
+    context: { it: closed, en: unit.item.en },
+    recap: { primary: closed, secondary: unit.item.en },
   };
 }

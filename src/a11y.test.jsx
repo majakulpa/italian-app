@@ -20,9 +20,9 @@ import { GRAMMAR_LEVELS } from "./data/grammar.js";
 import { STORY_LEVELS } from "./data/stories.js";
 import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
-import { STRANDS, ZERO } from "./data/articoli.js";
+import { STRANDS, ZERO, filled } from "./data/articoli.js";
 import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
-import { saveProgress, wordKey, drillKey, trapCaughtKey, riservaKey } from "./shared/storage.js";
+import { saveProgress, wordKey, drillKey, trapCaughtKey, riservaKey, articoliKey } from "./shared/storage.js";
 import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
@@ -647,6 +647,32 @@ describe("the review session", () => {
     const { container } = render(<ReviewModule onExit={() => {}} />);
     await expectNoViolations(container);
   });
+
+  // The round's second question shape, which has states the typed one does
+  // not: three buttons where a wrong one is aria-disabled rather than removed,
+  // a verdict card with a rule and a Polish anchor under it, and a carry-
+  // forward button that describes itself with the verdict.
+  it("has an accessible article item, located verdict and settled item", async () => {
+    const strand = STRANDS.find((s) => s.id === "determinativo");
+    const caffe = strand.items.find((i) => i.id === "caffe");
+    const key = articoliKey(strand, caffe);
+    saveProgress({ words: { [key]: "known" }, schedule: { [key]: { box: 1, due: "2020-01-01" } } });
+
+    const user = userEvent.setup();
+    const { container } = render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+    await expectNoViolations(container);
+
+    // Wrong once: the located card is up, one option is spent and still in
+    // the tab order, and nothing has been revealed.
+    await user.click(screen.getByRole("button", { name: "un" }));
+    await expectNoViolations(container);
+
+    // Wrong twice: settled, revealed, rule and anchor drawn, and the button
+    // that carries the item forward has appeared under them.
+    await user.click(screen.getByRole("button", { name: "no article" }));
+    await expectNoViolations(container);
+  });
 });
 
 // WCAG 3.1.2, Language of Parts: the document is lang="en", so every run of
@@ -871,6 +897,41 @@ describe("Italian text is marked as Italian", () => {
     expect(italianAncestor(screen.getByText(word.it))).not.toBeNull();
     expect(italianAncestor(screen.getByText(word.ex))).not.toBeNull();
     expect(italianAncestor(screen.getByText(word.exEn, { exact: false }))).toBeNull();
+  });
+
+  // The article shape puts Italian on a *button*, which is the one place a
+  // lang attribute has already gone missing in this repo: a wrapper that
+  // destructures {children, style} eats everything else, and axe cannot tell
+  // one language from another. So this reads the attribute off the rendered
+  // DOM rather than trusting the JSX.
+  it("marks the three article forms, the gapped sentence and the anchor, and not the English", async () => {
+    const user = userEvent.setup();
+    const strand = STRANDS.find((s) => s.id === "determinativo");
+    const caffe = strand.items.find((i) => i.id === "caffe");
+    const key = articoliKey(strand, caffe);
+    saveProgress({ words: { [key]: "known" }, schedule: { [key]: { box: 1, due: "2020-01-01" } } });
+
+    render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+
+    expect(italianAncestor(screen.getByText("Bevo ___ caffè ogni mattina."))).not.toBeNull();
+    for (const form of caffe.options.filter((o) => o !== ZERO)) {
+      const button = screen.getByRole("button", { name: form });
+      expect(within(button).getByText(form)).toHaveAttribute("lang", "it");
+    }
+    // The zero article is an em dash, which is not a word in any language —
+    // so it claims none, and carries a name instead of a lang.
+    const zero = screen.getByRole("button", { name: "no article" });
+    expect(within(zero).getByText("no article")).not.toHaveAttribute("lang");
+    // The English under the gap is English.
+    expect(italianAncestor(screen.getByText(caffe.en))).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: caffe.answer }));
+    // Three languages in one settled card: the Italian sentence, the English
+    // beside it, and the Polish anchor that PLAN.md keeps first-class.
+    expect(italianAncestor(screen.getByText(filled(caffe)))).not.toBeNull();
+    expect(screen.getByText(caffe.anchor.pl)).toHaveAttribute("lang", "pl");
+    expect(italianAncestor(screen.getByText(caffe.anchor.says))).toBeNull();
   });
 });
 

@@ -4,6 +4,13 @@ import { LEVELS } from "../../data/vocab.js";
 import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { lexiconQuestion } from "../riserva/drill.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
+import { STRANDS, ZERO, filled } from "../../data/articoli.js";
+
+const determinativo = STRANDS.find((s) => s.id === "determinativo");
+// "Bevo ___ caffè ogni mattina." — answer `il`, options il / un / —, and the
+// one item in the file the design itself picked to make the Polish point.
+const caffe = determinativo.items.find((i) => i.id === "caffe");
+const everyArticle = STRANDS.flatMap((strand) => strand.items);
 
 const a1Vocab = LEVELS.find((l) => l.id === "A1");
 const greetings = a1Vocab.categories.find((c) => c.id === "greetings");
@@ -136,5 +143,85 @@ describe("building a question from a due unit", () => {
     expect(toQuestion({ moduleId: "vocab", item: bene }).glossPl).toBeNull();
     expect(toQuestion({ moduleId: "grammar", item: drill }).glossPl).toBeNull();
     expect(toQuestion({ moduleId: "riserva", item: FONDAMENTALE[0] }).glossPl).toBe(FONDAMENTALE[0].pl);
+  });
+
+  // The one shape that is not typed. Its gap is the question the way a grammar
+  // drill's is, and the English under it is the small line a grammar drill
+  // puts its hint on — but the three forms are drawn, which nothing else here
+  // does, and that is the whole point of the shape.
+  it("asks an article item by its gap, with the three forms it is chosen from", () => {
+    const question = toQuestion({ moduleId: "articoli", item: caffe });
+
+    expect(question).toMatchObject({
+      kind: "articoli",
+      prompt: "Bevo ___ caffè ogni mattina.",
+      hint: caffe.en,
+      answer: caffe.answer,
+      gloss: null,
+      glossPl: null,
+      cloze: null,
+    });
+    expect(question.options).toEqual(caffe.options);
+    expect(question.options).toContain(ZERO);
+    expect(question.context).toEqual({ it: "Bevo il caffè ogni mattina.", en: caffe.en });
+  });
+
+  // The recap is what the end-of-round list prints, and a bare `il` there
+  // would be the one part of the item that says nothing on its own — an
+  // article is only ever an answer to the noun it stands in front of.
+  it("recaps an article item as the sentence with its gap closed", () => {
+    expect(toQuestion({ moduleId: "articoli", item: caffe }).recap).toEqual({
+      primary: "Bevo il caffè ogni mattina.",
+      secondary: caffe.en,
+    });
+  });
+
+  // The same check the cloze gets, for the same reason: a prompt that still
+  // contains the answer is a question that hands it over. `da` sits inside
+  // `dalla` and `di` inside `della`, so this has to be bounded rather than a
+  // substring test — and the zero article is an em dash, which never appears
+  // in a sentence.
+  it("never leaves the answer showing in an article prompt", () => {
+    for (const item of everyArticle) {
+      if (item.answer === ZERO) continue;
+      const { prompt } = toQuestion({ moduleId: "articoli", item });
+      const bounded = new RegExp(`(?<!\\p{L})${item.answer}(?!\\p{L})`, "iu");
+      expect(bounded.test(prompt), `${item.id}: ${prompt}`).toBe(false);
+    }
+  });
+
+  // Closing the gap has exactly one implementation — data/articoli.js's
+  // filled() — so the sentence La Piazza reveals and the sentence the bench
+  // reveals cannot come out different.
+  it("closes an article gap the way the bench closes it", () => {
+    for (const item of everyArticle) {
+      const question = toQuestion({ moduleId: "articoli", item });
+      expect(question.context.it, item.id).toBe(filled(item));
+      expect(question.recap.primary, item.id).toBe(filled(item));
+    }
+  });
+
+  // `options` is what the screen branches on to choose between a text box and
+  // three buttons, so the typed shapes have to declare it empty rather than
+  // leave the screen reading `undefined.length`.
+  it("gives every question shape an options slot, filled only on the article one", () => {
+    expect(toQuestion({ moduleId: "vocab", item: bene }).options).toEqual([]);
+    expect(toQuestion({ moduleId: "grammar", item: drill }).options).toEqual([]);
+    expect(toQuestion({ moduleId: "riserva", item: FONDAMENTALE[0] }).options).toEqual([]);
+    expect(toQuestion({ moduleId: "articoli", item: caffe }).options).toHaveLength(3);
+  });
+
+  // `options` and `alternatives` are two fields because they are two things: a
+  // grammar drill is authored with three forms that are never drawn, and an
+  // article item is authored with three that are the question. Folding them
+  // into one field would put the grammar line-up back on screen.
+  it("keeps the drawn forms and the undrawn ones in different fields", () => {
+    const grammar = toQuestion({ moduleId: "grammar", item: drill });
+    expect(grammar.alternatives.length).toBeGreaterThan(0);
+    expect(grammar.options).toEqual([]);
+
+    const article = toQuestion({ moduleId: "articoli", item: caffe });
+    expect(article.options.length).toBeGreaterThan(0);
+    expect(article.alternatives).toEqual([]);
   });
 });

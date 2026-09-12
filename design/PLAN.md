@@ -82,11 +82,16 @@ layer](#polish-is-a-first-class-layer).
   against it now: `modules/mappe/feedback.js`, `modules/falsiAmici/feedback.js`
   and `shared/locatedFeedback.js`, which La Piazza and La Riserva share —
   it moved out of `modules/review/` the day it got a second caller.
-- `src/modules/review/` — La Piazza (design 18): the landing, the typed round,
-  `question.js` (a due unit turned into something to produce) and `week.js`
-  (the one figure the landing states). The nine verdict kinds are in
+- `src/modules/review/` — La Piazza (design 18): the landing, the round and
+  `question.js` (a due unit turned into something to produce), plus `week.js`
+  (the one figure the landing states). The round has **two question shapes**,
+  told apart by `options` on the question: a box for everything that is typed,
+  and three buttons for an article item, which is a choice between authored
+  forms and cannot be asked any other way. The nine typed verdict kinds are in
   `shared/locatedFeedback.js` and the card that draws them in
-  `shared/Verdict.jsx`, because La Riserva's drill produces the same verdicts.
+  `shared/Verdict.jsx`, because La Riserva's drill produces the same verdicts;
+  the article ones stay in `modules/articoli/feedback.js` and are drawn by
+  `modules/articoli/cards.jsx`, which the bench and the queue share.
 - Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
   Everything in L'Officina — the hub, Mappatura delle parole, La Riserva, word detail,
   Gli Articoli and Falsi Amici — and La Piazza are in the new one, per the rule in
@@ -222,9 +227,9 @@ Four workbenches, per screen 07:
   way in to a typed production round over the entries it holds — gloss in
   English and Polish, you write the Italian, graded through `reviewItem` under
   `riserva:` keys — which is what made the base vocabulary studiable at all and
-  moved the ceiling from 1.6% to 66.1%. It is the only bench in the Leitner
-  queue, because a base-vocabulary entry is a lexical item and that is what a
-  Leitner box schedules.
+  moved the ceiling from 1.6% to 66.1%. It is in the Leitner queue, because a
+  base-vocabulary entry is a lexical item and that is what a Leitner box
+  schedules.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
   the errors survive into advanced proficiency, so this never stops appearing.
   Sequenced determinativo → indeterminativo → preposizioni articolate, which
@@ -236,14 +241,23 @@ Four workbenches, per screen 07:
   infinite answer space can — and the rule and the Polish card stay shut until
   the item does.
 
-  It stays out of the Leitner queue, but **not for the reason written here
-  before**. That reason was that the queue would answer a wrong pick by
-  revealing the right one on the spot — the weakest feedback shape available,
-  and the exact pattern this bench replaces — and that it should be revisited
-  when La Piazza learned to locate rather than solve. It has (chunk 4). What
-  is left is not an argument but work: La Piazza asks for typing now, and an
-  article item is a choice between three authored forms, so the queue needs a
-  second question shape before it can carry one.
+  **In the Leitner queue**, as of the chunk after 4. Two things had to happen
+  first and both have, in that order. The feedback: the queue used to answer a
+  wrong pick by revealing the right one on the spot — the weakest shape
+  available, and the exact pattern this bench replaces — which chunk 4 fixed.
+  Then the question shape: La Piazza asked for typing, and an article item is
+  a choice between three authored forms, so flipping the flag on its own would
+  have put an article item in front of a text box. The round now has a second
+  shape (`options` on the question, `modules/review/question.js`) that draws
+  this bench's own three buttons and routes to this bench's own judge — one
+  copy of the five located sentences, not two. Practising a strand here writes
+  through `reviewItem` like the vocabulary deck, so the bench feeds the queue
+  as a side effect rather than filling it with items that have no due date.
+
+  Why this bench and not the other two still out: it is the one this document
+  calls the genuinely hard thing, where neither of the learner's languages
+  helps and the errors survive into advanced proficiency. A mistake that does
+  not decay on its own is what spaced repetition is for.
 - **Falsi Amici** — ✅ built. The traps collected as you hit them: `colazione` ≠
   *kolacja*, `droga` ≠ *droga*, `firma` ≠ *firma*, `divano` ≠ *dywan*. It needed
   Mappatura delle parole first, because Mappatura delle parole is where most of them get generated — and
@@ -348,12 +362,19 @@ underneath it instead: which solid words come back inside the next seven days,
 or nothing at all when that is zero. Same rule as the four padlocks the map
 refused and the figures the benches refused.
 
-**What this unblocks, and is not doing here.** Gli Articoli, Mappatura delle
-parole and Falsi Amici each stated a blocker that was a fact about La Piazza,
-and all three of those facts have changed. Bringing any of them into the queue
-is its own chunk: the article strand needs the queue to carry a second
-question shape, since it is a choice between three authored forms and the
-queue now asks for typing.
+**What this unblocked.** Gli Articoli, Mappatura delle parole and Falsi Amici
+each stated a blocker that was a fact about La Piazza, and all three of those
+facts changed here. Gli Articoli went into the queue in the chunk after this
+one, which is where the second question shape was built — three buttons rather
+than a box, since an article item is a choice between three authored forms.
+The landing's "you write the Italian rather than picking it out of a line-up"
+names that exception rather than quietly becoming false.
+
+The other two stay out on arguments that are about them rather than about La
+Piazza, and both are written beside their own `scheduled: false` flag in
+`src/shared/stats.js`: a Leitner box schedules a lexical item and a suffix rule
+is not one, and a false friend is a collision you are trying not to walk into
+rather than a word you are trying to remember.
 
 ---
 

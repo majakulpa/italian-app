@@ -127,10 +127,10 @@ export function districtById(id) {
 
 // L'Officina's benches that are modules in their own right but are not the
 // one its tile counts. The tile names `vocab` because "N / M words" is what a
-// district shows, and a district row can only name one module — so a second
+// district shows, and a district row can only name one module — so a
 // scheduled module living inside the same walls needs saying here rather than
 // inventing a district of its own for a workbench.
-const BENCH_DISTRICT = { riserva: "officina" };
+const BENCH_DISTRICT = { riserva: "officina", articoli: "officina" };
 
 // Which district an item belongs to, by the module it came from. La Piazza
 // uses it to colour and label a due item, so every scheduled module has to

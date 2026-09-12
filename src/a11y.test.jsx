@@ -354,6 +354,26 @@ describe("La Riserva", () => {
     await expectNoViolations(container);
   });
 
+  // The band list after a press of "Drill the next N words" that opened
+  // nothing — another tab having finished the band between the screen painting
+  // and the press. It is a screen state of its own: the control that was
+  // pressed has been removed, focus has been moved back to the band's toggle,
+  // and the screen's live region is no longer empty.
+  it("stays accessible when a fascia turns out to have no round left", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
+    saveProgress({
+      version: 2,
+      words: Object.fromEntries(FONDAMENTALE.filter((e) => e.rank <= 200).map((e) => [riservaKey(e), "known"])),
+      schedule: {},
+    });
+    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+
+    await expectNoViolations(container);
+  });
+
   // Word detail's way in is the fascia, so the axe pass has to reach it the
   // way a learner does rather than by rendering the screen in isolation.
   it("has an accessible word detail behind a fascia", async () => {

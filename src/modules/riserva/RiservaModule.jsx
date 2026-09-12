@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET, BAND_SIZE, FASCE } from "../../data/fondamentale.js";
@@ -9,6 +9,7 @@ import { reviewItem } from "../../shared/srs.js";
 import WordDetail from "./WordDetail.jsx";
 import DrillRound, { DrillSummary, fasciaLabel } from "./DrillRound.jsx";
 import { drillRound, unmetCount, ROUND_SIZE } from "./drill.js";
+import LiveStatus from "../../shared/LiveStatus.jsx";
 
 // La Riserva — L'Officina's grid of the 2,000, and design screen 10.
 //
@@ -266,13 +267,27 @@ function Legend({ counts, empty }) {
 // much of it the learner has, which is a different number and the one a bar
 // drawn here would be mistaken for. See coverage.js's tally() on why the three
 // percentages must not be swapped.
-function Band({ band, fascia, index, unmet, selected, onSelect, onOpenWord, onDrill }) {
+function Band({ band, fascia, index, unmet, selected, drained, onSelect, onOpenWord, onDrill }) {
   const words = FONDAMENTALE.filter((e) => e.rank >= band.from && e.rank <= band.to);
   const label = fasciaLabel(fascia);
+  const toggleRef = useRef(null);
+
+  // The round that came back empty took the button that opened it with it —
+  // the band now says every word in it has been met, which is true, and the
+  // control the learner just pressed no longer exists. Left alone that drops
+  // focus to <body>, so a keyboard user is at the top of the document with no
+  // idea why. Focus goes back to the band's own toggle: the nearest thing that
+  // is still there, and the control that opened this band in the first place.
+  // The sentence explaining it is announced from the screen's live region,
+  // because a focus move is not a status message.
+  useEffect(() => {
+    if (drained) toggleRef.current.focus();
+  }, [drained]);
 
   return (
     <li>
       <button
+        ref={toggleRef}
         onClick={() => onSelect(selected ? null : index)}
         aria-expanded={selected}
         style={{
@@ -384,6 +399,10 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
   const [word, setWord] = useState(null);
   const [round, setRound] = useState(null);
   const [results, setResults] = useState(null);
+  // The fascia whose round came back empty, if any. Only the cross-tab race
+  // above reaches this: the band list is drawn from the same read the queue is
+  // built from, so within one tab the button and the queue cannot disagree.
+  const [drained, setDrained] = useState(null);
 
   useEffect(() => {
     saveProgress(progress);
@@ -408,6 +427,7 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
 
     setProgress(fresh);
     setResults(null);
+    setDrained(queue.length > 0 ? null : fascia.id);
     if (queue.length > 0) setRound({ fascia, queue });
   };
 
@@ -470,6 +490,16 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
     <Screen>
       <BackLink label={exitLabel} onClick={onExit} />
 
+      {/* Mounted for the life of the band list and empty until there is
+          something to say — see LiveStatus.jsx. The one thing it ever says is
+          why a press of "Drill the next N words" opened nothing: another tab
+          finished the band, and the screen silently rearranging itself around
+          a control that has just vanished is not a status message a screen
+          reader would otherwise get. */}
+      <LiveStatus>
+        {drained ? "That band has no round left to open — every word written down in it has now been met." : ""}
+      </LiveStatus>
+
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 14 }}>
         <h1 lang="it" style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
           La Riserva
@@ -518,6 +548,7 @@ export default function RiservaModule({ onExit, exitLabel = "All modules" }) {
             index={i}
             unmet={unmetCount(states, FASCE[i])}
             selected={open === i}
+            drained={drained === FASCE[i].id}
             onSelect={setOpen}
             onOpenWord={setWord}
             onDrill={startDrill}

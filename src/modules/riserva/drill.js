@@ -50,10 +50,37 @@
 
 import { FONDAMENTALE, fasciaWords, glossSenses, FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { SESSION_LIMIT } from "../../shared/srs.js";
+import { foldTyped } from "../../shared/typedAnswer.js";
 
 // Every word written down in the list, for the `neighbour` verdict below.
 // Built once: it is the same 300 strings whichever entry is being asked.
 const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
+
+// The entries that another entry folds onto — where the accent is the only
+// thing telling two words of this list apart.
+//
+// The judge forgives a missing accent on purpose: `possibilita` for
+// `possibilità` is a learner who knows the word and has a phone keyboard, and
+// marking that wrong would be marking dexterity. But `si` (42, "oneself; one,
+// people") and `sì` (44, "yes") differ by nothing else, so on those two the
+// tolerance stops being forgiveness and starts marking one entry right for the
+// other — prompt "oneself; one, people", typed `sì`, and the card answers
+// "Correct. Italian writes it si" while a Leitner box climbs on the wrong word.
+//
+// Derived rather than named, because the pair that needs this is a property of
+// the list and the list is 300 of 2,000. `si`/`sì` is the only one today and
+// drill.test.js pins that; the next 1,700 entries will bring more, and they
+// will be covered the day they are written down rather than the day somebody
+// notices. Folded with the judge's own foldTyped, so the set can only ever
+// contain exactly the pairs the judge would confuse.
+const FOLDED = FONDAMENTALE.map((entry) => foldTyped(entry.it));
+const FOLD_TWINS = new Set(FOLDED.filter((folded, i) => FOLDED.indexOf(folded) !== i));
+
+// Whether an entry's accent is load-bearing in the sense above. Exported for
+// the test that pins which entries these are.
+export function accentIsTheWord(italian) {
+  return FOLD_TWINS.has(foldTyped(italian));
+}
 
 // One sitting. The same size as a review round, for the same reason: it is
 // how many typed items a person will actually finish before the session stops
@@ -138,6 +165,15 @@ export function unmetCount(states, fascia) {
 // correct outcome rather than a failure; being told the wrong thing about why
 // is not.
 //
+// Which cuts both ways, and the first version of this only saw one side of it.
+// The neighbour verdict ran ahead of the spelling analysis with no guard, so a
+// one-character slip that happened to land on another entry — `ragazzo` for
+// `ragazza`, and 71 such pairs in the 300 — was reported as reaching for the
+// wrong word when the learner had the word and missed the gender. The verdict
+// now has to beat what the spelling analysis found before it is said; see
+// NEIGHBOUR_EDITS in locatedFeedback.js for where the line sits and why
+// `di`/`da` is still on the near side of it.
+//
 // ── The answer includes the article ─────────────────────────────────────
 // `la chiave`, not `chiave`. The article is not decoration on these entries:
 // fondamentale.js stores one only where the ending does not give the gender
@@ -173,6 +209,9 @@ export function lexiconQuestion(entry) {
     // neighbours count would be the app asserting a similarity judgement the
     // file does not contain.
     neighbours: LEXICON_WORDS.filter((word) => word !== entry.it),
+    // ...and the one case where a neighbour reaches the judge *through* the
+    // accent tolerance rather than past it. See accentIsTheWord above.
+    strictAccents: accentIsTheWord(entry.it),
     // A lexicon word has no example sentence to close a gap in, so the
     // context line says the other true thing about where it sits: its place
     // in the reservoir. Repeating the answer and its gloss back under the

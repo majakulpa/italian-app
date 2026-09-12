@@ -70,6 +70,14 @@ export function clozeExample(word) {
 // true and useful thing to say; a deck word's siblings are its category, and
 // a grammar drill's are sentences, and neither would make that sentence true.
 //
+// `strictAccents` is the sibling of that field and false here for the same
+// reason it is empty here. It says the answer is one of two entries a *list*
+// tells apart by an accent alone, so a missing accent would mark the other one
+// right; with no list there is no other one, and a deck word judged against
+// itself can only ever be a missing accent. La Riserva derives it (see
+// drill.js); the judge needs it on every shape, so it is stated rather than
+// left undefined.
+//
 // `context` is the gap closed: the sentence in full, once the item is
 // settled, so the answer arrives in the place it came from rather than as a
 // loose word. `recap` is the one-line form the end-of-round list wants, where
@@ -88,6 +96,7 @@ export function toQuestion(unit) {
       answer: unit.item.it,
       alternatives: [],
       neighbours: [],
+      strictAccents: false,
       context: { it: unit.item.ex, en: unit.item.exEn },
       recap: { primary: unit.item.it, secondary: unit.item.en },
     };
@@ -104,6 +113,7 @@ export function toQuestion(unit) {
     answer: unit.item.answer,
     alternatives: unit.item.options.filter((option) => option !== unit.item.answer),
     neighbours: [],
+    strictAccents: false,
     context: { it: filled, en: unit.item.en },
     recap: { primary: filled, secondary: unit.item.en },
   };

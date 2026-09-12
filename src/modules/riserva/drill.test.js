@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { drillRound, unmetCount, lexiconQuestion, ROUND_SIZE } from "./drill.js";
+import { drillRound, unmetCount, lexiconQuestion, accentIsTheWord, ROUND_SIZE } from "./drill.js";
 import { FASCE, FONDAMENTALE } from "../../data/fondamentale.js";
 import { LEVELS } from "../../data/vocab.js";
 import { riservaKey, wordKey } from "../../shared/storage.js";
@@ -9,6 +9,7 @@ import { reviewItem } from "../../shared/srs.js";
 // The tests go in through the same door.
 import { lexiconStates as states } from "../../shared/coverage.js";
 import { judge, ATTEMPTS } from "../../shared/locatedFeedback.js";
+import { foldTyped } from "../../shared/typedAnswer.js";
 
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
@@ -166,12 +167,104 @@ describe("lexiconQuestion", () => {
     expect(judge(lexiconQuestion(entryFor("in")), "a", 1).kind).toBe("neighbour");
   });
 
+  // The guard on that verdict, against the real list rather than a fixture.
+  // A one-character slip that lands on another entry is a slip: 71 pairs of
+  // the 300 are within one fold-edit of each other, and reporting a missed
+  // gender as "you reached for a different entry" is the app being confidently
+  // wrong about the commonest mistake it can receive.
+  it("locates a one-character slip rather than calling it a different entry", () => {
+    expect(judge(lexiconQuestion(entryFor("ragazza")), "ragazzo", 1)).toMatchObject({
+      kind: "ending",
+      shared: "ragazz",
+    });
+    expect(judge(lexiconQuestion(entryFor("figlia")), "figlio", 1).kind).toBe("ending");
+    expect(judge(lexiconQuestion(entryFor("nonna")), "nonno", 1).kind).toBe("ending");
+    expect(judge(lexiconQuestion(entryFor("primo")), "prima", 1).kind).toBe("ending");
+    expect(judge(lexiconQuestion(entryFor("alto")), "altro", 1).kind).toBe("ending");
+    expect(judge(lexiconQuestion(entryFor("mondo")), "modo", 1).kind).toBe("partial");
+    expect(judge(lexiconQuestion(entryFor("no")), "noi", 1).kind).toBe("partial");
+  });
+
+  // And the neighbour verdict keeps every pair it was added for. `di` and `da`
+  // are one edit apart and no pair of glosses separates two prepositions
+  // overlapping that heavily — but the spelling analysis has nothing to say
+  // about them either, so there is no true verdict for the neighbour one to
+  // talk over.
+  it("still names the neighbours no gloss and no spelling can separate", () => {
+    expect(judge(lexiconQuestion(entryFor("da")), "di", 1).kind).toBe("neighbour");
+    expect(judge(lexiconQuestion(entryFor("di")), "da", 1).kind).toBe("neighbour");
+    expect(judge(lexiconQuestion(entryFor("mi")), "ti", 1).kind).toBe("neighbour");
+  });
+
+  // And two edits out it overrides a located verdict, which is the half the
+  // guard has to leave standing. `quello` for `questo` would be "it starts
+  // right and then goes somewhere else" and `potere` for `volere` "it ends the
+  // way the answer ends" — both true about the letters and both wrong about
+  // the error, which is that she reached for the other word.
+  it("overrides the spelling verdict for an entry two edits away", () => {
+    expect(judge(lexiconQuestion(entryFor("questo")), "quello", 1).kind).toBe("neighbour");
+    expect(judge(lexiconQuestion(entryFor("volere")), "potere", 1).kind).toBe("neighbour");
+    expect(judge(lexiconQuestion(entryFor("non")), "nonno", 1).kind).toBe("neighbour");
+  });
+
   // An entry is never its own neighbour, walked over the whole list.
   it("never calls the answer itself a neighbour", () => {
     for (const entry of FONDAMENTALE) {
       expect(lexiconQuestion(entry).neighbours, entry.it).not.toContain(entry.it);
       expect(judge(lexiconQuestion(entry), entry.it, 1).correct, entry.it).toBe(true);
     }
+  });
+
+  // ...and that loop is not enough on its own, which is how `si` and `sì`
+  // graded each other correct for a whole review round. Judging every entry
+  // against its own spelling passes whatever the tolerance does. What has to
+  // be asserted is that no *other* entry is accepted for it.
+  //
+  // Only an entry that folds onto the answer can be: `correct` is returned
+  // from one branch of judge() and that branch is behind sameTyped, which
+  // compares folded strings and nothing else. So the pairs to walk are the
+  // fold groups, found in the data rather than named here — and walking those
+  // rather than all 300 × 299 is also what keeps this test finishing when the
+  // list grows from 300 entries to 2,000.
+  it("accepts no other entry of the list for the one being asked", () => {
+    const byFold = new Map();
+    for (const entry of FONDAMENTALE) {
+      const folded = foldTyped(entry.it);
+      byFold.set(folded, [...(byFold.get(folded) ?? []), entry]);
+    }
+    const groups = [...byFold.values()].filter((group) => group.length > 1);
+
+    expect(groups.flat().map((e) => `${e.rank} ${e.it}`)).toEqual(["42 si", "44 sì"]);
+    expect(groups.flat().every((e) => accentIsTheWord(e.it))).toBe(true);
+    expect(FONDAMENTALE.filter((e) => accentIsTheWord(e.it))).toHaveLength(groups.flat().length);
+
+    for (const group of groups) {
+      for (const entry of group) {
+        const q = lexiconQuestion(entry);
+        for (const other of group.filter((o) => o !== entry)) {
+          expect(judge(q, other.it, 1).correct, `${other.it} for ${entry.it}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  // The judged half of that, spelled out on the pair itself — including what
+  // it must *not* break: the accent is still forgiven on every entry that has
+  // no twin to be confused with.
+  it("holds the accent exact on the pair that folds together, and nowhere else", () => {
+    const si = lexiconQuestion(entryFor("si"));
+
+    expect(si.strictAccents).toBe(true);
+    expect(si.gloss).toBe("oneself; one, people");
+    expect(judge(si, "sì", 1)).toMatchObject({ correct: false, kind: "neighbour" });
+    expect(judge(lexiconQuestion(entryFor("sì")), "si", 1)).toMatchObject({ correct: false, kind: "neighbour" });
+
+    expect(judge(si, "si", 1)).toMatchObject({ correct: true, kind: "exact" });
+    expect(lexiconQuestion(entryFor("perché")).strictAccents).toBe(false);
+    expect(judge(lexiconQuestion(entryFor("perché")), "perche", 1)).toMatchObject({
+      correct: true,
+      kind: "spelling",
+    });
   });
 
   // And the verdict stays honest about what it cannot place. A word that is

@@ -48,6 +48,10 @@
 //               the wrong entry. Only La Riserva fills this in (see
 //               drill.js); a deck word and a grammar drill have no list of
 //               siblings the learner could have been reaching for instead.
+//               It is the one verdict that has to beat another to be said, so
+//               it is guarded twice: NEIGHBOUR_EDITS keeps it off a
+//               one-character slip, and `strictAccents` is what lets it fire
+//               on a word that folds onto the answer.
 //   ending      the answer is right up to its last letter or two.
 //   partial     it starts right and diverges further in than that.
 //   stem        it ends the way the answer ends and starts differently.
@@ -85,6 +89,48 @@ const MEANINGFUL = 2;
 // One or two characters is a verb ending, a plural, an agreement — the things
 // that miss on a form the learner otherwise has.
 const ENDING = 2;
+
+// How far from the answer a real list word has to be before "you reached for a
+// different entry" outranks what the spelling analysis found.
+//
+// Two, because one is a slip. One edit is a gender ending (`ragazzo` for
+// `ragazza`, `figlio` for `figlia`, `nonno` for `nonna`), an agreement
+// (`primo` for `prima`), a dropped letter (`modo` for `mondo`) or a thumb on
+// the wrong key — and 71 pairs of the 300 written down are within one edit of
+// each other, overwhelmingly the short function words a phone typo lands on.
+// Told "it belongs to a different entry, read the English gloss again", a
+// learner who simply missed the gender is sent to re-read a gloss she had
+// right, and the one verdict that would have named her actual error is the one
+// she does not get.
+//
+// Two edits is not a slip in a 300-word list. `parola` for `parlare` is three
+// and is the case this verdict exists for: it shares `par` at the front and
+// none of the mistake, so "it starts right and then goes somewhere else" is
+// confident and wrong about the kind of error. Those two bracket the
+// threshold, and `da`/`di` — one edit, and the pair La Riserva's drill was
+// built around — is why the guard is one-sided rather than a floor: see judge.
+const NEIGHBOUR_EDITS = 2;
+
+// Levenshtein distance over the folded strings, so an accent or a capital is
+// not an edit. Not in shared/typedAnswer.js for the reason sharedTail below is
+// not: nothing else wants it. Mappatura delle parole and Falsi Amici measure a
+// typed answer against a rule and a pair, and neither has a list of other
+// words to be near.
+function editDistance(input, answer) {
+  const a = foldTyped(input);
+  const b = foldTyped(answer);
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) {
+      next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    row = next;
+  }
+
+  return row[b.length];
+}
 
 // An answer's closing punctuation belongs to the sentence it was cut out of,
 // not to the Italian the learner has to produce. `come stai?` is a vocabulary
@@ -191,26 +237,47 @@ export function judge(question, input, attempt) {
     return { ...base, kind: "blank", spent: false, last: false };
   }
 
+  // Whether what she typed is another whole item the question knows about.
+  // Declared up here because two very different branches below ask it, and
+  // called rather than computed because one of them is on the path a *correct*
+  // answer takes: La Riserva hands every question 299 neighbours, and walking
+  // them to accept `libro` for `libro` is work for no verdict.
+  const typedIsNeighbour = () => question.neighbours.some((word) => sameTyped(typed, withoutClosing(word)));
+
   if (sameTyped(typed, target)) {
     // Written exactly as Italian writes it, or right once a mark she was
     // never asked to guess is folded away. The second case is still correct
     // and is still spelled back, or the app teaches the spelling it accepted.
     const asWritten = sameTyped(input, answer) && !accentsMissing(input, answer);
+
+    // The one place accent tolerance is not forgiveness. Where two entries of
+    // one list fold to the same string — `si` (rank 42, "oneself; one,
+    // people") and `sì` (rank 44, "yes") — the accent is the only thing that
+    // tells them apart, so folding it away marks one entry right for the
+    // other: the card would say "Correct. Italian writes it si", and a box
+    // would be promoted on a word she did not produce.
+    //
+    // `strictAccents` says the answer is one of those, and it is derived from
+    // the list rather than named here (see modules/riserva/drill.js). The
+    // tolerance itself is untouched everywhere else — `possibilita` for
+    // `possibilità` is the behaviour Le Mappe was built on, and so is the
+    // `citta` case in this file's tests. Case and whitespace stay forgiven
+    // even here: neither has ever distinguished two entries.
+    //
+    // `neighbour` is the third condition rather than a redundant one. What she
+    // typed has to actually be the twin entry for the app to say she reached
+    // for a different word; an accent that belongs to neither entry (`sí`) is
+    // a mis-accented spelling of this one, which is exactly what the tolerance
+    // is for.
+    if (question.strictAccents && !asWritten && typedIsNeighbour()) {
+      return { ...base, kind: "neighbour", answer: last ? answer : null };
+    }
+
     return { ...base, correct: true, kind: asWritten ? "exact" : "spelling", answer: asWritten ? null : answer };
   }
 
   if (question.alternatives.some((alternative) => sameTyped(typed, withoutClosing(alternative)))) {
     return { ...base, kind: "distractor", answer: last ? answer : null };
-  }
-
-  // Before the spelling analysis, and that ordering is the argument. If what
-  // she typed is another whole word from the list, she did not misspell this
-  // one — she reached for the wrong entry — and "it starts right and then goes
-  // somewhere else" would be a confident lie about the kind of error it is.
-  // `parlare` against `parola` shares three characters at the front and none
-  // of the mistake.
-  if (question.neighbours.some((word) => sameTyped(typed, withoutClosing(word)))) {
-    return { ...base, kind: "neighbour", answer: last ? answer : null };
   }
 
   const prefix = sharedPrefix(typed, target);
@@ -228,6 +295,29 @@ export function judge(question, input, attempt) {
   if (prefix.trim().length >= MEANINGFUL && behind > 0 && behind <= ENDING) kind = "ending";
   else if (prefix.trim().length >= MEANINGFUL) kind = "partial";
   else if (tail.trim().length >= MEANINGFUL) kind = "stem";
+
+  // The neighbour verdict, after the spelling analysis rather than before it,
+  // and it wins on either of two grounds.
+  //
+  // It may always replace `other`, at any distance. `other` already says "a
+  // different word rather than a near miss"; the neighbour verdict says the
+  // same thing with a fact behind it — that the word she wrote is one the list
+  // holds — so it is strictly more true and there is nothing to protect. This
+  // is the half that carries `di` for `da`, `mi` for `ti`, `a` for `in`: pairs
+  // one edit apart whose glosses overlap so heavily that no gloss separates
+  // them, which is what the verdict was added for.
+  //
+  // It may override a *located* verdict only from NEIGHBOUR_EDITS away. Closer
+  // in, the spelling analysis has found something true and specific and the
+  // neighbour verdict would talk over it — see the constant for the arithmetic
+  // and the pairs that bracket it.
+  //
+  // This ordering replaced running the check first with no distance guard at
+  // all, which reported every one-character gender slip that happened to land
+  // on another entry as a semantic error.
+  if (typedIsNeighbour() && (kind === "other" || editDistance(typed, target) >= NEIGHBOUR_EDITS)) {
+    return { ...base, kind: "neighbour", answer: last ? answer : null };
+  }
 
   // The located sentence stands on its own; only the fragment is gated. So an
   // input that swallows the whole answer still gets "it starts right and then
@@ -273,8 +363,13 @@ export function reveal(question) {
 export const LOCATED = {
   distractor:
     "That is one of the other forms this item was written with — the right word, in a form the sentence does not want. Which one does it want?",
+  // "this list" had nothing to point at. La Riserva draws the band being
+  // drilled, so there the phrase read; La Piazza draws one item and no list at
+  // all, and a base-vocabulary word reaches it through question.js. So the
+  // sentence names the list instead of gesturing at it, which is true on both
+  // screens — riserva units are the only ones that carry neighbours.
   neighbour:
-    "That is a real word from this list, but it belongs to a different entry. Read the English gloss again — which word does this one want?",
+    "That is another word from the base vocabulary, not the one being asked for. Read the English gloss again — which word does it want?",
   ending: "You have the word right up to its last letters. It is the ending that missed.",
   partial: "It starts right and then goes somewhere else.",
   stem: "It ends the way the answer ends. What comes in front of that does not.",

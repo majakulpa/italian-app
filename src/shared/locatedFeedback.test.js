@@ -88,6 +88,45 @@ describe("judging a typed review answer", () => {
     expect(judge(q("parlo", ["parli"], ["parli"]), "parli", FIRST).kind).toBe("distractor");
   });
 
+  // And the guard on that preference, which is the difference between locating
+  // an error and inventing one. A one-character slip that happens to land on
+  // another entry is a slip: `ragazzo` for `ragazza` is the commonest wrong
+  // answer the app can receive, and "it belongs to a different entry, read the
+  // gloss again" is false about it — she had the word and missed the gender.
+  it("keeps a one-edit slip a spelling verdict even when it lands on a neighbour", () => {
+    expect(judge(q("ragazza", [], ["ragazzo"]), "ragazzo", FIRST)).toMatchObject({
+      kind: "ending",
+      shared: "ragazz",
+    });
+    expect(judge(q("alto", [], ["altro"]), "altro", FIRST).kind).toBe("ending");
+    expect(judge(q("mondo", [], ["modo"]), "modo", FIRST).kind).toBe("partial");
+  });
+
+  // The guard is one-sided: a neighbour verdict may always replace `other`,
+  // however close the two words are. `other` already claims "a different word
+  // rather than a near miss", and the neighbour verdict says the same thing
+  // with a fact behind it — that the word she wrote is one the list holds. It
+  // is strictly more true, so there is nothing to protect. `di` for `da` is
+  // the pair La Riserva's drill was built around and it is one edit apart.
+  it("still names a one-edit neighbour that the spelling analysis cannot place", () => {
+    expect(judge(q("da", [], ["di"]), "di", FIRST).kind).toBe("neighbour");
+    expect(judge(q("da", [], []), "di", FIRST).kind).toBe("other");
+  });
+
+  // Accents are forgiven everywhere — `citta` above — except where forgiving
+  // one marks a *different word* right. Two entries that fold to the same
+  // string are told apart by the accent and nothing else, so on those the
+  // accent is the word. Case and whitespace stay forgiven: they never
+  // distinguish two entries.
+  it("holds the accent exact where the accent is the only thing telling two entries apart", () => {
+    const si = { ...q("si", [], ["sì"]), strictAccents: true };
+
+    expect(judge(si, "sì", FIRST)).toMatchObject({ kind: "neighbour", correct: false, answer: null });
+    expect(judge(si, "sì", LAST).answer).toBe("si");
+    expect(judge(si, "si", FIRST)).toMatchObject({ correct: true, kind: "exact" });
+    expect(judge(si, "  SI ", FIRST)).toMatchObject({ correct: true, kind: "exact" });
+  });
+
   it("leaves a word that is in neither list where it was", () => {
     expect(judge(q("strada", [], ["via"]), "xilofono", FIRST).kind).toBe("other");
   });

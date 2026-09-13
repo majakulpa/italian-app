@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { ArrowLeft, ChevronRight, Check, Clock, X } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { STORY_LEVELS } from "../../data/stories.js";
@@ -121,7 +121,18 @@ function Paragraph({ paragraph, level, onWordTap }) {
                   margin: 0,
                   font: "inherit",
                   color: level.accentDeep,
-                  borderBottom: `1.5px dotted ${level.accent}`,
+                  // The underline is the entire tap affordance: a glossed
+                  // word's own colour sits only ~1.6:1 from the body ink
+                  // around it, so nothing else says "tappable". That makes
+                  // it a control boundary (SC 1.4.11), which needs 3:1
+                  // against the paper the paragraph is printed on. Drawn in
+                  // the fill accent it didn't have it — measured against
+                  // THEME_STYLE, dark mode gave A1 3.15, A2 3.08, B1 3.08,
+                  // C1 3.34 and B2 2.24, an outright failure. accentDeep is
+                  // already the word's own text colour and measures
+                  // 7.99–10.68 across all five levels in both themes.
+                  // theme.test.js holds that pairing at 3:1 from now on.
+                  borderBottom: `1.5px dotted ${level.accentDeep}`,
                   cursor: "pointer",
                 }}
               >
@@ -292,8 +303,25 @@ function Questions({ level, story, onBack, onMarkDone }) {
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
+  const headingRef = useRef(null);
 
   const q = questions[index];
+
+  // Advancing unmounts the "Next question" button that was just pressed, and
+  // arriving here unmounts the reader's "Comprehension questions" button the
+  // same way. Left alone that drops focus to <body>: a keyboard learner
+  // re-tabs from the top of the document for every question, and a screen
+  // reader says nothing about the question now on screen. So focus goes to
+  // the question itself — the nearest thing that survives the swap, and the
+  // one node that states what changed. Same move as the fascia toggle in
+  // RiservaModule; the typed screens (La Piazza, Mappe, La Riserva) keep
+  // their input mounted across the same transition and refocus that instead.
+  //
+  // `done` doesn't run this: finishing leaves `index` where it was and
+  // returns the summary, which takes focus to its own title (SessionSummary).
+  useEffect(() => {
+    headingRef.current.focus();
+  }, [index]);
 
   const choose = (opt) => {
     if (selected) return;
@@ -325,6 +353,7 @@ function Questions({ level, story, onBack, onMarkDone }) {
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((m) => ({ id: m.id, primary: m.answer, secondary: m.explain }))}
+        missedLang="it"
         missedHeading="QUESTIONS TO REVIEW"
         backLabel="Back to stories"
         onBack={onBack}
@@ -341,7 +370,16 @@ function Questions({ level, story, onBack, onMarkDone }) {
           <span>{correctCount} correct</span>
         </div>
 
-        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px", lineHeight: 1.3 }}>
+        {/* Every comprehension prompt in src/data/stories.js is Italian at
+            every level, A1 included — "Come beve il caffè Marta?" is an A1
+            question — so the heading, the options and the answer all carry
+            lang="it" (SC 3.1.2). */}
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          lang="it"
+          style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px", lineHeight: 1.3 }}
+        >
           {q.prompt}
         </h2>
 
@@ -384,7 +422,7 @@ function Questions({ level, story, onBack, onMarkDone }) {
                   gap: 10,
                 }}
               >
-                {opt}
+                <span lang="it">{opt}</span>
                 {selected && isAnswer && <AnswerMark state="correct" />}
                 {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
               </button>

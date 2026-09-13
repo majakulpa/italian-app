@@ -254,6 +254,82 @@ describe("Questions", () => {
     expect(screen.getByRole("button", { name: /Read again/ })).toBeInTheDocument();
   });
 
+  // Every prompt, option and answer in src/data/stories.js is Italian at
+  // every level — the A1 reader asks "Come beve il caffè Marta?" — so an
+  // unmarked comprehension screen is read out with English phonetics
+  // (SC 3.1.2). This screen shipped with none of it marked.
+  it("marks the question, every option and the answer as Italian", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await user.click(screen.getByRole("button", { name: /Comprehension questions/ }));
+
+    const first = roma.questions[0];
+    expect(screen.getByRole("heading", { name: first.prompt })).toHaveAttribute("lang", "it");
+    for (const opt of first.options) {
+      // The lang has to sit on the text, not merely somewhere up the tree:
+      // asserting the closest ancestor is what makes this fail when the
+      // option is a bare string inside an unmarked button.
+      const marked = screen.getByText(opt).closest("[lang]");
+      expect(marked, opt).not.toBeNull();
+      expect(marked).toHaveAttribute("lang", "it");
+    }
+
+    // And through to the summary, whose bold half is the Italian answer.
+    for (const q of roma.questions) {
+      const wrong = q.options.find((o) => o !== q.answer);
+      await user.click(screen.getByRole("button", { name: wrong }));
+      await user.click(screen.getByRole("button", { name: /See results|Next question/ }));
+    }
+    for (const q of roma.questions) {
+      const strong = screen.getByText(q.answer);
+      expect(strong.tagName).toBe("STRONG");
+      expect(strong).toHaveAttribute("lang", "it");
+    }
+  });
+
+  // Advancing unmounts the button that was just pressed. Nothing else takes
+  // focus, so it falls to <body>: a keyboard learner re-tabs from the top of
+  // the document for every question and a screen reader never hears the new
+  // one. Each transition on this screen is checked, including the last.
+  it("moves focus onto each question it advances to, and onto the summary at the end", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+    await user.click(screen.getByRole("button", { name: /Comprehension questions/ }));
+
+    // Arriving from the reader unmounts "Comprehension questions" the same way.
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: roma.questions[0].prompt }));
+
+    for (const [i, q] of roma.questions.entries()) {
+      await user.click(screen.getByRole("button", { name: q.answer }));
+      await user.click(screen.getByRole("button", { name: /See results|Next question/ }));
+
+      const landed = roma.questions[i + 1]
+        ? screen.getByRole("heading", { name: roma.questions[i + 1].prompt })
+        : screen.getByRole("heading", { name: "Story complete" });
+      expect(document.activeElement).toBe(landed);
+      expect(document.activeElement).not.toBe(document.body);
+    }
+  });
+
+  // The underline is the only thing that says a word is tappable, which makes
+  // it a control boundary at 3:1 (SC 1.4.11). Drawn in the fill accent, B2
+  // measured 2.24 against the dark paper; accentDeep measures 7.99 at worst.
+  // theme.test.js holds the palette half of this — the failure needs both,
+  // because a palette that passes says nothing about which token is used.
+  it("draws the glossed-word underline in the level's deep accent, not its fill", async () => {
+    const user = userEvent.setup();
+    renderStories();
+    await user.click(screen.getAllByRole("button", { name: /^Read/ })[0]);
+
+    const word = screen.getAllByRole("button", { name: "arriva" })[0];
+    expect(word.style.borderBottom).toBe(`1.5px dotted ${a1.accentDeep}`);
+    // "var(--color-adriatic)" is not a substring of its -deep sibling, so
+    // this genuinely excludes the fill token rather than tautologising.
+    expect(word.style.borderBottom).not.toContain(a1.accent);
+  });
+
   it("lists a missed question with its explanation in the summary", async () => {
     const user = userEvent.setup();
     renderStories();

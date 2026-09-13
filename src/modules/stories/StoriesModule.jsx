@@ -430,7 +430,7 @@ function Questions({ level, story, onBack, onMarkDone }) {
           })}
         </div>
 
-        <AnswerStatus correct={selected === null ? null : selected === q.answer} answer={q.answer} />
+        <AnswerStatus correct={selected === null ? null : selected === q.answer} answer={q.answer} answerLang="it" />
 
         {selected && (
           <>

@@ -471,13 +471,12 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
         </div>
 
         {/* The spoken feedback is an English sentence with one Italian word
-            dropped into it ("Not quite. The answer is parlo."). `lang` can't
-            fix that from here: it marks an element, and the Italian half
-            isn't one — AnswerStatus builds the string itself, and it is
-            shared with every other bench. Marking the whole region Italian
-            would mispronounce the English, which is the larger half. Left as
-            it is on purpose; the fix belongs in AnswerStatus. */}
-        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} />
+            dropped into it ("Not quite. The answer is parlo."), so the answer
+            needs marking without marking the English around it. AnswerStatus
+            renders it as its own element now and takes the language from
+            here, because the answer is not Italian everywhere — the
+            vocabulary quiz's answer is an English gloss. */}
+        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} answerLang="it" />
 
         {selected && (
           <button

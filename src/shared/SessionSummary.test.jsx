@@ -42,6 +42,45 @@ describe("SessionSummary", () => {
     expect(screen.getByText("ciao")).toBeInTheDocument();
   });
 
+  // The bold half of a missed row is the Italian the learner didn't produce.
+  // Unmarked, a screen reader reads it with English phonetics (SC 3.1.2), and
+  // the caller is the only one who knows — so an omitted prop must not
+  // silently become "it" either.
+  it("marks the bold half of a missed row in the language the caller names", () => {
+    const { rerender } = renderSummary({
+      missed: [{ id: "1", primary: "ciao", secondary: "hi / bye" }],
+      missedHeading: "WORDS TO REVIEW",
+      missedLang: "it",
+    });
+
+    expect(screen.getByText("ciao")).toHaveAttribute("lang", "it");
+
+    rerender(
+      <SessionSummary
+        level={level}
+        title="Quiz complete"
+        primary={7}
+        primaryLabel="correct out of 8"
+        secondary={1}
+        secondaryLabel="to review"
+        onBack={() => {}}
+        missed={[{ id: "1", primary: "ciao", secondary: "hi / bye" }]}
+        missedHeading="WORDS TO REVIEW"
+      />
+    );
+    expect(screen.getByText("ciao")).not.toHaveAttribute("lang");
+  });
+
+  // Every module arrives here by pressing a button this screen then unmounts.
+  // Nothing else claims focus, so it falls to <body> and the learner is at
+  // the top of the document with no idea the session ended.
+  it("takes focus onto its title, rather than leaving it on the body", () => {
+    renderSummary({ title: "Story complete" });
+
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Story complete" }));
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
   it("omits the review list entirely on a clean run", () => {
     renderSummary({ missed: [], missedHeading: "WORDS TO REVIEW" });
 

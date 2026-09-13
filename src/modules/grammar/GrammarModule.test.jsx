@@ -273,6 +273,63 @@ describe("Drill", () => {
     expect(screen.getByText(first.prompt.replace("___", first.answer))).toBeInTheDocument();
   });
 
+  // A speaker button beside the prompt read the sentence with the gap filled
+  // in, and SpeakButton names itself `Pronounce "<text>"` — so the answer was
+  // in an accessible name before the learner had answered. The name is the
+  // half a screen reader gets, and tab-focus alone was enough to be handed
+  // it; these two cases pin both halves of the fix.
+  it("keeps the answer out of every accessible name while the item is unanswered", async () => {
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    const sentence = item0.prompt.replace("___", item0.answer);
+
+    // The only speakers on an unanswered item are the per-option ones, which
+    // say nothing that isn't already printed on the button beside them.
+    const names = screen
+      .getAllByRole("button", { name: /^Pronounce/ })
+      .map((b) => b.getAttribute("aria-label"));
+    expect(names.sort()).toEqual(item0.options.map((o) => `Pronounce "${o}"`).sort());
+    expect(screen.queryByRole("button", { name: `Pronounce "${sentence}"` })).not.toBeInTheDocument();
+    // And nothing at all on the screen offers to read the filled sentence.
+    for (const name of names) expect(name).not.toContain(sentence);
+  });
+
+  it("offers the whole sentence aloud once the item is answered", async () => {
+    vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
+    const speakSpy = vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const item0 = presentAre.drills[0];
+    const sentence = item0.prompt.replace("___", item0.answer);
+    await user.click(screen.getByRole("button", { name: item0.answer }));
+
+    await user.click(screen.getByRole("button", { name: `Pronounce "${sentence}"` }));
+    expect(speakSpy).toHaveBeenCalledWith(sentence);
+  });
+
+  // Advancing used to unmount the button that was just pressed and leave
+  // focus on <body>: re-tab from the top of the document for every question,
+  // and silence about the item that replaced the answered one.
+  it("moves focus to the next prompt instead of dropping it to the body", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    await user.click(screen.getByRole("button", { name: presentAre.drills[0].answer }));
+    await user.click(screen.getByRole("button", { name: /Next/ }));
+
+    const prompt = screen.getByRole("heading", { name: presentAre.drills[1].prompt });
+    expect(prompt).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it("lets the user hear an answer option without selecting it", async () => {
     // jsdom has no SpeechSynthesis API — mock it locally for this test only,
     // so other tests keep matching options by their exact accessible name
@@ -291,5 +348,33 @@ describe("Drill", () => {
     // Still on the same question, nothing selected — the click didn't choose it.
     expect(screen.getByText("0 correct")).toBeInTheDocument();
     expect(screen.getByText(item0.prompt)).toBeInTheDocument();
+  });
+});
+
+// WCAG 3.1.2: Italian on an English page has to say it is Italian, or a
+// screen reader reads it in an English voice. src/a11y.test.jsx sweeps the
+// drill prompt and options; these are the strings on this module's other
+// screens that it doesn't reach.
+describe("language marking", () => {
+  const italianAncestor = (el) => el.closest('[lang="it"]');
+
+  it("marks the home screen's Italian eyebrow and topic names as Italian", () => {
+    renderGrammar();
+
+    expect(italianAncestor(screen.getByText("Regole in tasca"))).not.toBeNull();
+    expect(italianAncestor(screen.getByText("Presente: verbi in -ARE"))).not.toBeNull();
+    expect(italianAncestor(screen.getByText("Essere e avere"))).not.toBeNull();
+    // The English around it must not claim to be Italian.
+    expect(italianAncestor(screen.getByText("Grammar"))).toBeNull();
+    expect(italianAncestor(screen.getByText(presentAre.tagline))).toBeNull();
+  });
+
+  it("marks the lesson heading as Italian", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Learn/ })[0]);
+
+    expect(italianAncestor(screen.getByRole("heading", { name: presentAre.name }))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(presentAre.explanation.summary))).toBeNull();
   });
 });

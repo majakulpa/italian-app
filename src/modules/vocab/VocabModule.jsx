@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
@@ -31,7 +31,11 @@ function VocabHome({ onPick, onExit, exitLabel, progress }) {
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
+        {/* The only Italian on this screen besides the "N parole" counts
+            below: the level taglines and every category name in
+            src/data/vocab.js are English ("Travel", "Food & dining"), so
+            they are left unmarked (SC 3.1.2). */}
+        <p lang="it" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
           Parole in viaggio
         </p>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
@@ -53,7 +57,17 @@ function VocabHome({ onPick, onExit, exitLabel, progress }) {
               key={cat.id}
               level={level}
               title={cat.name}
-              subtitle={known > 0 ? `${known} / ${cat.words.length} known` : `${cat.words.length} parole`}
+              // Only the unstudied subtitle is Italian, and only the word
+              // "parole" in it — but the count belongs to that phrase, so the
+              // span wraps both and an Italian voice reads "dodici parole".
+              // The studied form ("7 / 12 known") is English throughout.
+              subtitle={
+                known > 0 ? (
+                  `${known} / ${cat.words.length} known`
+                ) : (
+                  <span lang="it">{`${cat.words.length} parole`}</span>
+                )
+              }
             >
               <button
                 onClick={() => onPick(level, cat, "flashcards")}
@@ -126,15 +140,49 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
   const order = useMemo(() => shuffle(category.words), [category]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [stats, setStats] = useState({ known: 0, learning: 0 });
+  const [knownCount, setKnownCount] = useState(0);
+  // The words themselves, not just a tally: every other summary in the app
+  // lists what you got wrong, and a deck that only says "4 still learning"
+  // makes the learner replay the whole deck to find out which four.
+  const [learning, setLearning] = useState([]);
   const [done, setDone] = useState(false);
+  const wordRef = useRef(null);
 
   const word = order[index];
+
+  // Grading a card unmounts the "I knew it" / "Still learning" pair that was
+  // just pressed (the card flips back to its front face), and nothing takes
+  // their place, so focus falls to <body>: a keyboard learner re-tabs from
+  // the top of the document for every card and a screen reader says nothing
+  // about the word that replaced the one they graded.
+  //
+  // The typed benches (review/ReviewModule.jsx, mappe/MappeModule.jsx,
+  // riserva/DrillRound.jsx) avoid that by keeping one button mounted across
+  // the transition and refocusing their input. There is no input here and no
+  // control that survives the swap in a useful place, so this screen takes
+  // the other half of the same pattern — the deliberate move that
+  // stories/StoriesModule.jsx and grammar/GrammarModule.jsx use: focus the
+  // node that *is* the new item. On a flashcard deck that is the Italian
+  // word on the front of the card; it is the question, and it is what a
+  // screen-reader user needs to hear before deciding whether they know it.
+  //
+  // Unconditional rather than guarded on `index > 0`, because arriving from
+  // the home screen unmounts the "Cards" button the same way. Finishing the
+  // deck leaves `index` where it is and returns the summary, which takes
+  // focus to its own title (SessionSummary), so this never fires with the
+  // front face unmounted.
+  useEffect(() => {
+    wordRef.current.focus();
+  }, [index]);
 
   const advance = useCallback(
     (knew) => {
       onMarkWord(wordKey(level, category, word), knew ? "known" : "learning");
-      setStats((s) => (knew ? { ...s, known: s.known + 1 } : { ...s, learning: s.learning + 1 }));
+      if (knew) {
+        setKnownCount((c) => c + 1);
+      } else {
+        setLearning((l) => [...l, word]);
+      }
       if (index + 1 >= order.length) {
         setDone(true);
       } else {
@@ -150,10 +198,13 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
       <SessionSummary
         level={level}
         title="Deck complete"
-        primary={stats.known}
+        primary={knownCount}
         primaryLabel="marked known"
-        secondary={stats.learning}
+        secondary={learning.length}
         secondaryLabel="still learning"
+        missed={learning.map((w) => ({ id: w.it, primary: w.it, secondary: w.en }))}
+        missedLang="it"
+        missedHeading="STILL LEARNING"
         backLabel="Back to categories"
         onBack={onBack}
       />
@@ -166,7 +217,7 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 10 }}>
           <span>{index + 1} / {order.length}</span>
-          <span>{stats.known} known</span>
+          <span>{knownCount} known</span>
         </div>
 
         <div
@@ -190,7 +241,16 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingRight: 50 }}>
             {!flipped ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+                {/* tabIndex={-1} makes the word focusable without adding a
+                    tab stop: it is the target of the focus move above, not
+                    somewhere a learner tabs through. The browser's own focus
+                    ring stays — that is where the keyboard user now is. */}
+                <h2
+                  ref={wordRef}
+                  tabIndex={-1}
+                  lang="it"
+                  style={{ fontFamily: "'Fraunces', serif", fontSize: 34, fontWeight: 600, color: TOKENS.ink, margin: 0 }}
+                >
                   {word.it}
                 </h2>
                 <SpeakButton text={word.it} color={level.accentDeep} size={20} />
@@ -308,8 +368,22 @@ function Quiz({ level, category, onBack, onMarkWord }) {
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
+  const promptRef = useRef(null);
 
   const q = questions[index];
+
+  // Advancing unmounts the "Next word" button that was just pressed and puts
+  // nothing in its place, dropping focus to <body> — see the note on the
+  // flashcard deck above for why that is a keyboard learner losing their
+  // place on every single question. This screen is the same shape as the
+  // grammar drill (grammar/GrammarModule.jsx) and the story questions
+  // (stories/StoriesModule.jsx): the answer *is* a button, so there is no
+  // input to keep mounted and refocus. Focus goes to the prompt — the
+  // Italian word being asked about, which is both the nearest surviving node
+  // and the one thing that states what changed.
+  useEffect(() => {
+    promptRef.current.focus();
+  }, [index]);
 
   const choose = (opt) => {
     if (selected) return;
@@ -363,7 +437,14 @@ function Quiz({ level, category, onBack, onMarkWord }) {
           What does this mean?
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 22 }}>
-          <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0 }}>
+          {/* tabIndex={-1}: focusable as the target of the move above, but
+              not a tab stop of its own. */}
+          <h2
+            ref={promptRef}
+            tabIndex={-1}
+            lang="it"
+            style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: TOKENS.ink, margin: 0 }}
+          >
             {q.word.it}
           </h2>
           <SpeakButton text={q.word.it} color={level.accentDeep} size={19} />
@@ -454,6 +535,8 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
 
+  const replayRef = useRef(null);
+
   const q = questions[index];
 
   // Auto-play each new word as soon as its question appears.
@@ -461,6 +544,19 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
     if (!done) speakItalian(q.word.it);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, done]);
+
+  // Same dropped focus as the other two decks, but a different landing place,
+  // because this screen deliberately has no visible prompt: the item *is* the
+  // audio, and showing the Italian word would answer the question. So focus
+  // goes to the replay control, which is the one node that stands for the
+  // item — the direct equivalent of the typed benches refocusing their input
+  // (review/ReviewModule.jsx, mappe/MappeModule.jsx, riserva/DrillRound.jsx),
+  // and the learner's likely next action. The effect above has just replayed
+  // the new word as focus lands on it, and the options follow it in DOM
+  // order, so Tab from here reaches the answers.
+  useEffect(() => {
+    replayRef.current.focus();
+  }, [index]);
 
   const choose = (opt) => {
     if (selected) return;
@@ -516,6 +612,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
 
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
           <button
+            ref={replayRef}
             onClick={() => speakItalian(q.word.it)}
             aria-label="Play again"
             style={{

@@ -5,6 +5,7 @@ import GrammarModule from "./GrammarModule.jsx";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 import * as speech from "../../shared/speech.js";
 import * as srs from "../../shared/srs.js";
+import { optionPaint } from "./optionPaint.js";
 import { loadProgress, drillKey, stageEvidenceKey, todayISO, addDaysISO } from "../../shared/storage.js";
 
 const a1 = GRAMMAR_LEVELS.find((l) => l.id === "A1");
@@ -380,8 +381,9 @@ describe("Drill above the learner's stage", () => {
     // The option she picked: no cross, no red.
     const picked = screen.getByRole("button", { name: wrong });
     expect(picked).toHaveAccessibleName(wrong);
-    expect(picked.style.color).not.toContain("corallo");
-    expect(picked.parentElement.getAttribute("style")).not.toContain("corallo");
+    expect(picked.style.background).toBe(optionPaint("idle").background);
+    expect(picked.style.color).toBe(optionPaint("idle").color);
+    expect(picked.style.border).toBe(optionPaint("idle").border);
     expect(screen.queryByText("your answer, incorrect")).not.toBeInTheDocument();
 
     // The live region: no "Not quite", the stage and the form instead.
@@ -461,6 +463,14 @@ describe("Drill above the learner's stage", () => {
 
     expect(screen.getByText("your answer, incorrect")).toBeInTheDocument();
     expect(screen.queryByText("Not corrected yet")).not.toBeInTheDocument();
+    // La Città's state paint: the miss in tomato, the answer in pistachio.
+    const wrongPick = first.options.find((o) => o !== first.answer);
+    expect(screen.getByRole("button", { name: `${wrongPick} your answer, incorrect` }).style.background).toBe(
+      optionPaint("wrong").background,
+    );
+    expect(screen.getByRole("button", { name: `${first.answer} correct answer` }).style.background).toBe(
+      optionPaint("answer").background,
+    );
     const saved = loadProgress();
     const key = drillKey(a1, presentAre, first);
     expect(saved.schedule[key]).toMatchObject({ box: 1, due: todayISO() });

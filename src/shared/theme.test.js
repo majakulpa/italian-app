@@ -5,6 +5,7 @@ import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
+import { optionPaint } from "../modules/grammar/optionPaint.js";
 
 const declaredIn = (css) => new Set(css.match(/--color-[a-z-]+(?=\s*:)/g) || []);
 const referencedBy = (obj) =>
@@ -314,6 +315,55 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
   // tiles now, in each tile's own ink (held above). This pins why the move
   // was needed rather than a nicety: a fill accent as text on the dark card
   // fails even the 3:1 that 30px text is allowed.
+  // The grammar drill's answer surfaces, measured off optionPaint() itself so
+  // a state that changes its paint changes what is measured. Each option is a
+  // control on the page: its text has to clear 4.5:1 on its own background,
+  // and its boundary 3:1 on paper, drawn either by the edge or by the fill (the
+  // same either-or the district tiles above use, for the same reason). The
+  // speaker beside it is an ink icon on paper, and both controls' grape focus
+  // ring lands on paper, because the painted tile is the button alone.
+  const DRILL_STATES = ["idle", "answer", "wrong"];
+  it.each(MODES)("%s: every grammar drill option state is readable and bounded on the page", (_mode, vars) => {
+    const failures = [];
+    for (const state of DRILL_STATES) {
+      const paint = optionPaint(state);
+      const [bg, ink, edge] = [named(paint.background), named(paint.color), named(paint.edge)];
+      const text = contrastRatio(vars[ink], vars[bg]);
+      if (text < AA_TEXT) failures.push(`${state} text: ${round(text)}`);
+      const bound = Math.max(contrastRatio(vars[edge], vars["--color-paper"]), contrastRatio(vars[bg], vars["--color-paper"]));
+      if (bound < AA_NON_TEXT) failures.push(`${state} boundary: ${round(bound)}`);
+    }
+    for (const [what, fg, min] of [
+      ["speaker icon", "--color-ink", AA_NON_TEXT],
+      ["focus ring", "--color-grape", AA_NON_TEXT],
+    ]) {
+      const ratio = contrastRatio(vars[fg], vars["--color-paper"]);
+      if (ratio < min) failures.push(`${what} on paper: ${round(ratio)}`);
+    }
+    expect(failures).toEqual([]);
+  });
+
+  // The drill's above-stage note is a neutral city card: an ink sentence, an
+  // ink-soft eyebrow, and the flipping city edge around it on paper. Its Next
+  // button is the pistachio primary La Piazza uses, held by the tile tests.
+  it.each(MODES)("%s: the grammar drill's above-stage note is readable and bounded", (_mode, vars) => {
+    const card = vars["--color-card"];
+    expect(round(contrastRatio(vars["--color-ink"], card))).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(round(contrastRatio(vars["--color-ink-soft"], card))).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(round(contrastRatio(vars["--color-city-edge"], vars["--color-paper"]))).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  // Why the option is not a painted row with the speaker inside it: the ring
+  // would sit on the fill, and in dark mode grape on either state fill is far
+  // under 3:1. Pins the reason, so nobody paints the row back.
+  it("dark: the focus ring would not show on a painted option's fill", () => {
+    const vars = palettes.dark;
+    for (const state of ["answer", "wrong"]) {
+      const fill = named(optionPaint(state).background);
+      expect(round(contrastRatio(vars["--color-grape"], vars[fill])), state).toBeLessThan(AA_NON_TEXT);
+    }
+  });
+
   it("dark: a state fill accent is not a text colour on the card", () => {
     const vars = palettes.dark;
     for (const fill of ["--color-malachite", "--color-corallo"]) {

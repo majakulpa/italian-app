@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SessionSummary from "./SessionSummary.jsx";
-import { LEVEL_ACCENTS } from "./theme.js";
+import { LEVEL_ACCENTS, TOKENS, CITY_ACCENTS, citySurface } from "./theme.js";
 
 const level = { id: "A1", label: "A1", name: "Principiante", ...LEVEL_ACCENTS.A1 };
 
@@ -95,5 +95,44 @@ describe("SessionSummary", () => {
     await user.click(screen.getByRole("button", { name: "Back to categories" }));
 
     expect(onBack).toHaveBeenCalled();
+  });
+
+  // The tallies were painted in TOKENS.malachite / TOKENS.corallo as text on
+  // the card: fill accents, 2.50:1 in dark mode. On a city fill, each number
+  // and label carries that fill's own ink — set on the node itself, because
+  // jsdom can't see an inherited colour and neither can this test.
+  it.each([
+    ["7", "correct out of 8", "pistachio"],
+    ["1", "to review", "lemon"],
+  ])("paints tally %s (%s) on the %s city fill, in that fill's own ink", (figure, label, accent) => {
+    renderSummary();
+    const number = screen.getByText(figure);
+    const caption = screen.getByText(label);
+
+    const tile = number.parentElement.style;
+
+    expect(tile.background).toBe(citySurface(accent).background);
+    expect(tile.border).toBe(citySurface(accent).border);
+    expect(tile.boxShadow).toBe(citySurface(accent).boxShadow);
+    for (const node of [number, caption]) {
+      expect(node.style.color).toBe(CITY_ACCENTS[accent].ink);
+      expect(node.style.color).not.toBe(TOKENS.malachite);
+      expect(node.style.color).not.toBe(TOKENS.corallo);
+    }
+  });
+
+  it("sets the review list on a neutral city surface", () => {
+    renderSummary({ missed: [{ id: "1", primary: "ciao", secondary: "hi / bye" }], missedHeading: "WORDS TO REVIEW" });
+
+    expect(screen.getByText("WORDS TO REVIEW").parentElement.style.border).toBe(citySurface().border);
+  });
+
+  it("makes the way out a pistachio city button", () => {
+    renderSummary({ backLabel: "Back to categories" });
+    const button = screen.getByRole("button", { name: "Back to categories" });
+
+    expect(button.style.background).toBe(CITY_ACCENTS.pistachio.fill);
+    expect(button.style.color).toBe(CITY_ACCENTS.pistachio.ink);
+    expect(button.style.border).toBe(`3px solid ${TOKENS.cityInk}`);
   });
 });

@@ -201,6 +201,23 @@ describe("palette contrast (WCAG 2.1 AA)", () => {
   // level picker marks the active level the same way — same job, same 3:1.
   // These are the *-deep variants precisely because the fill accents only
   // manage 2.5:1 against the dark card.
+  // The session summary's trophy roundel: a level's accentDeep icon and 3px
+  // ring on tint(accent, 16%) of that same level, drawn over the page. The
+  // icon is a graphic (3:1 would do) but it is held to text contrast, and
+  // the ring to 3:1 against the paper the roundel sits on.
+  it.each(MODES)("%s: the summary roundel's accentDeep clears 4.5:1 on its own sixteen-percent tint", (_mode, vars) => {
+    const named = (token) => token.match(/var\((--color-[a-z-]+)\)/)[1];
+    const failures = [];
+    for (const [id, { accent, accentDeep }] of Object.entries(LEVEL_ACCENTS)) {
+      const fill = mix(vars[named(accent)], vars["--color-card"], 16);
+      const onTint = contrastRatio(vars[named(accentDeep)], fill);
+      const ringOnPaper = contrastRatio(vars[named(accentDeep)], vars["--color-paper"]);
+      if (onTint < AA_TEXT) failures.push(`${id} icon on its tint: ${round(onTint)}`);
+      if (ringOnPaper < AA_NON_TEXT) failures.push(`${id} ring on paper: ${round(ringOnPaper)}`);
+    }
+    expect(failures).toEqual([]);
+  });
+
   it.each(MODES)("%s: a state or selection border clears 3:1 on the card", (_mode, vars) => {
     const failures = [
       "--color-malachite-deep",
@@ -278,6 +295,30 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
   // pairing that has to hold.
   it.each(MODES)("%s: the focus ring clears 3:1 against the map plate", (_mode, vars) => {
     expect(round(contrastRatio(vars["--color-grape"], vars["--color-paper-deep"]))).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  // The shared module chrome (TopBar, LevelPicker, TicketCard, SessionSummary)
+  // wears `.citta` too, so the grape ring now lands on the module page, which
+  // is paper, and around buttons sitting on a ticket's card. The weakest of
+  // the three is grape on the dark card, 3.99:1.
+  it.each(MODES)("%s: the focus ring clears 3:1 on every surface the chrome puts it on", (_mode, vars) => {
+    const failures = SURFACES.map((surface) => [surface, contrastRatio(vars["--color-grape"], vars[surface])])
+      .filter(([, ratio]) => ratio < AA_NON_TEXT)
+      .map(([surface, ratio]) => `focus ring on ${surface}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // SessionSummary's tallies used to paint TOKENS.malachite and
+  // TOKENS.corallo as text on the card. They are pistachio and lemon city
+  // tiles now, in each tile's own ink (held above). This pins why the move
+  // was needed rather than a nicety: a fill accent as text on the dark card
+  // fails even the 3:1 that 30px text is allowed.
+  it("dark: a state fill accent is not a text colour on the card", () => {
+    const vars = palettes.dark;
+    for (const fill of ["--color-malachite", "--color-corallo"]) {
+      expect(round(contrastRatio(vars[fill], vars["--color-card"])), fill).toBeLessThan(AA_NON_TEXT);
+    }
   });
 });
 

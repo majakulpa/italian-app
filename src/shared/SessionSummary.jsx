@@ -1,11 +1,25 @@
 import React, { useEffect, useRef } from "react";
 import { Trophy } from "lucide-react";
-import { TOKENS, tint } from "./theme.js";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface, tint } from "./theme.js";
 
 // End-of-session results screen shared by every drill-style module (vocab
 // quiz, grammar drill, ...). `missed` items are rendered as
 // "<strong>primary</strong> — secondary" (e.g. the Italian word/answer and
 // its translation/explanation).
+//
+// La Città: the same end-of-session shape La Riserva's and La Piazza's
+// summaries already draw — a pistachio tally for what landed, a lemon one for
+// what is coming back, a neutral city surface for the list, and a pistachio
+// primary button — so a session ends the same way in every district.
+//
+// The tallies used to be painted in TOKENS.malachite and TOKENS.corallo as
+// *text* on the card. Those are fill accents, and theme.js's rule is never to
+// pair text with one: in dark mode both came to 2.50:1 on the card, under the
+// 3:1 even 30px text needs. On a city fill they take the fill's own ink, the
+// pairing theme.test.js holds at 4.5:1, and every text node inside sets that
+// ink explicitly rather than inheriting it — see the La Riserva legend note
+// in README.md for why an inherited colour is not trusted here.
+const TALLY = { padding: "14px 16px", flex: 1, minWidth: 0 };
 export default function SessionSummary({
   level,
   title,
@@ -39,7 +53,7 @@ export default function SessionSummary({
   }, []);
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
+    <div className="citta" style={{ maxWidth: 480, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
         <div
           style={{
@@ -47,14 +61,15 @@ export default function SessionSummary({
             height: 60,
             borderRadius: "50%",
             background: tint(level.accent, 16),
-            border: `1.5px solid ${level.accent}`,
+            border: `${CITY_RULES.border}px solid ${level.accentDeep}`,
+            boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             color: level.accentDeep,
           }}
         >
-          <Trophy size={28} />
+          <Trophy size={28} aria-hidden="true" />
         </div>
       </div>
       <h2
@@ -65,19 +80,19 @@ export default function SessionSummary({
         {title}
       </h2>
       <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 28 }}>
-        <div style={{ background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 22px", minWidth: 120 }}>
-          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: TOKENS.malachite, margin: 0 }}>{primary}</p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0" }}>{primaryLabel}</p>
+        <div style={{ ...citySurface("pistachio"), ...TALLY }}>
+          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: CITY_ACCENTS.pistachio.ink, margin: 0 }}>{primary}</p>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: CITY_ACCENTS.pistachio.ink, margin: "4px 0 0" }}>{primaryLabel}</p>
         </div>
-        <div style={{ background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 22px", minWidth: 120 }}>
-          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: TOKENS.corallo, margin: 0 }}>{secondary}</p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0" }}>{secondaryLabel}</p>
+        <div style={{ ...citySurface("lemon"), ...TALLY }}>
+          <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: CITY_ACCENTS.lemon.ink, margin: 0 }}>{secondary}</p>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: CITY_ACCENTS.lemon.ink, margin: "4px 0 0" }}>{secondaryLabel}</p>
         </div>
       </div>
 
       {missed && missed.length > 0 && (
-        <div style={{ textAlign: "left", background: TOKENS.card, border: `1px solid ${TOKENS.line}`, borderRadius: 12, padding: "16px 20px", marginBottom: 28 }}>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.inkSoft, margin: "0 0 10px", letterSpacing: 1 }}>
+        <div style={{ ...citySurface(), textAlign: "left", padding: "16px 20px", marginBottom: 28 }}>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, color: TOKENS.inkSoft, margin: "0 0 10px", letterSpacing: 1.6, textTransform: "uppercase" }}>
             {missedHeading}
           </p>
           {missed.map((item) => (
@@ -91,13 +106,14 @@ export default function SessionSummary({
       <button
         onClick={onBack}
         style={{
-          border: "none",
-          background: TOKENS.ink,
-          color: TOKENS.paper,
-          borderRadius: 10,
+          border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+          boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+          background: CITY_ACCENTS.pistachio.fill,
+          color: CITY_ACCENTS.pistachio.ink,
+          borderRadius: CITY_RULES.radius,
           padding: "13px 26px",
           fontFamily: "'Inter', sans-serif",
-          fontWeight: 600,
+          fontWeight: 700,
           fontSize: 15,
           cursor: "pointer",
         }}

@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import GrammarModule from "./GrammarModule.jsx";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 import * as speech from "../../shared/speech.js";
+import * as srs from "../../shared/srs.js";
+import { loadProgress, drillKey, stageEvidenceKey, todayISO, addDaysISO } from "../../shared/storage.js";
 
 const a1 = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const presentAre = a1.topics.find((t) => t.id === "present-are");
@@ -348,6 +350,121 @@ describe("Drill", () => {
     // Still on the same question, nothing selected — the click didn't choose it.
     expect(screen.getByText("0 correct")).toBeInTheDocument();
     expect(screen.getByText(item0.prompt)).toBeInTheDocument();
+  });
+});
+
+// PLAN.md: never grade a structure above the learner's stage. A fresh learner
+// is at stage 1, presente, so a passato prossimo item is above her stage and a
+// wrong pick on it must not read as wrong anywhere — not in the option, the
+// mark, the live region, the score or the summary — and must be deferred in
+// the queue rather than demoted.
+describe("Drill above the learner's stage", () => {
+  const b1 = GRAMMAR_LEVELS.find((l) => l.id === "B1");
+  const passato = b1.topics.find((t) => t.id === "passato-prossimo");
+  const item = passato.drills[0]; // "Ieri io ___ la pasta." — ho mangiato
+  const wrong = item.options.find((opt) => opt !== item.answer);
+  const KEY = drillKey(b1, passato, item);
+  const tomorrow = addDaysISO(todayISO(), 1);
+
+  const openPassato = async (user) => {
+    await user.click(screen.getByRole("button", { name: /Intermedio/ }));
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+  };
+
+  it("draws no wrong surface for a wrong pick, and says why instead", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await openPassato(user);
+    await user.click(screen.getByRole("button", { name: wrong }));
+
+    // The option she picked: no cross, no red.
+    const picked = screen.getByRole("button", { name: wrong });
+    expect(picked).toHaveAccessibleName(wrong);
+    expect(picked.style.color).not.toContain("corallo");
+    expect(picked.parentElement.getAttribute("style")).not.toContain("corallo");
+    expect(screen.queryByText("your answer, incorrect")).not.toBeInTheDocument();
+
+    // The live region: no "Not quite", the stage and the form instead.
+    const status = document.querySelector('[role="status"]');
+    expect(status.textContent).not.toMatch(/Not quite/);
+    expect(status.textContent).toBe(
+      "This form belongs to stage 2, passato prossimo. You are at stage 1, presente, so it is not corrected yet. The form is ho mangiato.",
+    );
+    expect(status.querySelector('[lang="it"]')).not.toBeNull();
+
+    // On screen, the same, with the stage names marked Italian.
+    expect(screen.getByText("Not corrected yet")).toBeInTheDocument();
+    const names = screen.getAllByText("passato prossimo");
+    expect(names.every((el) => el.closest('[lang="it"]'))).toBe(true);
+
+    // Not counted against the score.
+    expect(screen.getByText("0 correct")).toBeInTheDocument();
+  });
+
+  it("defers the item in the queue instead of demoting it", async () => {
+    const reviewSpy = vi.spyOn(srs, "reviewItem");
+    const deferSpy = vi.spyOn(srs, "deferItem");
+    const user = userEvent.setup();
+    renderGrammar();
+    await openPassato(user);
+    await user.click(screen.getByRole("button", { name: wrong }));
+
+    expect(deferSpy).toHaveBeenCalledWith(expect.anything(), KEY);
+    expect(reviewSpy).not.toHaveBeenCalled();
+    const saved = loadProgress();
+    expect(saved.words[KEY]).toBe("learning");
+    expect(saved.schedule[KEY]).toMatchObject({ box: 1, due: tomorrow });
+    expect(saved.words[stageEvidenceKey(KEY)]).toBe("shown");
+  });
+
+  it("leaves it out of the score's denominator and the review list, and says how many", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await openPassato(user);
+
+    await user.click(screen.getByRole("button", { name: wrong }));
+    await user.click(screen.getByRole("button", { name: /Next/ }));
+    for (const rest of passato.drills.slice(1)) {
+      await user.click(screen.getByRole("button", { name: rest.answer }));
+      await user.click(screen.getByRole("button", { name: /Next|See results/ }));
+    }
+
+    expect(screen.getByText(`correct out of ${passato.drills.length - 1}`)).toBeInTheDocument();
+    expect(screen.getByText("1 form was shown but not corrected — above your stage for now.")).toBeInTheDocument();
+    expect(screen.queryByText("TO REVIEW")).not.toBeInTheDocument();
+    expect(screen.getByText("to review").previousSibling).toHaveTextContent("0");
+  });
+
+  it("promotes a right pick above stage exactly as before, and counts it as no evidence", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await openPassato(user);
+    await user.click(screen.getByRole("button", { name: item.answer }));
+
+    const saved = loadProgress();
+    expect(saved.words[KEY]).toBe("known");
+    expect(saved.schedule[KEY].box).toBe(2);
+    expect(saved.words).not.toHaveProperty(stageEvidenceKey(KEY));
+    expect(screen.getByText("1 correct")).toBeInTheDocument();
+  });
+
+  // At stage 1 a presente item is graded: wrong is wrong, as it always was, and
+  // the right option having just been painted makes the next typed answer to
+  // it a copy rather than evidence.
+  it("still corrects a wrong pick at the learner's stage, and marks it shown", async () => {
+    const user = userEvent.setup();
+    renderGrammar();
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const first = presentAre.drills[0];
+    await user.click(screen.getByRole("button", { name: first.options.find((o) => o !== first.answer) }));
+
+    expect(screen.getByText("your answer, incorrect")).toBeInTheDocument();
+    expect(screen.queryByText("Not corrected yet")).not.toBeInTheDocument();
+    const saved = loadProgress();
+    const key = drillKey(a1, presentAre, first);
+    expect(saved.schedule[key]).toMatchObject({ box: 1, due: todayISO() });
+    expect(saved.words[stageEvidenceKey(key)]).toBe("shown");
   });
 });
 

@@ -1,12 +1,13 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
-import { loadProgress, saveProgress, todayISO } from "../../shared/storage.js";
-import { dueItems, dueCount, reviewItem, SESSION_LIMIT } from "../../shared/srs.js";
+import { loadProgress, saveProgress, todayISO, markStageShown, markStageProduced } from "../../shared/storage.js";
+import { dueItems, dueCount, reviewItem, deferItem, SESSION_LIMIT } from "../../shared/srs.js";
+import { aboveStage, shownNotCorrected } from "../../shared/stage.js";
 import { districtById, districtForModule } from "../../shared/districts.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import { toQuestion } from "./question.js";
-import { judge, reveal, announce, answered, ATTEMPTS } from "../../shared/locatedFeedback.js";
+import { judge, reveal, announce, answered, aboveStageVerdict, ATTEMPTS } from "../../shared/locatedFeedback.js";
 import Verdict from "../../shared/Verdict.jsx";
 import {
   judge as judgeArticle,
@@ -303,7 +304,7 @@ function NothingDue({ onExit }) {
 
 // ── The item (design screen 18, the lower half) ──────────────────────────
 
-function Round({ queue, onGrade, onDone, onBack }) {
+function Round({ queue, gateFor, onGrade, onShown, onDefer, onDone, onBack }) {
   const inputId = useId();
   const verdictId = useId();
   const inputRef = useRef(null);
@@ -351,8 +352,23 @@ function Round({ queue, onGrade, onDone, onBack }) {
   // it is only ever called from a branch that also settles the item, and a
   // settled item's button advances rather than re-checking.
   const settle = (promoted) => {
-    onGrade(unit.key, promoted);
+    onGrade(unit, promoted);
     setResults((r) => [...r, { key: unit.key, promoted, recap: q.recap }]);
+  };
+
+  // The other way an item settles: above the learner's stage, where a miss is
+  // not a miss (shared/stage.js). No second attempt, no reviewItem, and the
+  // result is kept apart so the summary neither counts it as coming back for
+  // a mistake nor lists it as worth another look. deferItem writes the
+  // "shown" evidence marker itself, so nothing else is written here.
+  //
+  // The gate is asked at the moment of the miss rather than when the round
+  // was built: a clean answer earlier in this round can establish a stage, and
+  // an item on that stage is then corrected like any other.
+  const defer = (gate) => {
+    setVerdict(aboveStageVerdict(q, gate));
+    onDefer(unit);
+    setResults((r) => [...r, { key: unit.key, promoted: false, deferred: true, recap: q.recap }]);
   };
 
   const advance = () => {
@@ -379,6 +395,20 @@ function Round({ queue, onGrade, onDone, onBack }) {
     }
 
     const next = judge(q, input, attempt);
+
+    // Something written and wrong. Above the learner's stage that settles the
+    // item without judging it; at or below, the form may be about to be shown
+    // (a located fragment now, the answer on a spent attempt), so the
+    // evidence marker goes to "shown" before anything else can count.
+    if (!next.correct && next.kind !== "blank") {
+      const gate = gateFor(unit);
+      if (gate) {
+        defer(gate);
+        return;
+      }
+      onShown(unit);
+    }
+
     setVerdict(next);
 
     if (next.correct || next.last) {
@@ -413,7 +443,13 @@ function Round({ queue, onGrade, onDone, onBack }) {
   };
 
   const showMe = () => {
+    const gate = gateFor(unit);
+    if (gate) {
+      defer(gate);
+      return;
+    }
     setVerdict(reveal(q));
+    onShown(unit);
     settle(false);
   };
 
@@ -604,7 +640,8 @@ function Round({ queue, onGrade, onDone, onBack }) {
 
 function Summary({ results, onBack }) {
   const promoted = results.filter((r) => r.promoted);
-  const again = results.filter((r) => !r.promoted);
+  const again = results.filter((r) => !r.promoted && !r.deferred);
+  const deferred = results.filter((r) => r.deferred);
 
   return (
     <Screen>
@@ -625,6 +662,14 @@ function Summary({ results, onBack }) {
           <Eyebrow style={{ opacity: 0.9 }}>coming back</Eyebrow>
         </div>
       </div>
+
+      {/* Above-stage items come back too, but not because anything was wrong
+          with them, so they are neither in "coming back" nor listed below. */}
+      {deferred.length > 0 && (
+        <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.inkSoft, margin: "0 0 20px", lineHeight: 1.5 }}>
+          {shownNotCorrected(deferred.length)}
+        </p>
+      )}
 
       {again.length > 0 && (
         <div style={{ ...citySurface(), padding: "14px 16px", marginBottom: 20 }}>
@@ -671,6 +716,19 @@ export default function ReviewModule({ onExit }) {
     setRound(dueItems(loadProgress(), todayISO()).map((unit) => ({ unit, q: toQuestion(unit) })));
   };
 
+  // Only a grammar drill has a stage. Articles, the deck and La Riserva are
+  // never gated and never carry an evidence marker.
+  const staged = (unit) => unit.moduleId === "grammar";
+  const gateFor = (unit) => (staged(unit) ? aboveStage(progress, unit.group, unit.item) : null);
+
+  // Right first time on a typed grammar item is the one answer that can be
+  // evidence of a stage; markStageProduced decides whether it counts.
+  const grade = (unit, promoted) =>
+    setProgress((p) => {
+      const graded = reviewItem(p, unit.key, promoted);
+      return promoted && staged(unit) ? markStageProduced(graded, unit.key) : graded;
+    });
+
   const backToHome = () => {
     setRound(null);
     setResults(null);
@@ -685,7 +743,10 @@ export default function ReviewModule({ onExit }) {
       <Round
         queue={round}
         onBack={backToHome}
-        onGrade={(key, correct) => setProgress((p) => reviewItem(p, key, correct))}
+        gateFor={gateFor}
+        onGrade={grade}
+        onShown={(unit) => setProgress((p) => (staged(unit) ? markStageShown(p, unit.key) : p))}
+        onDefer={(unit) => setProgress((p) => deferItem(p, unit.key))}
         onDone={setResults}
       />
     );

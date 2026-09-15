@@ -59,6 +59,9 @@
 //               location that isn't there.
 //   blank       nothing was typed. Not an attempt — see judge().
 //   revealed    the learner pressed "show me".
+//   above-stage a miss or "show me" on an item above the learner's stage:
+//               not judged, the form given. Built by aboveStageVerdict(),
+//               never by judge() — the judge does not know the learner.
 //
 // The fragments a verdict quotes back (`shared`, `tail`) are bounded at both
 // ends, and the bound is about what the fragment *leaves* rather than where
@@ -76,6 +79,7 @@
 // drift.
 
 import { foldTyped, sameTyped, accentsMissing, sharedPrefix } from "./typedAnswer.js";
+import { stageNoteText } from "./stage.js";
 
 export const ATTEMPTS = 2;
 
@@ -347,14 +351,37 @@ export function judge(question, input, attempt) {
 //
 // It lives beside the verdicts rather than in a screen because it is a fact
 // about a verdict, and both screens that render one need it.
+//
+// An above-stage verdict is excluded too, for the other half of the same
+// reason: she did write something, but the app has decided not to judge it,
+// and a cross or aria-invalid would be judging it.
 export function answered(verdict) {
-  return verdict.kind !== "blank" && verdict.kind !== "revealed";
+  return verdict.kind !== "blank" && verdict.kind !== "revealed" && verdict.kind !== "above-stage";
 }
 
 // "Show me" — a deliberate second choice, and wrong by definition: the item
 // is settled, the answer is handed over, and nothing about it promotes.
 export function reveal(question) {
   return { correct: false, kind: "revealed", spent: true, last: true, answer: question.answer, shared: null, tail: null };
+}
+
+// A miss, or "Show me", on an item above the learner's stage (shared/stage.js,
+// and `gate` is what aboveStage() returns). PLAN.md: "never grade a structure
+// above the learner's stage — it stays in the input". So the item settles on
+// the spot, with no second attempt — locating an error is correcting it — and
+// the form is given plainly, with no verdict on what she wrote. `correct` is
+// false because nothing promotes, which is all that field means to a screen.
+export function aboveStageVerdict(question, gate) {
+  return {
+    correct: false,
+    kind: "above-stage",
+    spent: true,
+    last: true,
+    answer: question.answer,
+    shared: null,
+    tail: null,
+    gate,
+  };
 }
 
 // The located sentences. The one thing none of them may contain is the
@@ -394,6 +421,10 @@ export function announce(verdict) {
   }
 
   if (verdict.kind === "revealed") return `The answer is ${verdict.answer}${fullStopAfter(verdict.answer)}`;
+
+  if (verdict.kind === "above-stage") {
+    return `${stageNoteText(verdict.gate)} The form is ${verdict.answer}${fullStopAfter(verdict.answer)}`;
+  }
 
   const parts = [`${LEAD} ${LOCATED[verdict.kind]}`];
   if (verdict.shared) parts.push(`You have ${verdict.shared} right.`);

@@ -2,8 +2,10 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
-import { loadProgress, saveProgress, drillKey, topicKnownCount } from "../../shared/storage.js";
-import { reviewItem } from "../../shared/srs.js";
+import { loadProgress, saveProgress, drillKey, topicKnownCount, markStageShown } from "../../shared/storage.js";
+import { reviewItem, deferItem } from "../../shared/srs.js";
+import { aboveStage, shownNotCorrected } from "../../shared/stage.js";
+import StageNote from "../../shared/StageNote.jsx";
 import { shuffle } from "../../shared/shuffle.js";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
@@ -283,12 +285,16 @@ function fillBlank(item) {
   return item.prompt.replace("___", item.answer);
 }
 
-function Drill({ level, topic, onBack, onMarkDrill }) {
+function Drill({ level, topic, progress, onBack, onMarkDrill, onDefer }) {
   const questions = useMemo(() => buildDrillQuestions(topic), [topic]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
+  // The current item's stage gate when a wrong pick landed above the
+  // learner's stage (shared/stage.js), else null; and how many did.
+  const [gate, setGate] = useState(null);
+  const [deferred, setDeferred] = useState(0);
   const [done, setDone] = useState(false);
   const promptRef = useRef(null);
 
@@ -317,13 +323,28 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
   const choose = (opt) => {
     if (selected) return;
     setSelected(opt);
-    const isCorrect = opt === q.item.answer;
-    onMarkDrill(drillKey(level, topic, q.item), isCorrect ? "known" : "learning");
-    if (isCorrect) {
+    const key = drillKey(level, topic, q.item);
+    if (opt === q.item.answer) {
+      // Promotes exactly as it always has. A pick out of four is recognition,
+      // so it is no evidence of a stage and writes no marker.
+      onMarkDrill(key, "known");
       setCorrectCount((c) => c + 1);
-    } else {
-      setMissed((m) => [...m, q.item]);
+      return;
     }
+
+    // A wrong pick above the learner's stage is not marked wrong: it is
+    // deferred rather than demoted, it is not counted against the score and
+    // it is not listed to review. The gate is read at the moment of the pick,
+    // from progress as it stands.
+    const above = aboveStage(progress, topic, q.item);
+    if (above) {
+      setGate(above);
+      setDeferred((d) => d + 1);
+      onDefer(key);
+      return;
+    }
+    onMarkDrill(key, "learning");
+    setMissed((m) => [...m, q.item]);
   };
 
   const next = () => {
@@ -332,6 +353,7 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
     } else {
       setIndex((i) => i + 1);
       setSelected(null);
+      setGate(null);
     }
   };
 
@@ -341,12 +363,13 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
         level={level}
         title="Drill complete"
         primary={correctCount}
-        primaryLabel={`correct out of ${questions.length}`}
+        primaryLabel={`correct out of ${questions.length - deferred}`}
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((item) => ({ id: item.id, primary: fillBlank(item), secondary: item.hint }))}
         missedLang="it"
         missedHeading="TO REVIEW"
+        note={deferred > 0 ? shownNotCorrected(deferred) : undefined}
         backLabel="Back to topics"
         onBack={onBack}
       />
@@ -419,7 +442,7 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
                 bg = tint(TOKENS.malachite, 12);
                 border = TOKENS.malachiteDeep;
                 color = TOKENS.malachiteDeep;
-              } else if (isSelected) {
+              } else if (isSelected && !gate) {
                 bg = tint(TOKENS.corallo, 12);
                 border = TOKENS.corolloDeep;
                 color = TOKENS.corolloDeep;
@@ -462,7 +485,7 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
                 >
                   <span lang="it">{opt}</span>
                   {selected && isAnswer && <AnswerMark state="correct" />}
-                  {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
+                  {selected && isSelected && !isAnswer && !gate && <AnswerMark state="incorrect" />}
                 </button>
                 <SpeakButton text={opt} color={color} size={15} />
               </div>
@@ -476,7 +499,39 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
             renders it as its own element now and takes the language from
             here, because the answer is not Italian everywhere — the
             vocabulary quiz's answer is an English gloss. */}
-        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} answerLang="it" />
+        {/* Above the learner's stage the pick is not judged, so what replaces
+            "Not quite" says why and gives the form — on screen here, and
+            spoken through the same live region below. */}
+        {gate && (
+          <div
+            style={{
+              marginTop: 16,
+              background: TOKENS.card,
+              border: `1px solid ${TOKENS.line}`,
+              borderRadius: 10,
+              padding: "12px 14px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.55,
+              color: TOKENS.ink,
+            }}
+          >
+            <p style={{ margin: "0 0 4px", fontWeight: 600, color: TOKENS.ink }}>Not corrected yet</p>
+            <p style={{ margin: "0 0 4px", color: TOKENS.ink }}>
+              <StageNote gate={gate} />
+            </p>
+            <p style={{ margin: 0, color: TOKENS.ink }}>
+              The form is <b lang="it">{q.item.answer}</b>.
+            </p>
+          </div>
+        )}
+
+        <AnswerStatus
+          correct={selected === null ? null : selected === q.item.answer}
+          answer={q.item.answer}
+          answerLang="it"
+          gate={gate}
+        />
 
         {selected && (
           <button
@@ -520,7 +575,15 @@ export default function GrammarModule({ onExit }) {
   const onBack = () => setSession(null);
   // Goes through reviewItem rather than markWord so every answer also moves
   // the drill's Leitner box — ordinary study is what feeds the review queue.
-  const onMarkDrill = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
+  //
+  // A wrong pick at or below the learner's stage also marks the item "shown":
+  // the drill has just painted the right option, so the next clean typed
+  // answer to it in La Piazza is a copy of that, not evidence.
+  const onMarkDrill = (key, status) =>
+    setProgress((p) => (status === "known" ? reviewItem(p, key, true) : markStageShown(reviewItem(p, key, false), key)));
+  // Above the learner's stage: deferred, never demoted. deferItem marks the
+  // item "shown" itself.
+  const onDefer = (key) => setProgress((p) => deferItem(p, key));
 
   if (!session) return <GrammarHome onPick={onPick} onExit={onExit} progress={progress} />;
   if (session.mode === "lesson") {
@@ -537,8 +600,10 @@ export default function GrammarModule({ onExit }) {
     <Drill
       level={session.level}
       topic={session.topic}
+      progress={progress}
       onBack={onBack}
       onMarkDrill={onMarkDrill}
+      onDefer={onDefer}
     />
   );
 }

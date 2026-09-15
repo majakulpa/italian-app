@@ -136,3 +136,19 @@ describe("SessionSummary", () => {
     expect(button.style.border).toBe(`3px solid ${TOKENS.cityInk}`);
   });
 });
+
+// The grammar drill's items above the learner's stage were neither right nor
+// to review, so the one sentence about them sits apart from both tallies.
+describe("SessionSummary note", () => {
+  it("draws the note in an explicit ink when given", () => {
+    renderSummary({ note: "1 form was shown but not corrected — above your stage for now." });
+    expect(screen.getByText("1 form was shown but not corrected — above your stage for now.").style.color).toBe(
+      TOKENS.inkSoft,
+    );
+  });
+
+  it("draws no note by default", () => {
+    const { container } = renderSummary();
+    expect(container.textContent).not.toMatch(/not corrected/);
+  });
+});

@@ -2,6 +2,7 @@ import React from "react";
 import { TOKENS, citySurface } from "./theme.js";
 import AnswerMark from "./AnswerMark.jsx";
 import SpeakButton from "./SpeakButton.jsx";
+import StageNote from "./StageNote.jsx";
 import { LOCATED, fullStopAfter, answered } from "./locatedFeedback.js";
 
 // The card that renders one verdict from shared/locatedFeedback.js.
@@ -52,14 +53,21 @@ function Eyebrow({ children, style, ...rest }) {
 // the reservoir. Both are `{ it, en }`, and the Italian half carries the tag.
 export default function Verdict({ id, context, verdict }) {
   const blank = verdict.kind === "blank";
-  const accent = verdict.correct ? "pistachio" : blank ? undefined : "lemon";
+  // Above the learner's stage the card must not read as wrong: no lemon (the
+  // colour of "not there yet" and "coming back"), no cross, no "Have another
+  // go". It takes the neutral surface a blank box does, and says why.
+  const above = verdict.kind === "above-stage";
+  const neutral = blank || above;
+  const accent = verdict.correct ? "pistachio" : neutral ? undefined : "lemon";
   const heading = verdict.correct
     ? "Right"
     : blank
       ? "Nothing written"
-      : verdict.kind === "revealed"
-        ? "Here it is"
-        : "Not there yet";
+      : above
+        ? "Not corrected yet"
+        : verdict.kind === "revealed"
+          ? "Here it is"
+          : "Not there yet";
   // AnswerMark's hidden text says "your answer, incorrect", so it is drawn
   // only where there is an answer of hers to call that — see answered(). The
   // heading carries the state in words instead, so nothing here is left to
@@ -69,7 +77,7 @@ export default function Verdict({ id, context, verdict }) {
   return (
     <div id={id} style={{ ...citySurface(accent), padding: "14px 16px", marginTop: 16 }}>
       <Eyebrow
-        style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6, color: blank ? TOKENS.inkSoft : undefined }}
+        style={{ opacity: 0.9, display: "flex", alignItems: "center", gap: 6, color: neutral ? TOKENS.inkSoft : undefined }}
       >
         {marked && <AnswerMark state={verdict.correct ? "correct" : "incorrect"} size={14} />}
         {heading}
@@ -94,6 +102,12 @@ export default function Verdict({ id, context, verdict }) {
 
         {verdict.correct && !verdict.answer && <p style={{ margin: 0 }}>That is the one.</p>}
 
+        {above && (
+          <p style={{ margin: 0 }}>
+            <StageNote gate={verdict.gate} />
+          </p>
+        )}
+
         {verdict.answer && (
           <>
             <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -102,7 +116,7 @@ export default function Verdict({ id, context, verdict }) {
                   come stai?." reads as a typo. fullStopAfter is shared with
                   announce() so the card and the live region agree. */}
               <span>
-                {verdict.correct ? "Italian writes it " : "The answer is "}
+                {verdict.correct ? "Italian writes it " : above ? "The form is " : "The answer is "}
                 <b lang="it">{verdict.answer}</b>
                 {fullStopAfter(verdict.answer)}
               </span>

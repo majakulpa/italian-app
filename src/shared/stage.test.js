@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { STAGES, EMERGENCE_ITEMS, itemStage, formStage, stageState, isGraded } from "./stage.js";
+import { STAGES, EMERGENCE_ITEMS, itemStage, formStage, stageState, isGraded, aboveStage, stageNoteText, shownNotCorrected } from "./stage.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { drillKey, stageEvidenceKey, markStageProduced, markStageShown, markWord, riservaKey } from "./storage.js";
 import { reviewItem, deferItem, dueCount, dueItems } from "./srs.js";
@@ -222,6 +222,33 @@ describe("isGraded", () => {
     expect(graded(EMPTY, drill("verbi-modali", "1"))).toBe(true);
     expect(graded(EMPTY, drill("verbi-modali", "8"))).toBe(false);
     expect(graded(establish(EMPTY, 2), drill("imperfetto", "4"))).toBe(false);
+  });
+});
+
+describe("aboveStage", () => {
+  it("is null for an item that is graded", () => {
+    const d = drill("present-are", "1");
+    expect(aboveStage(EMPTY, d.topic, d.item)).toBeNull();
+  });
+
+  it("names the item's grading stage and the learner's current one", () => {
+    const d = drill("imperfetto", "4"); // ho visto: grades at 3, types a 2
+    expect(aboveStage(establish(EMPTY, 1), d.topic, d.item)).toEqual({ stage: STAGES[2], current: STAGES[1] });
+  });
+});
+
+describe("shownNotCorrected", () => {
+  it("counts one form and several", () => {
+    expect(shownNotCorrected(1)).toBe("1 form was shown but not corrected — above your stage for now.");
+    expect(shownNotCorrected(3)).toBe("3 forms were shown but not corrected — above your stage for now.");
+  });
+});
+
+describe("stageNoteText", () => {
+  it("says the item's stage and the learner's, with their Italian names", () => {
+    expect(stageNoteText({ stage: STAGES[5], current: STAGES[0] })).toBe(
+      "This form belongs to stage 6, congiuntivo. You are at stage 1, presente, so it is not corrected yet.",
+    );
   });
 });
 

@@ -109,3 +109,28 @@ export function isGraded(progress, topic, item) {
   const state = stageState(progress);
   return stage <= state.current || state.stages[stage - 1].established;
 }
+
+// What a screen needs to say about an item a miss on which will not be
+// corrected: the rung the item sits on and the one the learner is on, each as
+// its STAGES entry so the copy can name them. Null when the item is graded,
+// so a caller has one value to branch on and the names to hand in the same
+// place.
+export function aboveStage(progress, topic, item) {
+  if (isGraded(progress, topic, item)) return null;
+  return { stage: STAGES[itemStage(topic, item) - 1], current: STAGES[stageState(progress).current - 1] };
+}
+
+// The end-of-session line for those items, the same on both screens.
+export function shownNotCorrected(count) {
+  return `${count} ${count === 1 ? "form was" : "forms were"} shown but not corrected — above your stage for now.`;
+}
+
+// The sentence both screens say about such an item, as plain text for a live
+// region. StageNote.jsx draws the same words with the stage names marked
+// Italian, and StageNote.test.jsx pins that the two do not drift.
+export function stageNoteText({ stage, current }) {
+  return (
+    `This form belongs to stage ${stage.stage}, ${stage.name}. ` +
+    `You are at stage ${current.stage}, ${current.name}, so it is not corrected yet.`
+  );
+}

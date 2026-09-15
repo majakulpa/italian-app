@@ -50,3 +50,26 @@ describe("AnswerStatus", () => {
     expect(screen.getByText("to speak")).not.toHaveAttribute("lang");
   });
 });
+
+describe("AnswerStatus above the learner's stage", () => {
+  const gate = { stage: { stage: 2, name: "passato prossimo" }, current: { stage: 1, name: "presente" } };
+
+  it("says the stage and gives the form instead of Not quite, with the Italian marked", () => {
+    const { container } = render(<AnswerStatus correct={false} answer="ho mangiato" answerLang="it" gate={gate} />);
+    const region = container.querySelector('[role="status"]');
+
+    expect(region.textContent).toBe(
+      "This form belongs to stage 2, passato prossimo. You are at stage 1, presente, so it is not corrected yet. The form is ho mangiato.",
+    );
+    expect([...region.querySelectorAll('[lang="it"]')].map((el) => el.textContent)).toEqual([
+      "passato prossimo",
+      "presente",
+      "ho mangiato",
+    ]);
+  });
+
+  it("still says Correct. for a right answer, gate or not", () => {
+    render(<AnswerStatus correct answer="ho mangiato" answerLang="it" gate={gate} />);
+    expect(screen.getByRole("status")).toHaveTextContent(/^Correct\.$/);
+  });
+});

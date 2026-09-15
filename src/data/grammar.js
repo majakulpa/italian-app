@@ -23,6 +23,17 @@ import { LEVEL_ACCENTS } from "../shared/theme.js";
 // in every conjugation table, so they stay plain strings and the renderer
 // glosses them from PRONOUN_GLOSS below rather than the data repeating
 // itself five times.
+//
+// Every topic carries a `stage`: the rung of the ladder in shared/stage.js
+// (1 presente … 7 passato remoto) that the choice it drills belongs to, or
+// `null` when its answers are not verb forms at all — articles, agreement,
+// comparatives, clitics — and are never gated. A drill may carry its own
+// `stage` where it produces a form higher up the ladder than its topic, so an
+// item's stage is max(topic stage, stage of the form produced). An override
+// only ever raises: the topic stage is what the drill is testing, and the
+// form being lower doesn't make the choice easier. In the imperfetto topic,
+// `ho visto` is a passato prossimo form picked *against* the imperfetto, so it
+// is stage 3. grammar.test.js holds both rules.
 
 // The `lei` = formal "you" sense is deliberately left out: in a conjugation
 // table this column is the third person, and the register point belongs in
@@ -47,6 +58,7 @@ export const GRAMMAR_LEVELS = [
         id: "present-are",
         name: "Presente: verbi in -ARE",
         tagline: "The present tense of regular -are verbs",
+        stage: 1,
         explanation: {
           summary:
             "Most Italian verbs end in -are, -ere, or -ire. The -are group is the largest — drop the -are ending and add these endings to the stem.",
@@ -85,6 +97,7 @@ export const GRAMMAR_LEVELS = [
         id: "essere-avere",
         name: "Essere e avere",
         tagline: "To be and to have — irregular but essential",
+        stage: 1,
         explanation: {
           summary:
             "Essere (to be) and avere (to have) are irregular, but you'll use them constantly — including later to build the passato prossimo.",
@@ -123,6 +136,7 @@ export const GRAMMAR_LEVELS = [
         id: "presente-irregolare",
         name: "Presente irregolare: andare, fare, stare, venire",
         tagline: "The everyday verbs that break the rules",
+        stage: 1,
         explanation: {
           summary:
             "A handful of the most-used verbs don't follow the -are/-ere/-ire patterns at all. There's no trick to them — they're learnt one by one — but notice that noi and voi usually stay regular.",
@@ -170,6 +184,7 @@ export const GRAMMAR_LEVELS = [
         id: "nomi-aggettivi",
         name: "Nomi e aggettivi",
         tagline: "Making the endings agree",
+        stage: null,
         explanation: {
           summary:
             "Every Italian noun is masculine or feminine, and any adjective with it has to match — in gender and in number. Most nouns end in -o (masculine), -a (feminine) or -e (either), and the plural just changes that final vowel.",
@@ -218,6 +233,7 @@ export const GRAMMAR_LEVELS = [
         id: "present-ere-ire",
         name: "Presente: verbi in -ERE e -IRE",
         tagline: "The present tense of -ere and -ire verbs",
+        stage: 1,
         explanation: {
           summary:
             "-ere and -ire verbs follow similar patterns to -are verbs but with different endings. Some -ire verbs (like capire) add -isc- before the ending in most forms.",
@@ -262,6 +278,7 @@ export const GRAMMAR_LEVELS = [
         id: "articles",
         name: "Articoli",
         tagline: "Definite and indefinite articles",
+        stage: null,
         explanation: {
           summary:
             "Italian nouns have gender (masculine/feminine) and number, and the article must match. Definite articles mean \"the\"; indefinite articles mean \"a/an\".",
@@ -299,6 +316,7 @@ export const GRAMMAR_LEVELS = [
         id: "verbi-modali",
         name: "Verbi modali: potere, volere, dovere",
         tagline: "Can, want and must — each followed by an infinitive",
+        stage: 1,
         explanation: {
           summary:
             "Potere (can), volere (want) and dovere (must) are followed straight by an infinitive, with nothing in between. All three are irregular in the present, and all three are worth knowing cold — they carry half of everyday conversation.",
@@ -338,13 +356,18 @@ export const GRAMMAR_LEVELS = [
           { id: "5", prompt: "___ aiutarmi, per favore?", en: "Can you (plural) help me, please?", hint: "potere (to be able to) — voi", options: ["Potete", "Possiamo", "Possono", "Puoi"], answer: "Potete" },
           { id: "6", prompt: "I bambini ___ andare al parco.", en: "The children want to go to the park.", hint: "volere (to want) — loro", options: ["vogliono", "vuole", "volete", "vogliamo"], answer: "vogliono" },
           { id: "7", prompt: "Marco ___ nuotare molto bene.", en: "Marco can swim very well — a skill he has learnt.", hint: "sapere (to know how to) — lui", options: ["sa", "può", "deve", "vuole"], answer: "sa" },
-          { id: "8", prompt: "Ieri ___ lavorare fino a tardi.", en: "Yesterday I had to work until late.", hint: "dovere (must) — passato prossimo, io", options: ["ho dovuto", "sono dovuto", "ho dovuta", "avevo dovuto"], answer: "ho dovuto" },
+          // The modal is the choice, but the form typed is a passato prossimo,
+          // auxiliary and all.
+          { id: "8", stage: 2, prompt: "Ieri ___ lavorare fino a tardi.", en: "Yesterday I had to work until late.", hint: "dovere (must) — passato prossimo, io", options: ["ho dovuto", "sono dovuto", "ho dovuta", "avevo dovuto"], answer: "ho dovuto" },
         ],
       },
       {
         id: "riflessivi",
         name: "Verbi riflessivi",
         tagline: "Mi alzo, ti svegli — describing your day",
+        // Stage 1: the verb forms are presente. Drill 2 types only the clitic ti, which has no
+        // stage of its own, so it takes the topic: graded for everyone either way.
+        stage: 1,
         explanation: {
           summary:
             "A reflexive verb turns its action back on the subject: alzare is to lift something, alzarsi is to get yourself up. The pronoun — mi, ti, si, ci, vi, si — goes in front of the verb, and the verb itself is conjugated as normal.",
@@ -383,7 +406,7 @@ export const GRAMMAR_LEVELS = [
           { id: "4", prompt: "Noi ___ molto alle feste.", en: "We enjoy ourselves a lot at parties.", hint: "divertirsi (to enjoy oneself) — noi", options: ["ci divertiamo", "vi divertite", "si divertono", "mi diverto"], answer: "ci divertiamo" },
           { id: "5", prompt: "Voi ___ prima di uscire?", en: "Do you (plural) get dressed before going out?", hint: "vestirsi (to get dressed) — voi", options: ["vi vestite", "ci vestiamo", "si vestono", "ti vesti"], answer: "vi vestite" },
           { id: "6", prompt: "I bambini ___ le mani prima di mangiare.", en: "The children wash their hands before eating.", hint: "lavarsi (to wash oneself) — loro", options: ["si lavano", "si lava", "ci laviamo", "vi lavate"], answer: "si lavano" },
-          { id: "7", prompt: "Stamattina Anna ___ alle sei.", en: "This morning Anna got up at six.", hint: "alzarsi (to get up) — passato prossimo, lei", options: ["si è alzata", "si è alzato", "ha alzato", "si era alzata"], answer: "si è alzata" },
+          { id: "7", stage: 2, prompt: "Stamattina Anna ___ alle sei.", en: "This morning Anna got up at six.", hint: "alzarsi (to get up) — passato prossimo, lei", options: ["si è alzata", "si è alzato", "ha alzato", "si era alzata"], answer: "si è alzata" }, // A passato prossimo with essere and participle agreement.
           { id: "8", prompt: "Devo ___ presto domani.", en: "I have to get up early tomorrow.", hint: "alzarsi (to get up) — after an infinitive the pronoun joins on, io", options: ["alzarmi", "alzarsi", "alzarti", "alzarci"], answer: "alzarmi" },
         ],
       },
@@ -400,6 +423,7 @@ export const GRAMMAR_LEVELS = [
         id: "passato-prossimo",
         name: "Passato prossimo",
         tagline: "Talking about completed past actions",
+        stage: 2,
         explanation: {
           summary:
             "The passato prossimo describes completed past actions. It's formed with essere or avere in the present tense, plus a past participle. Most verbs use avere; verbs of movement or state (and all reflexive verbs) use essere — and with essere, the participle agrees with the subject in gender and number.",
@@ -443,6 +467,7 @@ export const GRAMMAR_LEVELS = [
         id: "comparatives",
         name: "Comparativi",
         tagline: "Comparing people and things",
+        stage: null,
         explanation: {
           summary:
             "Compare two things with più... di (more... than) or meno... di (less... than). Use che instead of di when comparing two adjectives, verbs, or nouns of the same type. Use come or quanto to express equality (as... as).",
@@ -471,6 +496,10 @@ export const GRAMMAR_LEVELS = [
         id: "imperfetto",
         name: "Imperfetto",
         tagline: "The backdrop tense — and when it beats the passato prossimo",
+        // Stage 3, drills 4 and 7 included: ho visto and ha bussato are passato prossimo
+        // forms, but they are picked against the imperfetto, and that aspect
+        // choice is what the topic tests.
+        stage: 3,
         explanation: {
           summary:
             "The imperfetto describes what things were like, what used to happen, and what was going on when something else cut in. The passato prossimo reports one finished event. Same past, two different jobs — and Italian chooses between them in almost every past sentence.",
@@ -518,6 +547,7 @@ export const GRAMMAR_LEVELS = [
         id: "futuro",
         name: "Futuro semplice",
         tagline: "Will — and the Italian habit of guessing with it",
+        stage: 4,
         explanation: {
           summary:
             "The future is one set of endings on the infinitive minus its final -e, with -are turning into -er-. Italians also use it to guess about the present: sarà stanco means \"he must be tired\", not \"he will be tired\".",
@@ -575,6 +605,9 @@ export const GRAMMAR_LEVELS = [
         id: "congiuntivo-presente",
         name: "Congiuntivo presente",
         tagline: "The mood of doubt, opinion and wishes",
+        // Stage 6, drill 8 included: abita is an indicative, but the drill is the
+        // congiuntivo refused after so che, which needs the congiuntivo to see.
+        stage: 6,
         explanation: {
           summary:
             "The congiuntivo is used in a subordinate clause after expressions of opinion, doubt, emotion or will — anything that isn't presented as plain fact. Verbs of certainty (so che, è vero che, è sicuro che) keep the indicative instead.",
@@ -621,6 +654,7 @@ export const GRAMMAR_LEVELS = [
         id: "condizionale",
         name: "Condizionale",
         tagline: "Would: politeness, hypotheses and unconfirmed news",
+        stage: 5,
         explanation: {
           summary:
             "The condizionale is Italian's \"would\". It softens requests, states what you would do, and — in the press — reports something not yet confirmed. Built on the same stem as the future, with its own endings.",
@@ -667,6 +701,7 @@ export const GRAMMAR_LEVELS = [
         id: "pronomi",
         name: "Pronomi diretti, indiretti e combinati",
         tagline: "Lo, gli, glielo — not repeating what's already been said",
+        stage: null,
         explanation: {
           summary:
             "A direct pronoun replaces an object with no preposition (vedo Marco → lo vedo); an indirect one replaces a + person (scrivo a Marco → gli scrivo). Put the two together and the first changes its vowel to e: me lo, te lo, and gli + lo written as one word, glielo.",
@@ -714,6 +749,9 @@ export const GRAMMAR_LEVELS = [
         id: "imperativo",
         name: "Imperativo",
         tagline: "Telling, offering and asking — informally and formally",
+        // Stage 1: the informal imperative is built on the presente. The two formal Lei
+        // drills produce a congiuntivo presente and are raised.
+        stage: 1,
         explanation: {
           summary:
             "The informal imperative (tu, noi, voi) reuses the present tense — with one exception: the tu form of -are verbs ends in -a. The formal Lei borrows the congiuntivo presente, which is why parli! can mean both \"you speak\" as a wish and \"speak!\" to a stranger.",
@@ -746,12 +784,14 @@ export const GRAMMAR_LEVELS = [
         },
         drills: [
           { id: "1", prompt: "___ più lentamente, per favore!", en: "Speak more slowly, please! — to a friend.", hint: "parlare (to speak) — imperativo, tu", options: ["Parla", "Parli", "Parlare", "Parlate"], answer: "Parla" },
-          { id: "2", prompt: "Signora, ___ pure, la ascolto.", en: "Madam, do go ahead and speak, I'm listening.", hint: "parlare (to speak) — imperativo, Lei (the formal you)", options: ["parli", "parla", "parlate", "parlare"], answer: "parli" },
+          // The Lei imperative is the congiuntivo presente, and that is the form typed
+          // — even though parli! is often learnt early, as a formula.
+          { id: "2", stage: 6, prompt: "Signora, ___ pure, la ascolto.", en: "Madam, do go ahead and speak, I'm listening.", hint: "parlare (to speak) — imperativo, Lei (the formal you)", options: ["parli", "parla", "parlate", "parlare"], answer: "parli" },
           { id: "3", prompt: "___ questa strada e poi gira a destra.", en: "Take this street and then turn right — to a friend.", hint: "prendere (to take) — imperativo, tu", options: ["Prendi", "Prenda", "Prendete", "Prendere"], answer: "Prendi" },
           { id: "4", prompt: "Ragazzi, ___ attenzione!", en: "Guys, pay attention!", hint: "fare (to do, to make) — imperativo, voi", options: ["fate", "fai", "faccia", "facciamo"], answer: "fate" },
           { id: "5", prompt: "Non ___ così in fretta!", en: "Don't eat so fast! — to a friend.", hint: "to eat (an -are verb) — negative imperativo, tu", options: ["mangiare", "mangi", "mangia", "mangiate"], answer: "mangiare" },
           { id: "6", prompt: "___ la verità, ti prego.", en: "Tell me the truth, please — to a friend.", hint: "dirmi (to tell me) — imperativo tu, with the pronoun attached", options: ["Dimmi", "Mi dica", "Dimmelo", "Dici"], answer: "Dimmi" },
-          { id: "7", prompt: "Prego, ___, il dottore arriva subito.", en: "Please take a seat, the doctor will be right with you — formal.", hint: "accomodarsi (to take a seat) — imperativo, Lei: the pronoun stays in front", options: ["si accomodi", "accomodati", "si accomoda", "accomodatevi"], answer: "si accomodi" },
+          { id: "7", stage: 6, prompt: "Prego, ___, il dottore arriva subito.", en: "Please take a seat, the doctor will be right with you — formal.", hint: "accomodarsi (to take a seat) — imperativo, Lei: the pronoun stays in front", options: ["si accomodi", "accomodati", "si accomoda", "accomodatevi"], answer: "si accomodi" }, // Same as drill 2: si accomodi is a congiuntivo presente form.
           { id: "8", prompt: "___ subito, è tardi!", en: "Let's go right away, it's late!", hint: "andare (to go) — imperativo, noi", options: ["Andiamo", "Andate", "Vai", "Vada"], answer: "Andiamo" },
         ],
       },
@@ -768,6 +808,11 @@ export const GRAMMAR_LEVELS = [
         id: "periodo-ipotetico",
         name: "Periodo ipotetico",
         tagline: "If I had time — the three kinds of if-sentence",
+        // Stage 6, every drill: the topic is which clause of an if-sentence takes the
+        // congiuntivo and which the condizionale, so even the condizionale answers
+        // are a choice made against a congiuntivo distractor. Tagged one by one
+        // because the forms typed range from presente to congiuntivo trapassato.
+        stage: 6,
         explanation: {
           summary:
             "Italian has three if-patterns: a real one (indicative throughout), a possible or unreal one (congiuntivo imperfetto + condizionale), and an impossible one about the past (congiuntivo trapassato + condizionale passato). The one rule never to break: se is never followed by a condizionale.",
@@ -792,20 +837,29 @@ export const GRAMMAR_LEVELS = [
           ],
         },
         drills: [
-          { id: "1", prompt: "Se ___ più tempo, imparerei il russo.", en: "If I had more time, I'd learn Russian.", hint: "avere (to have) — congiuntivo imperfetto, io", options: ["avessi", "avrei", "ho", "avrò"], answer: "avessi" },
-          { id: "2", prompt: "Se fossi al tuo posto, non ___ quell'offerta.", en: "If I were in your place, I wouldn't accept that offer.", hint: "accettare (to accept) — condizionale, io", options: ["accetterei", "accettassi", "accetto", "accetterò"], answer: "accetterei" },
-          { id: "3", prompt: "Se me lo ___, ti avrei aspettato.", en: "If you had told me, I would have waited for you.", hint: "dire (to say, to tell) — congiuntivo trapassato, tu", options: ["avessi detto", "avresti detto", "hai detto", "dicessi"], answer: "avessi detto" },
-          { id: "4", prompt: "Se ___ meno, dormirebbe meglio.", en: "If he worked less, he'd sleep better.", hint: "lavorare (to work) — congiuntivo imperfetto, lui", options: ["lavorasse", "lavorerebbe", "lavora", "lavorerà"], answer: "lavorasse" },
-          { id: "5", prompt: "Se non ci fosse stato lo sciopero, ___ in orario.", en: "If there hadn't been a strike, we would have arrived on time.", hint: "arrivare (to arrive) — condizionale passato, noi", options: ["saremmo arrivati", "fossimo arrivati", "siamo arrivati", "arriveremmo"], answer: "saremmo arrivati" },
-          { id: "6", prompt: "Parla come se ___ tutto.", en: "He talks as if he knew everything.", hint: "sapere (to know) — after «come se»: congiuntivo imperfetto, lui", options: ["sapesse", "sa", "saprebbe", "sapeva"], answer: "sapesse" },
-          { id: "7", prompt: "Se voi ___ presto, troverete posto.", en: "If you (plural) arrive early, you'll find a seat.", hint: "arrivare (to arrive) — a real hypothesis takes the indicative, voi", options: ["arrivate", "arrivaste", "arrivereste", "arriviate"], answer: "arrivate" },
-          { id: "8", prompt: "Se loro ___ la verità, sarebbero più tranquilli.", en: "If they knew the truth, they'd be calmer.", hint: "sapere (to know) — congiuntivo imperfetto, loro", options: ["sapessero", "saprebbero", "sanno", "sapranno"], answer: "sapessero" },
+          { id: "1", stage: 6, prompt: "Se ___ più tempo, imparerei il russo.", en: "If I had more time, I'd learn Russian.", hint: "avere (to have) — congiuntivo imperfetto, io", options: ["avessi", "avrei", "ho", "avrò"], answer: "avessi" }, // congiuntivo imperfetto
+          // The form is a condizionale (5), but the choice is which clause takes the
+          // congiuntivo: the distractor is accettassi. Topic stage wins, as ho visto
+          // does in the imperfetto.
+          { id: "2", stage: 6, prompt: "Se fossi al tuo posto, non ___ quell'offerta.", en: "If I were in your place, I wouldn't accept that offer.", hint: "accettare (to accept) — condizionale, io", options: ["accetterei", "accettassi", "accetto", "accetterò"], answer: "accetterei" },
+          { id: "3", stage: 6, prompt: "Se me lo ___, ti avrei aspettato.", en: "If you had told me, I would have waited for you.", hint: "dire (to say, to tell) — congiuntivo trapassato, tu", options: ["avessi detto", "avresti detto", "hai detto", "dicessi"], answer: "avessi detto" }, // congiuntivo trapassato
+          { id: "4", stage: 6, prompt: "Se ___ meno, dormirebbe meglio.", en: "If he worked less, he'd sleep better.", hint: "lavorare (to work) — congiuntivo imperfetto, lui", options: ["lavorasse", "lavorerebbe", "lavora", "lavorerà"], answer: "lavorasse" }, // congiuntivo imperfetto
+          // condizionale passato (5), picked against fossimo arrivati — as drill 2.
+          { id: "5", stage: 6, prompt: "Se non ci fosse stato lo sciopero, ___ in orario.", en: "If there hadn't been a strike, we would have arrived on time.", hint: "arrivare (to arrive) — condizionale passato, noi", options: ["saremmo arrivati", "fossimo arrivati", "siamo arrivati", "arriveremmo"], answer: "saremmo arrivati" },
+          { id: "6", stage: 6, prompt: "Parla come se ___ tutto.", en: "He talks as if he knew everything.", hint: "sapere (to know) — after «come se»: congiuntivo imperfetto, lui", options: ["sapesse", "sa", "saprebbe", "sapeva"], answer: "sapesse" }, // congiuntivo imperfetto after come se
+          // A presente, but the drill exists to refuse the congiuntivo in a real
+          // if-clause, like congiuntivo-presente drill 8 after so che.
+          { id: "7", stage: 6, prompt: "Se voi ___ presto, troverete posto.", en: "If you (plural) arrive early, you'll find a seat.", hint: "arrivare (to arrive) — a real hypothesis takes the indicative, voi", options: ["arrivate", "arrivaste", "arrivereste", "arriviate"], answer: "arrivate" },
+          { id: "8", stage: 6, prompt: "Se loro ___ la verità, sarebbero più tranquilli.", en: "If they knew the truth, they'd be calmer.", hint: "sapere (to know) — congiuntivo imperfetto, loro", options: ["sapessero", "saprebbero", "sanno", "sapranno"], answer: "sapessero" }, // congiuntivo imperfetto
         ],
       },
       {
         id: "passivo-si",
         name: "Passivo e «si» impersonale",
         tagline: "Saying what was done without saying who did it",
+        // Stage 1: passive and si are not rungs of the tense ladder, so each drill is
+        // the stage of its tense — presente, or passato prossimo where raised.
+        stage: 1,
         explanation: {
           summary:
             "The passive puts the object first: essere (or venire) plus a past participle that agrees with the subject, with the agent introduced by da. When there is no agent worth naming, Italian much prefers si — the passivante si with a stated object, the impersonale si without one.",
@@ -831,20 +885,26 @@ export const GRAMMAR_LEVELS = [
           ],
         },
         drills: [
-          { id: "1", prompt: "Il contratto ___ firmato dal direttore la settimana scorsa.", en: "The contract was signed by the director last week.", hint: "essere (to be) — passive in the passato prossimo, lui", options: ["è stato", "è", "ha", "viene"], answer: "è stato" },
-          { id: "2", prompt: "La legge è stata ___ dal parlamento.", en: "The law was passed by parliament.", hint: "approvare (to approve, to pass) — participle agreeing with «la legge»", options: ["approvata", "approvato", "approvate", "approvando"], answer: "approvata" },
-          { id: "3", prompt: "I biglietti ___ solo online.", en: "Tickets are only sold online.", hint: "vendere (to sell) — passivante «si» with a plural object", options: ["si vendono", "si vende", "si è venduto", "si venderebbe"], answer: "si vendono" },
-          { id: "4", prompt: "In Italia ___ tardi.", en: "In Italy people have dinner late.", hint: "cenare (to have dinner) — impersonal «si»", options: ["si cena", "si cenano", "si è cenato", "ci cena"], answer: "si cena" },
-          { id: "5", prompt: "Questo lavoro ___ fatto subito.", en: "This job must be done right away.", hint: "andare (to go) — «andare + participle» for what must be done, lui", options: ["va", "è", "viene", "ha"], answer: "va" },
-          { id: "6", prompt: "Il film ___ recensito ogni anno dagli studenti.", en: "The film is reviewed every year by the students.", hint: "venire (to come) — passive with venire, lui", options: ["viene", "va", "ha", "sono"], answer: "viene" },
-          { id: "7", prompt: "Ieri ___ molto bene in quella trattoria.", en: "Yesterday we ate very well in that trattoria.", hint: "mangiare (to eat) — impersonal «si» in the past, which takes essere", options: ["si è mangiato", "si ha mangiato", "si mangiano", "si mangerebbe"], answer: "si è mangiato" },
-          { id: "8", prompt: "Il quadro è stato dipinto ___ un allievo di Giotto.", en: "The painting was painted by a pupil of Giotto.", hint: "by (the agent of a passive sentence)", options: ["da", "di", "con", "per"], answer: "da" },
+          { id: "1", stage: 2, prompt: "Il contratto ___ firmato dal direttore la settimana scorsa.", en: "The contract was signed by the director last week.", hint: "essere (to be) — passive in the passato prossimo, lui", options: ["è stato", "è", "ha", "viene"], answer: "è stato" }, // è stato: the passive in the passato prossimo.
+          // The participle of a passato prossimo passive, agreeing as essere makes it.
+          { id: "2", stage: 2, prompt: "La legge è stata ___ dal parlamento.", en: "The law was passed by parliament.", hint: "approvare (to approve, to pass) — participle agreeing with «la legge»", options: ["approvata", "approvato", "approvate", "approvando"], answer: "approvata" },
+          { id: "3", stage: 1, prompt: "I biglietti ___ solo online.", en: "Tickets are only sold online.", hint: "vendere (to sell) — passivante «si» with a plural object", options: ["si vendono", "si vende", "si è venduto", "si venderebbe"], answer: "si vendono" }, // presente
+          { id: "4", stage: 1, prompt: "In Italia ___ tardi.", en: "In Italy people have dinner late.", hint: "cenare (to have dinner) — impersonal «si»", options: ["si cena", "si cenano", "si è cenato", "ci cena"], answer: "si cena" }, // presente
+          { id: "5", stage: 1, prompt: "Questo lavoro ___ fatto subito.", en: "This job must be done right away.", hint: "andare (to go) — «andare + participle» for what must be done, lui", options: ["va", "è", "viene", "ha"], answer: "va" }, // presente of andare
+          { id: "6", stage: 1, prompt: "Il film ___ recensito ogni anno dagli studenti.", en: "The film is reviewed every year by the students.", hint: "venire (to come) — passive with venire, lui", options: ["viene", "va", "ha", "sono"], answer: "viene" }, // presente of venire
+          { id: "7", stage: 2, prompt: "Ieri ___ molto bene in quella trattoria.", en: "Yesterday we ate very well in that trattoria.", hint: "mangiare (to eat) — impersonal «si» in the past, which takes essere", options: ["si è mangiato", "si ha mangiato", "si mangiano", "si mangerebbe"], answer: "si è mangiato" }, // si è mangiato: passato prossimo.
+          // A preposition, so no form of its own: max(topic 1, null) is 1, which is
+          // graded for everyone exactly as null would be.
+          { id: "8", stage: 1, prompt: "Il quadro è stato dipinto ___ un allievo di Giotto.", en: "The painting was painted by a pupil of Giotto.", hint: "by (the agent of a passive sentence)", options: ["da", "di", "con", "per"], answer: "da" },
         ],
       },
       {
         id: "passato-remoto",
         name: "Passato remoto",
         tagline: "The tense of history, novels and the south",
+        // Stage 7, drill 8 included: partiva is an imperfetto chosen against the passato
+        // remoto, the same aspect choice as the imperfetto topic.
+        stage: 7,
         explanation: {
           summary:
             "The passato remoto reports a finished action with no thread left to the present: it is the narrative past of history books, novels and fairy tales — and, south of Rome, the ordinary way of talking about yesterday. The regular endings are straightforward; the irregular verbs follow a tidy 1-3-3 pattern.",
@@ -892,6 +952,9 @@ export const GRAMMAR_LEVELS = [
         id: "verbi-pronominali",
         name: "Verbi pronominali",
         tagline: "Farcela, andarsene, cavarsela — verbs welded to their pronouns",
+        // Stage 1: the difficulty is the welded clitics, and the presente drills are
+        // presente. The three passato prossimo drills are raised.
+        stage: 1,
         explanation: {
           summary:
             "A few very common verbs drag pronouns around that no longer mean anything on their own: ce la faccio isn't \"I do it there\", it's \"I can manage\". They have to be learnt whole — and their auxiliary in the past follows the verb underneath.",
@@ -923,9 +986,10 @@ export const GRAMMAR_LEVELS = [
           { id: "3", prompt: "Come va con il tedesco? — ___, più o meno.", en: "How's your German going? — I get by, more or less.", hint: "cavarsela (to get by) — presente, io", options: ["Me la cavo", "Mi cavo", "Me ne cavo", "Ce la cavo"], answer: "Me la cavo" },
           { id: "4", prompt: "Da casa mia ___ mezz'ora ad arrivare in ufficio.", en: "From my place it takes me half an hour to get to the office.", hint: "metterci (to take someone time) — presente, io", options: ["ci metto", "ci vuole", "mi metto", "ce la metto"], answer: "ci metto" },
           { id: "5", prompt: "Per fare questa torta ___ tre uova.", en: "You need three eggs to make this cake.", hint: "volerci (to be needed) — presente, agreeing with «tre uova»", options: ["ci vogliono", "ci vuole", "ci mettono", "si vogliono"], answer: "ci vogliono" },
-          { id: "6", prompt: "L'esame era difficile, ma alla fine ___.", en: "The exam was hard, but in the end I made it.", hint: "farcela (to manage) — passato prossimo, io", options: ["ce l'ho fatta", "ce l'ho fatto", "ce la sono fatta", "ci ho fatto"], answer: "ce l'ho fatta" },
-          { id: "7", prompt: "Anna era offesa e ___ senza salutare.", en: "Anna was offended and left without saying goodbye.", hint: "andarsene (to leave) — passato prossimo, lei", options: ["se n'è andata", "se n'è andato", "si è andata", "ne è andata"], answer: "se n'è andata" },
-          { id: "8", prompt: "Ha avuto un incidente, ma ___ con qualche graffio.", en: "He had an accident, but got off with a few scratches.", hint: "cavarsela (to get off lightly) — passato prossimo, lui", options: ["se l'è cavata", "se l'è cavato", "si è cavata", "ce l'ha cavata"], answer: "se l'è cavata" },
+          // passato prossimo — the clitics are the difficulty, the form is still a past.
+          { id: "6", stage: 2, prompt: "L'esame era difficile, ma alla fine ___.", en: "The exam was hard, but in the end I made it.", hint: "farcela (to manage) — passato prossimo, io", options: ["ce l'ho fatta", "ce l'ho fatto", "ce la sono fatta", "ci ho fatto"], answer: "ce l'ho fatta" },
+          { id: "7", stage: 2, prompt: "Anna era offesa e ___ senza salutare.", en: "Anna was offended and left without saying goodbye.", hint: "andarsene (to leave) — passato prossimo, lei", options: ["se n'è andata", "se n'è andato", "si è andata", "ne è andata"], answer: "se n'è andata" }, // passato prossimo
+          { id: "8", stage: 2, prompt: "Ha avuto un incidente, ma ___ con qualche graffio.", en: "He had an accident, but got off with a few scratches.", hint: "cavarsela (to get off lightly) — passato prossimo, lui", options: ["se l'è cavata", "se l'è cavato", "si è cavata", "ce l'ha cavata"], answer: "se l'è cavata" }, // passato prossimo
         ],
       },
     ],

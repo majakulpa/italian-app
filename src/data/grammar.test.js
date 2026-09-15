@@ -141,3 +141,48 @@ describe("GRAMMAR_LEVELS", () => {
     }
   );
 });
+
+// The stage tags the grading gate reads. See the note at the top of grammar.js
+// for the rule, and shared/stage.js for the ladder.
+describe("stage tags", () => {
+  const LADDER = [1, 2, 3, 4, 5, 6, 7];
+  // How many distinct items establish a stage. Mirrors EMERGENCE_ITEMS in
+  // shared/stage.js.
+  const EMERGENCE_ITEMS = 4;
+
+  const allItems = allTopics.flatMap(({ level, topic }) =>
+    topic.drills.map((item) => ({ name: `${level.id} · ${topic.id} · ${item.id}`, topic, item })),
+  );
+  const resolved = (topic, item) => item.stage ?? topic.stage;
+
+  it("tags every topic, so no item falls through to undefined", () => {
+    for (const { topic } of allTopics) expect(topic).toHaveProperty("stage");
+  });
+
+  it("resolves every one of the 160 drill items to a stage on the ladder, or to null", () => {
+    expect(allItems).toHaveLength(160);
+    for (const { name, topic, item } of allItems) {
+      const stage = resolved(topic, item);
+      expect(stage === null || LADDER.includes(stage), `${name} resolved to ${stage}`).toBe(true);
+    }
+  });
+
+  // An override is the form typed outranking its topic. A lower one would say
+  // the choice being tested got easier because the answer did, which is how
+  // `ho visto` would end up graded for someone who has never met the imperfetto.
+  it("only lets a per-item stage raise its topic's, never lower it", () => {
+    for (const { name, topic, item } of allItems.filter(({ item }) => "stage" in item)) {
+      expect(LADDER.includes(item.stage), `${name} overrides with ${item.stage}`).toBe(true);
+      if (topic.stage !== null) {
+        expect(item.stage, `${name} lowers ${topic.id}`).toBeGreaterThanOrEqual(topic.stage);
+      }
+    }
+  });
+
+  // A stage with fewer items than it takes to establish it could never be
+  // reached, and every stage above it would stay ungraded for good.
+  it.each(LADDER)("has enough items to establish stage %i", (stage) => {
+    const count = allItems.filter(({ topic, item }) => resolved(topic, item) === stage).length;
+    expect(count).toBeGreaterThanOrEqual(EMERGENCE_ITEMS);
+  });
+});

@@ -9,6 +9,7 @@ import {
   dueItems,
   dueCount,
   reviewItem,
+  deferItem,
 } from "./srs.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
@@ -16,7 +17,17 @@ import { STORY_LEVELS } from "../data/stories.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { FONDAMENTALE } from "../data/fondamentale.js";
 import { STRANDS } from "../data/articoli.js";
-import { wordKey, drillKey, storyKey, conversationKey, riservaKey, articoliKey } from "./storage.js";
+import {
+  wordKey,
+  drillKey,
+  storyKey,
+  conversationKey,
+  riservaKey,
+  articoliKey,
+  stageEvidenceKey,
+  todayISO,
+  addDaysISO,
+} from "./storage.js";
 import { lemmaKey } from "./lemma.js";
 
 // Dates are passed in rather than read from the clock, so none of this
@@ -340,6 +351,79 @@ describe("reviewItem", () => {
   it("keeps an item due today when it's answered wrong", () => {
     const before = progressWith({ [VOCAB_KEYS[0]]: "known" });
     expect(dueCount(reviewItem(before, VOCAB_KEYS[0], false, TODAY), TODAY)).toBe(1);
+  });
+});
+
+// The write for a wrong answer above the learner's stage: not wrong, so it
+// must not demote; not right, so it must not promote.
+describe("deferItem", () => {
+  const TOMORROW = "2026-08-18";
+
+  it("keeps a met item's status and box, and only moves it to tomorrow", () => {
+    const before = progressWith({ [DRILL_KEY]: "known" }, { [DRILL_KEY]: { box: 4, due: TODAY, last: "2026-08-10" } });
+    const after = deferItem(before, DRILL_KEY, TODAY);
+
+    expect(after.words[DRILL_KEY]).toBe("known");
+    expect(after.schedule[DRILL_KEY]).toEqual({ box: 4, due: TOMORROW, last: TODAY });
+  });
+
+  // reviewItem(false) would put this in box 1 due today — the demotion the
+  // stage gate exists to withhold.
+  it("does not do what a wrong answer does", () => {
+    const before = progressWith({ [DRILL_KEY]: "known" }, { [DRILL_KEY]: { box: 4, due: TODAY } });
+    expect(deferItem(before, DRILL_KEY, TODAY).schedule[DRILL_KEY]).not.toEqual(
+      reviewItem(before, DRILL_KEY, false, TODAY).schedule[DRILL_KEY],
+    );
+  });
+
+  // A save from before the scheduler has a status and no box. There is no box
+  // to keep, and inventing one would be the demotion or promotion this avoids.
+  it("keeps a pre-scheduler item boxless rather than inventing a box", () => {
+    const after = deferItem(progressWith({ [DRILL_KEY]: "learning" }), DRILL_KEY, TODAY);
+
+    expect(after.words[DRILL_KEY]).toBe("learning");
+    expect(after.schedule[DRILL_KEY]).toEqual({ due: TOMORROW, last: TODAY });
+  });
+
+  // First contact, answered wrong above stage. With no status the unit is not
+  // met, dueUnits() never serves it, and it would stall for good.
+  it("writes an unmet item as learning in box 1, due tomorrow", () => {
+    const after = deferItem(EMPTY, DRILL_KEY, TODAY);
+
+    expect(after.words[DRILL_KEY]).toBe("learning");
+    expect(after.schedule[DRILL_KEY]).toEqual({ box: 1, due: TOMORROW, last: TODAY });
+  });
+
+  it("takes the item out of today's queue and brings it back tomorrow", () => {
+    const met = progressWith({ [DRILL_KEY]: "known" }, { [DRILL_KEY]: { box: 3, due: TODAY } });
+    expect(dueCount(met, TODAY)).toBe(1);
+    expect(dueCount(deferItem(met, DRILL_KEY, TODAY), TODAY)).toBe(0);
+    expect(dueCount(deferItem(met, DRILL_KEY, TODAY), TOMORROW)).toBe(1);
+
+    expect(dueCount(EMPTY, TOMORROW)).toBe(0);
+    expect(dueCount(deferItem(EMPTY, DRILL_KEY, TODAY), TOMORROW)).toBe(1);
+  });
+
+  // The form was on screen, so this answer's successor cannot be evidence.
+  it("marks the item's stage evidence as shown, over produced", () => {
+    expect(deferItem(EMPTY, DRILL_KEY, TODAY).words[stageEvidenceKey(DRILL_KEY)]).toBe("shown");
+
+    const produced = progressWith({ [DRILL_KEY]: "known", [stageEvidenceKey(DRILL_KEY)]: "produced" });
+    expect(deferItem(produced, DRILL_KEY, TODAY).words[stageEvidenceKey(DRILL_KEY)]).toBe("shown");
+  });
+
+  it("touches no other key, and leaves the original progress untouched", () => {
+    const before = progressWith({ [DRILL_KEY]: "known", [VOCAB_KEYS[0]]: "learning" }, { [VOCAB_KEYS[0]]: { box: 2, due: TODAY } });
+    const after = deferItem(before, DRILL_KEY, TODAY);
+
+    expect(after.words[VOCAB_KEYS[0]]).toBe("learning");
+    expect(after.schedule[VOCAB_KEYS[0]]).toEqual({ box: 2, due: TODAY });
+    expect(before.words).toEqual({ [DRILL_KEY]: "known", [VOCAB_KEYS[0]]: "learning" });
+    expect(before.schedule).toEqual({ [VOCAB_KEYS[0]]: { box: 2, due: TODAY } });
+  });
+
+  it("defaults to today", () => {
+    expect(deferItem(EMPTY, DRILL_KEY).schedule[DRILL_KEY]).toEqual({ box: 1, due: addDaysISO(todayISO(), 1), last: todayISO() });
   });
 });
 

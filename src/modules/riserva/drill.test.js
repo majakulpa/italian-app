@@ -96,13 +96,14 @@ describe("drillRound", () => {
   });
 
   // Band 2 used to be half written down (ranks 201–300 of 201–400) and this
-  // test asked FASCE[1] directly. Ranks 301–400 filled the rest of it, so no
-  // real fascia straddles the seeded/unseeded boundary any more — the boundary
-  // sits exactly on a band edge now. drillRound and unmetCount only ever read
-  // `from`/`to` off whatever they're given, so the partial case is rebuilt
-  // directly with a synthetic band rather than losing the coverage of it.
+  // test asked FASCE[1] directly. Ranks 301–400 filled the rest of it, and
+  // ranks 401–500 pushed the boundary out again, so no real fascia straddles
+  // the seeded/unseeded boundary any more — the boundary sits exactly on a
+  // band edge now. drillRound and unmetCount only ever read `from`/`to` off
+  // whatever they're given, so the partial case is rebuilt directly with a
+  // synthetic band rather than losing the coverage of it.
   it("drills only the written-down half of a partly seeded band", () => {
-    const straddling = { id: "test-straddle", from: 351, to: 450 };
+    const straddling = { id: "test-straddle", from: 451, to: 550 };
     expect(unmetCount(states(EMPTY), straddling)).toBe(50);
     expect(drillRound(states(EMPTY), straddling).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
   });

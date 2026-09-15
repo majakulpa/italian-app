@@ -485,10 +485,126 @@ export const FONDAMENTALE = [
   { rank: 398, it: "toccare", en: "to touch", pl: "dotykać" },
   { rank: 399, it: "sorridere", en: "to smile", pl: "uśmiechać się" },
   { rank: 400, it: "sposare", en: "to marry", pl: "poślubić · brać ślub" },
+
+  { rank: 401, it: "undici", en: "eleven", pl: "jedenaście" },
+  { rank: 402, it: "dodici", en: "twelve", pl: "dwanaście" },
+  { rank: 403, it: "tredici", en: "thirteen", pl: "trzynaście" },
+  { rank: 404, it: "quattordici", en: "fourteen", pl: "czternaście" },
+  { rank: 405, it: "quindici", en: "fifteen", pl: "piętnaście" },
+  { rank: 406, it: "sedici", en: "sixteen", pl: "szesnaście" },
+  { rank: 407, it: "diciassette", en: "seventeen", pl: "siedemnaście" },
+  { rank: 408, it: "diciotto", en: "eighteen", pl: "osiemnaście" },
+  { rank: 409, it: "diciannove", en: "nineteen", pl: "dziewiętnaście" },
+  { rank: 410, it: "venti", en: "twenty", pl: "dwadzieścia" },
+  { rank: 411, it: "trenta", en: "thirty", pl: "trzydzieści" },
+  { rank: 412, it: "quaranta", en: "forty", pl: "czterdzieści" },
+  { rank: 413, it: "cinquanta", en: "fifty", pl: "pięćdziesiąt" },
+  { rank: 414, it: "sessanta", en: "sixty", pl: "sześćdziesiąt" },
+  { rank: 415, it: "settanta", en: "seventy", pl: "siedemdziesiąt" },
+  { rank: 416, it: "ottanta", en: "eighty", pl: "osiemdziesiąt" },
+  { rank: 417, it: "novanta", en: "ninety", pl: "dziewięćdziesiąt" },
+
+  { rank: 418, it: "il lunedì", en: "Monday", pl: "poniedziałek" },
+  { rank: 419, it: "il martedì", en: "Tuesday", pl: "wtorek" },
+  { rank: 420, it: "il mercoledì", en: "Wednesday", pl: "środa" },
+  { rank: 421, it: "il giovedì", en: "Thursday", pl: "czwartek" },
+  { rank: 422, it: "il venerdì", en: "Friday", pl: "piątek" },
+  { rank: 423, it: "sabato", en: "Saturday", pl: "sobota" },
+  { rank: 424, it: "domenica", en: "Sunday", pl: "niedziela" },
+
+  { rank: 425, it: "zio", en: "uncle", pl: "wujek" },
+  { rank: 426, it: "zia", en: "aunt", pl: "ciocia" },
+  { rank: 427, it: "cugino", en: "cousin", pl: "kuzyn" },
+  { rank: 428, it: "cugina", en: "cousin (female)", pl: "kuzynka" },
+
+  { rank: 429, it: "naso", en: "nose", pl: "nos" },
+  { rank: 430, it: "orecchio", en: "ear", pl: "ucho" },
+  { rank: 431, it: "il dente", en: "tooth", pl: "ząb" },
+  { rank: 432, it: "collo", en: "neck", pl: "szyja" },
+  { rank: 433, it: "spalla", en: "shoulder", pl: "bark" },
+  { rank: 434, it: "schiena", en: "back (body part)", pl: "plecy" },
+  { rank: 435, it: "la pelle", en: "skin", pl: "skóra" },
+  { rank: 436, it: "dito", en: "finger", pl: "palec" },
+  { rank: 437, it: "i capelli", en: "hair", pl: "włosy" },
+
+  { rank: 438, it: "grigio", en: "grey", pl: "szary" },
+  { rank: 439, it: "viola", en: "purple", pl: "fioletowy" },
+  { rank: 440, it: "arancione", en: "orange (color)", pl: "pomarańczowy" },
+
+  { rank: 441, it: "chiamarsi", en: "to be called, to be named", pl: "nazywać się" },
+  { rank: 442, it: "alzarsi", en: "to get up, to stand up", pl: "wstawać · wstać" },
+  { rank: 443, it: "svegliarsi", en: "to wake up", pl: "budzić się · obudzić się" },
+  { rank: 444, it: "sedersi", en: "to sit down", pl: "siadać · usiąść" },
+  { rank: 445, it: "rimanere", en: "to stay, to be left", pl: "zostawać · zostać" },
+  { rank: 446, it: "iniziare", en: "to begin, to initiate", pl: "zaczynać · zacząć" },
+  { rank: 447, it: "bastare", en: "to be enough, to suffice", pl: "wystarczać · wystarczyć" },
+  { rank: 448, it: "succedere", en: "to happen, to occur", pl: "zdarzać się · zdarzyć się" },
+  { rank: 449, it: "scusare", en: "to excuse, to forgive", pl: "przepraszać · przeprosić" },
+  { rank: 450, it: "riposare", en: "to rest", pl: "odpoczywać · odpocząć" },
+
+  { rank: 451, it: "terra", en: "earth, ground, land", pl: "ziemia" },
+  { rank: 452, it: "bosco", en: "wood, forest", pl: "las" },
+  { rank: 453, it: "spiaggia", en: "beach", pl: "plaża" },
+  { rank: 454, it: "campagna", en: "countryside", pl: "wieś" },
+  { rank: 455, it: "isola", en: "island", pl: "wyspa" },
+
+  { rank: 456, it: "soffitto", en: "ceiling", pl: "sufit" },
+  { rank: 457, it: "pavimento", en: "floor", pl: "podłoga" },
+  { rank: 458, it: "tetto", en: "roof", pl: "dach" },
+  { rank: 459, it: "giardino", en: "garden", pl: "ogród" },
+  { rank: 460, it: "specchio", en: "mirror", pl: "lustro" },
+  { rank: 461, it: "armadio", en: "wardrobe, closet", pl: "szafa" },
+  { rank: 462, it: "lampada", en: "lamp", pl: "lampa" },
+  { rank: 463, it: "divano", en: "sofa, couch", pl: "sofa · kanapa" },
+  { rank: 464, it: "tappeto", en: "carpet, rug", pl: "dywan" },
+  { rank: 465, it: "quadro", en: "painting, picture", pl: "obraz" },
+
+  { rank: 466, it: "uovo", en: "egg", pl: "jajko" },
+  { rank: 467, it: "pasta", en: "pasta", pl: "makaron" },
+  { rank: 468, it: "pizza", en: "pizza", pl: "pizza" },
+  { rank: 469, it: "riso", en: "rice", pl: "ryż" },
+  { rank: 470, it: "la colazione", en: "breakfast", pl: "śniadanie" },
+  { rank: 471, it: "pranzo", en: "lunch", pl: "obiad" },
+  { rank: 472, it: "cena", en: "dinner, supper", pl: "kolacja" },
+  { rank: 473, it: "il ristorante", en: "restaurant", pl: "restauracja" },
+
+  { rank: 474, it: "i pantaloni", en: "trousers, pants", pl: "spodnie" },
+  { rank: 475, it: "giacca", en: "jacket", pl: "kurtka" },
+  { rank: 476, it: "il maglione", en: "sweater", pl: "sweter" },
+  { rank: 477, it: "borsa", en: "bag, purse", pl: "torba" },
+  { rank: 478, it: "gli occhiali", en: "glasses, eyeglasses", pl: "okulary" },
+
+  { rank: 479, it: "l'università", en: "university", pl: "uniwersytet", gender: "f" },
+  { rank: 480, it: "banca", en: "bank", pl: "bank" },
+  { rank: 481, it: "farmacia", en: "pharmacy", pl: "apteka" },
+  { rank: 482, it: "albergo", en: "hotel", pl: "hotel" },
+  { rank: 483, it: "aeroporto", en: "airport", pl: "lotnisko" },
+  { rank: 484, it: "il bar", en: "bar, café", pl: "bar" },
+
+  { rank: 485, it: "bicicletta", en: "bicycle, bike", pl: "rower" },
+  { rank: 486, it: "barca", en: "boat", pl: "łódź" },
+  { rank: 487, it: "l'autobus", en: "bus", pl: "autobus", gender: "m" },
+
+  { rank: 488, it: "avvocato", en: "lawyer", pl: "adwokat · prawnik" },
+  { rank: 489, it: "il cameriere", en: "waiter", pl: "kelner" },
+  { rank: 490, it: "lo studente", en: "student", pl: "student" },
+
+  { rank: 491, it: "arrabbiato", en: "angry", pl: "wściekły" },
+  { rank: 492, it: "contento", en: "happy, pleased, glad", pl: "zadowolony" },
+
+  { rank: 493, it: "ascoltare", en: "to listen, to listen to", pl: "słuchać" },
+  { rank: 494, it: "spendere", en: "to spend (money)", pl: "wydawać · wydać" },
+
+  { rank: 495, it: "momento", en: "moment", pl: "moment · chwila" },
+  { rank: 496, it: "subito", en: "immediately, right away", pl: "od razu · natychmiast" },
+  { rank: 497, it: "presto", en: "soon, early", pl: "wcześnie · niedługo" },
+  { rank: 498, it: "tardi", en: "late", pl: "późno" },
+  { rank: 499, it: "insieme", en: "together", pl: "razem" },
+  { rank: 500, it: "forse", en: "maybe, perhaps", pl: "może" },
 ];
 
 // The entries actually written down inside one band, in rank order. Usually
-// none: the list is 400 of 2,000, and a rank with no word behind it is a fact
+// none: the list is 500 of 2,000, and a rank with no word behind it is a fact
 // about the file rather than about the learner, so a band of empty ranks has
 // nothing to study and must not present as one.
 export function fasciaWords(fascia) {

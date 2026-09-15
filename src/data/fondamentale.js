@@ -569,7 +569,7 @@ export const FONDAMENTALE = [
   { rank: 473, it: "il ristorante", en: "restaurant", pl: "restauracja" },
 
   { rank: 474, it: "i pantaloni", en: "trousers, pants", pl: "spodnie" },
-  { rank: 475, it: "giacca", en: "jacket", pl: "kurtka" },
+  { rank: 475, it: "giacca", en: "jacket", pl: "marynarka · kurtka" },
   { rank: 476, it: "il maglione", en: "sweater", pl: "sweter" },
   { rank: 477, it: "borsa", en: "bag, purse", pl: "torba" },
   { rank: 478, it: "gli occhiali", en: "glasses, eyeglasses", pl: "okulary" },
@@ -589,7 +589,7 @@ export const FONDAMENTALE = [
   { rank: 489, it: "il cameriere", en: "waiter", pl: "kelner" },
   { rank: 490, it: "lo studente", en: "student", pl: "student" },
 
-  { rank: 491, it: "arrabbiato", en: "angry", pl: "wściekły" },
+  { rank: 491, it: "arrabbiato", en: "angry", pl: "zdenerwowany · zły na kogoś" },
   { rank: 492, it: "contento", en: "happy, pleased, glad", pl: "zadowolony" },
 
   { rank: 493, it: "ascoltare", en: "to listen, to listen to", pl: "słuchać" },

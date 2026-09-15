@@ -22,7 +22,7 @@ import { CONVERSATION_LEVELS } from "./data/conversations.js";
 import { MAPS } from "./data/mappe.js";
 import { STRANDS, ZERO, filled } from "./data/articoli.js";
 import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
-import { saveProgress, wordKey, drillKey, trapCaughtKey, riservaKey, articoliKey } from "./shared/storage.js";
+import { saveProgress, saveCoverageHistory, wordKey, drillKey, trapCaughtKey, riservaKey, articoliKey } from "./shared/storage.js";
 import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import * as speech from "./shared/speech.js";
@@ -85,6 +85,39 @@ describe("the app shell", () => {
     await user.click(screen.getByRole("button", { name: "Officina" }));
     await user.click(screen.getByRole("button", { name: /Vocabulary/ }));
     await expectNoViolations(container, { fragment: false });
+  });
+
+  // Casa has two coverage states that are different markup: a sentence where
+  // there is no curve yet, and an SVG image with a caption once there is.
+  it("has an accessible Casa before the curve exists, settings and all", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Casa" }));
+    await expectNoViolations(container, { fragment: false });
+  });
+
+  it("has an accessible Casa with a coverage curve drawn", async () => {
+    saveCoverageHistory([
+      { date: "2020-01-01", pct: 0 },
+      { date: "2020-02-01", pct: 4 },
+    ]);
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Casa" }));
+    expect(screen.getByRole("img", { name: /^Coverage from/ })).toBeInTheDocument();
+    await expectNoViolations(container, { fragment: false });
+  });
+
+  it("marks the tab labels and Casa's heading as Italian", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const bar = screen.getByRole("navigation", { name: "Sections" });
+    for (const label of ["Città", "Officina", "Piazza", "Casa"]) {
+      expect(within(bar).getByText(label).closest("[lang]")).toHaveAttribute("lang", "it");
+    }
+
+    await user.click(within(bar).getByRole("button", { name: "Casa" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Casa" })).toHaveAttribute("lang", "it");
   });
 
   it("has an accessible city map with progress on it and La Piazza open", async () => {

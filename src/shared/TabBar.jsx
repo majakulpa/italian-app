@@ -14,6 +14,7 @@ export const TABS = [
   { id: "citta", label: "Città", route: null },
   { id: "officina", label: "Officina", route: "officina" },
   { id: "piazza", label: "Piazza", route: "review" },
+  { id: "casa", label: "Casa", route: "casa" },
 ];
 
 // Which tab a route lives under. A route that is not a tab's own root was

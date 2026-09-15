@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BookOpen, Grid3x3, MessageCircle, GraduationCap, ScrollText, Signpost, TriangleAlert, Type } from "lucide-react";
 import { TOKENS, FONTS_IMPORT, THEME_STYLE, CITY_STYLE } from "./shared/theme.js";
-import ThemeToggle from "./shared/ThemeToggle.jsx";
 import TabBar, { TAB_BAR_CLEARANCE } from "./shared/TabBar.jsx";
 import Dashboard from "./Dashboard.jsx";
 import ReviewModule from "./modules/review/ReviewModule.jsx";
@@ -9,6 +8,9 @@ import GrammarModule from "./modules/grammar/GrammarModule.jsx";
 import ConversationsModule from "./modules/conversations/ConversationsModule.jsx";
 import StoriesModule from "./modules/stories/StoriesModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
+import CasaModule from "./modules/casa/CasaModule.jsx";
+import { recordCoverage } from "./shared/coverageHistory.js";
+import useThemeMode from "./shared/useThemeMode.js";
 
 // Every content module the app ships. A module id here needs a matching entry
 // in MODULE_STATS (shared/stats.js) for the city to count its progress —
@@ -43,6 +45,13 @@ export const MODULES = [
 
 export default function App() {
   const [active, setActive] = useState(null);
+  // Applies a stored light/dark choice from the first screen. The toggle that
+  // changes it lives in Casa, and used to be mounted on every screen, which is
+  // what applied the choice at startup; without this a learner who chose dark
+  // gets the OS theme on the map until Casa is opened. The toggle keeps its
+  // own copy of the hook: this one only ever applies the stored value once, so
+  // the two cannot fight over data-theme.
+  useThemeMode();
   // Bumped on every move and used as the key on the routed screen, so that
   // pressing a tab always lands on that place's front screen. Without it,
   // pressing Officina from inside a bench would leave the bench open: the hub
@@ -50,7 +59,16 @@ export default function App() {
   // changed.
   const [visit, setVisit] = useState(0);
 
+  // Coverage is written down when the app opens and on every move, before
+  // the next screen mounts — so a module just left has its answers in the
+  // figure, and Casa reads a history that already has them. See
+  // coverageHistory.js for why a point is dated the day it is recorded.
+  useEffect(() => {
+    recordCoverage();
+  }, []);
+
   const go = (route) => {
+    recordCoverage();
     setActive(route);
     setVisit((n) => n + 1);
   };
@@ -61,19 +79,17 @@ export default function App() {
       <style>{FONTS_IMPORT}</style>
       <style>{THEME_STYLE}</style>
       <style>{CITY_STYLE}</style>
-      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
-        <ThemeToggle />
-      </div>
       {/* One landmark around whatever screen is showing, so a screen-reader
           user can jump straight to the content. The bottom padding keeps the
           last line of the longest screen clear of the fixed tab bar. */}
       <main key={visit} style={{ paddingBottom: TAB_BAR_CLEARANCE }}>
         {!active && <Dashboard onSelect={go} />}
-        {/* Review and L'Officina are routes, not modules: neither has content
-            or progress of its own, so they stay out of MODULES. L'Officina
-            opens its benches inside itself. */}
+        {/* Review, L'Officina and Casa are routes, not modules: none has
+            content or progress of its own, so they stay out of MODULES.
+            L'Officina opens its benches inside itself. */}
         {active === "review" && <ReviewModule onExit={home} />}
         {active === "officina" && <OfficinaModule onExit={home} />}
+        {active === "casa" && <CasaModule />}
         {active === "grammar" && <GrammarModule onExit={home} />}
         {active === "conversations" && <ConversationsModule onExit={home} />}
         {active === "stories" && <StoriesModule onExit={home} />}

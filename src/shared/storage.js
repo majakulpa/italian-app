@@ -250,6 +250,97 @@ export function riservaKey(entry) {
   return `riserva:${entry.it}`;
 }
 
+// ── Coverage history ────────────────────────────────────────────────────
+// Casa draws coverage as a curve, and a curve needs past values that nothing
+// else in storage can give back: coverage is derived from the boxes as they
+// are now, and a box does not remember what it was last month. So this is the
+// one derived figure that is also recorded — and only the figure, as a dated
+// point, never anything about the visit that wrote it.
+//
+//   { version: 1, points: [{ date: "2026-09-15", pct: 41.2 }, ...] }
+//
+// Two rules keep it from turning into a streak by the back door (PLAN.md:
+// nothing may count sessions, minutes or consecutive days):
+//
+// - At most one point per calendar day. A second change on the same day
+//   replaces that day's point rather than adding one.
+// - A point is written only when coverage has changed since the last one. Open
+//   the app every day for a month without learning a word and the history does
+//   not grow, so its length says how often coverage moved and nothing about how
+//   often you came.
+//
+// Its own slot rather than a third map in the progress blob, and that is not
+// tidiness. The progress blob is loaded into state by long-lived screens —
+// L'Officina and La Piazza hold it across a whole session — and written back
+// whole on every answer. A history inside it would be overwritten by the next
+// answer from any screen that loaded before the point was written. Beside it,
+// nothing else writes this key. That also means PROGRESS_VERSION does not move:
+// no save's shape changes.
+//
+// The migration is the absence of a key. A save from before this existed has
+// no history, loads as an empty one, and the curve starts at the first point
+// written after the upgrade — Casa says so rather than drawing a line back to
+// a start nobody recorded.
+const COVERAGE_HISTORY_KEY = "italiano:coverage-history:v1";
+
+export const COVERAGE_HISTORY_VERSION = 1;
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isCoveragePoint(point) {
+  return typeof point?.date === "string" && ISO_DATE.test(point.date) && Number.isFinite(point.pct);
+}
+
+// Anything unreadable loads as no history rather than as a guess: a blob from
+// a version this code does not know, or one that is not JSON. The curve then
+// starts again from the next point, the same honest answer an old save gets.
+// Inside a readable blob, a point without a real date and figure is dropped,
+// and so is one that does not come after the point before it — Casa spaces
+// the curve by date, and two points on one day would give it no width.
+export function loadCoverageHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(COVERAGE_HISTORY_KEY));
+    if (parsed?.version !== COVERAGE_HISTORY_VERSION || !Array.isArray(parsed.points)) return [];
+    return parsed.points.filter(isCoveragePoint).reduce((kept, point) => {
+      const last = kept[kept.length - 1];
+      return !last || point.date > last.date ? [...kept, point] : kept;
+    }, []);
+  } catch {
+    return [];
+  }
+}
+
+export function saveCoverageHistory(points) {
+  try {
+    localStorage.setItem(COVERAGE_HISTORY_KEY, JSON.stringify({ version: COVERAGE_HISTORY_VERSION, points }));
+  } catch {
+    // storage unavailable (private browsing, quota, etc.) — the curve just won't grow
+  }
+}
+
+// The history with today's coverage folded in. Returns the same array when
+// nothing should be written, so a caller can tell a no-op by identity.
+//
+// A change that is undone the same day — a word answered wrong after it was
+// answered right — takes that day's point back out, because the day then
+// ends where the previous point already stands. A date earlier than the last
+// point (a device clock set back) writes nothing rather than putting the
+// history out of order.
+export function addCoveragePoint(points, date, pct) {
+  const last = points[points.length - 1];
+  if (!last) return [{ date, pct }];
+  if (date < last.date) return points;
+
+  if (date === last.date) {
+    if (pct === last.pct) return points;
+    const before = points[points.length - 2];
+    if (before && before.pct === pct) return points.slice(0, -1);
+    return [...points.slice(0, -1), { date, pct }];
+  }
+
+  return pct === last.pct ? points : [...points, { date, pct }];
+}
+
 // Explicit light/dark choice, separate from the progress blob so a reset of
 // one doesn't touch the other. No stored value means "follow the OS" —
 // see useThemeMode.js.

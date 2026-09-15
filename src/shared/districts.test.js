@@ -2,8 +2,6 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   DISTRICTS,
   STREETS,
-  CINEMA_SOLID_WORDS,
-  CINEMA_DISTRICTS,
   cityState,
   districtById,
 } from "./districts.js";
@@ -11,14 +9,11 @@ import { MODULE_STATS } from "./stats.js";
 import { MODULES } from "../App.jsx";
 import { BENCHES } from "../modules/officina/benches.js";
 import { CITY_ACCENTS } from "./theme.js";
-import * as coverageModule from "./coverage.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { CONVERSATION_LEVELS } from "../data/conversations.js";
 import { STORY_LEVELS } from "../data/stories.js";
 import { wordKey, drillKey, conversationKey, storyKey } from "./storage.js";
-import { reviewItem } from "./srs.js";
-import { FONDAMENTALE } from "../data/fondamentale.js";
 
 const EMPTY = { words: {}, schedule: {} };
 
@@ -28,52 +23,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Right five times running is what the top Leitner box takes, and the top box
-// is what "solid" means — seeded through reviewItem so the box and the status
-// agree exactly as they would after five real sessions.
-function solidify(progress, keys) {
-  return keys.reduce((acc, key) => {
-    let next = acc;
-    for (let i = 0; i < 5; i += 1) next = reviewItem(next, key, true, "2026-08-25");
-    return next;
-  }, progress);
-}
-
-// One vocab key per distinct lexicon lemma — the only words that can move the
-// solid count at all, since coverage.js bridges from the vocabulary deck by
-// matching Italian strings. There are 22 of them in the whole app.
-const LEXICON_KEYS = (() => {
-  const ranked = new Map(FONDAMENTALE.map((entry) => [entry.it, entry.rank]));
-  const byRank = new Map();
-
-  for (const level of LEVELS) {
-    for (const category of level.categories) {
-      for (const word of category.words) {
-        const rank = ranked.get(word.it);
-        if (rank !== undefined && !byRank.has(rank)) byRank.set(rank, wordKey(level, category, word));
-      }
-    }
-  }
-
-  return [...byRank.values()];
-})();
-
 function allDone(moduleId) {
   const mod = MODULE_STATS.find((m) => m.id === moduleId);
   return Object.fromEntries(mod.levels.flatMap((level) => mod.units(level).map((unit) => [unit.key, mod.doneStatus])));
-}
-
-// The app cannot currently reach 600 solid words, and the reason changed with
-// La Riserva. It used to be that only 20 of the vocabulary module's 120 words
-// were inside the base 2,000; now every seeded rank is drillable and the wall
-// is the list itself — 400 entries of a 2,000 target, so 400 solid is the most
-// there is. coverage.js pins that ceiling on purpose, at 69.1% and 400 words.
-// So the far side of Il Cinema's gate can only be reached
-// by standing in for the coverage figure — stated outright rather than hidden
-// behind a fixture name, because "unreachable with the content that ships" is
-// itself the interesting fact. The tests that don't need 600 use real study.
-function pretendSolidWords(count) {
-  vi.spyOn(coverageModule, "coverage").mockReturnValue({ counts: { solid: count } });
 }
 
 describe("the district roster", () => {
@@ -215,28 +167,40 @@ describe("what a day-one map looks like", () => {
     expect(city.mercato.status).toMatch(/^0 \/ \d+ dialogues$/);
   });
 
-  it("shuts La Piazza and Il Cinema, and says what opens each", () => {
+  it("shuts La Piazza, and says what opens it", () => {
     const city = state(EMPTY);
 
     expect(city.piazza.lock.why).toMatch(/Opens the moment a word is waiting/);
     expect(city.piazza.status).toBe("nothing due yet");
-    expect(city.cinema.lock.why).toContain(`${CINEMA_SOLID_WORDS} solid words`);
-    expect(city.cinema.lock.why).toContain(`${CINEMA_DISTRICTS} districts finished`);
   });
 
-  // The point of the lock, per the design: a visible door with a live counter
-  // beats a door you didn't know was there. So the number has to be the
-  // learner's real distance from it, earned by real study — no stub here.
-  it("counts Il Cinema's remaining words down as words actually go solid", () => {
-    expect(state(EMPTY).cinema.status).toBe(`${CINEMA_SOLID_WORDS} words to go`);
+  // Il Cinema used to be gated at 600 solid words. The lexicon holds 400
+  // entries of a 2,000 target, so 400 solid is the ceiling and the gate asked
+  // for more words than the app contains — the ten graded readers behind it
+  // were shut for good, reachable only through the NavMenu. See districts.js
+  // for why the threshold belongs to the unbuilt serial instead.
+  it("opens Il Cinema from the very first visit, onto the readers that ship", () => {
+    const city = state(EMPTY);
 
-    const studied = solidify(EMPTY, LEXICON_KEYS.slice(0, 3));
-    expect(state(studied).cinema.status).toBe(`${CINEMA_SOLID_WORDS - 3} words to go`);
+    expect(city.cinema.lock).toBeNull();
+    expect(city.cinema.status).toMatch(/^0 \/ \d+ stories$/);
   });
 
-  it("draws on three genuinely different lexicon words to do it", () => {
-    expect(LEXICON_KEYS.length).toBeGreaterThanOrEqual(3);
-    expect(new Set(LEXICON_KEYS.slice(0, 3)).size).toBe(3);
+  // The guard on the whole class of bug: a lock nobody can open is worse than
+  // no lock, because the tile states a condition and then never honours it.
+  // Every lock the map draws has to be satisfiable by something a learner can
+  // actually do, so the only one left is the one that turns on the data.
+  it("draws no lock the shipped content cannot open", () => {
+    const shut = cityState(EMPTY).filter((district) => district.lock);
+
+    expect(shut.map((d) => d.id)).toEqual(["piazza"]);
+
+    // And La Piazza's opens on a single answered item, which is reachable:
+    // one real vocabulary word, answered once and now overdue.
+    const level = LEVELS[0];
+    const key = wordKey(level, level.categories[0], level.categories[0].words[0]);
+    const withOne = { words: { [key]: "known" }, schedule: { [key]: { box: 2, due: "2020-01-01", last: "2020-01-01" } } };
+    expect(state(withOne).piazza.lock).toBeNull();
   });
 });
 
@@ -272,53 +236,6 @@ describe("La Piazza", () => {
     const city = state({ words: { [storyKey(level, level.stories[0])]: "done" }, schedule: {} });
 
     expect(city.piazza.lock).not.toBeNull();
-  });
-});
-
-describe("Il Cinema's gate", () => {
-  // The words half and the districts half are independent, and the tile has
-  // to say which one is still outstanding — "2 districts to go" is a
-  // different instruction from "540 words to go".
-  it("switches its counter to districts once the words are there", () => {
-    pretendSolidWords(CINEMA_SOLID_WORDS);
-    expect(state(EMPTY).cinema.status).toBe(`${CINEMA_DISTRICTS} districts to go`);
-  });
-
-  it("counts a finished district off the second half of the condition", () => {
-    pretendSolidWords(CINEMA_SOLID_WORDS);
-    const city = state({ words: allDone("conversations"), schedule: {} });
-
-    expect(city.mercato.done).toBe(true);
-    expect(city.cinema.status).toBe("1 district to go");
-  });
-
-  it("stays shut on the districts alone, however many are finished", () => {
-    const city = state({ words: { ...allDone("conversations"), ...allDone("stories") }, schedule: {} });
-
-    expect(city.cinema.lock).not.toBeNull();
-    expect(city.cinema.status).toBe(`${CINEMA_SOLID_WORDS} words to go`);
-  });
-
-  it("opens once both halves are met", () => {
-    pretendSolidWords(CINEMA_SOLID_WORDS);
-    const city = state({ words: { ...allDone("conversations"), ...allDone("stories") }, schedule: {} });
-
-    expect(city.cinema.lock).toBeNull();
-    expect(city.cinema.status).toMatch(/stories$/);
-  });
-
-  it("opens past the threshold, not only exactly on it", () => {
-    pretendSolidWords(CINEMA_SOLID_WORDS + 40);
-    const city = state({ words: { ...allDone("conversations"), ...allDone("stories") }, schedule: {} });
-
-    expect(city.cinema.lock).toBeNull();
-  });
-
-  // La Piazza replays other districts rather than holding content of its own,
-  // so it can't be one of the two — otherwise the second half of the gate
-  // would be satisfiable by a district with nothing in it.
-  it("never counts La Piazza toward the two districts", () => {
-    expect(DISTRICTS.find((d) => d.id === "piazza").module).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Trophy } from "lucide-react";
 import { TOKENS, tint } from "./theme.js";
 
@@ -14,14 +14,30 @@ export default function SessionSummary({
   secondary,
   secondaryLabel,
   missed,
-  // The bold half of each missed row is Italian in most sessions, but not in
-  // the stories module, where an A1/A2 comprehension answer is in English —
-  // so the caller says, rather than this component assuming (WCAG 3.1.2).
+  // The bold half of each missed row is Italian in every session that has
+  // one today — a vocab word, a filled-in grammar sentence, a dialogue reply,
+  // a story's comprehension answer (those are Italian at every level,
+  // A1 included; this comment used to claim otherwise and the stories module
+  // shipped its rows unmarked on the strength of it). It stays a prop rather
+  // than becoming `lang="it"` here because a summary of English rows is a
+  // thing a future caller can legitimately want, and mislabelling English as
+  // Italian is the same defect in the other direction (WCAG 3.1.2).
   missedLang,
   missedHeading = "TO REVIEW",
   backLabel = "Back",
   onBack,
 }) {
+  const titleRef = useRef(null);
+
+  // Every module reaches this screen by pressing a button that this screen
+  // then unmounts, which drops focus to <body> — the learner is at the top
+  // of the document with no idea the session ended. Focus goes to the title,
+  // the one node that says what happened. Mount-only: nothing on this screen
+  // changes afterwards.
+  useEffect(() => {
+    titleRef.current.focus();
+  }, []);
+
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
@@ -41,7 +57,11 @@ export default function SessionSummary({
           <Trophy size={28} />
         </div>
       </div>
-      <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px" }}>
+      <h2
+        ref={titleRef}
+        tabIndex={-1}
+        style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 600, color: TOKENS.ink, margin: "0 0 22px" }}
+      >
         {title}
       </h2>
       <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 28 }}>

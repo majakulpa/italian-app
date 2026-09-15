@@ -175,6 +175,28 @@ describe("palette contrast (WCAG 2.1 AA)", () => {
     expect(failures).toEqual([]);
   });
 
+  // A glossed word in a story is underlined and nothing else marks it: its
+  // own text colour sits ~1.6:1 from the body ink around it, so the underline
+  // is the whole affordance and therefore a control boundary at 3:1. It is
+  // drawn in the level's accentDeep, on the paper the paragraph is printed
+  // on. Drawn in the *fill* accent — which is what shipped — dark mode gave
+  // A1 3.15, A2 3.08, B1 3.08, C1 3.34 and B2 2.24, a straight failure that
+  // no check in this file was looking at. The pairing is checked against
+  // every surface because the card and paper-deep carry the same paragraphs
+  // elsewhere; which token the module actually reaches for is held by
+  // StoriesModule.test.jsx, since a sound palette says nothing about that.
+  it.each(MODES)("%s: the glossed-word underline clears 3:1 on every surface", (_mode, vars) => {
+    const named = (token) => token.match(/var\((--color-[a-z-]+)\)/)[1];
+    const failures = [];
+    for (const [id, accents] of Object.entries(LEVEL_ACCENTS)) {
+      for (const surface of SURFACES) {
+        const ratio = contrastRatio(vars[named(accents.accentDeep)], vars[surface]);
+        if (ratio < AA_NON_TEXT) failures.push(`${id} underline on ${surface}: ${round(ratio)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
   // An answered option swaps its boundary for the state colour, and the
   // level picker marks the active level the same way — same job, same 3:1.
   // These are the *-deep variants precisely because the fill accents only

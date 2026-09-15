@@ -209,23 +209,23 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  // Il Cinema is shut on a fresh account and cannot be opened with the
-  // content that ships — 600 solid words is past the app's own ceiling of 20
-  // — so the map is not a route to the stories module today. The switcher
-  // still is. That gap is deliberate for now and stated here rather than
-  // papered over: the map gates the district, the menu does not gate the
-  // module behind it.
-  it("leaves the stories module reachable from the switcher while Il Cinema is shut", async () => {
+  // This used to assert the opposite: Il Cinema was shut on a fresh account
+  // and could not be opened with the content that ships, so the map was not a
+  // route to the stories module and only the switcher was. That gap was
+  // called deliberate, but a door that never opens is not a gate — see
+  // districts.js. Both ways in work now, and the map is one of them.
+  it("reaches the stories module from the map as well as the switcher", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByRole("button", { name: /Il Cinema/ })).toHaveAccessibleName(/locked/);
-
-    await user.click(screen.getByRole("button", { name: "Menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Stories" }));
+    await user.click(screen.getByRole("button", { name: /Il Cinema/ }));
     expect(screen.getByText("Quattro pagine")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /All modules/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Stories" }));
+    expect(screen.getByText("Quattro pagine")).toBeInTheDocument();
   });
 });

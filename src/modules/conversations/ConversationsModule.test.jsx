@@ -33,6 +33,16 @@ describe("ConversationsHome", () => {
     expect(screen.getByText(cafe.tagline)).toBeInTheDocument();
   });
 
+  // WCAG 3.1.2. The eyebrow is the only Italian on the home screen — every
+  // dialogue title and tagline in data/conversations.js is English — and
+  // unmarked Italian gets English pronunciation rules from a screen reader.
+  it("marks the Italian eyebrow as Italian and leaves the English titles alone", () => {
+    renderConversations();
+    expect(screen.getByText("Due parole")).toHaveAttribute("lang", "it");
+    expect(screen.getByText("At the café")).not.toHaveAttribute("lang");
+    expect(screen.getByText(cafe.tagline)).not.toHaveAttribute("lang");
+  });
+
   it("switches dialogues when a different level is selected", async () => {
     const user = userEvent.setup();
     renderConversations();
@@ -109,6 +119,64 @@ describe("Dialogue", () => {
     expect(screen.getByText(step0Pick.feedback)).toBeInTheDocument();
     // Step 1's prompt is now showing.
     expect(screen.getByText(cafe.steps[1].them.it)).toBeInTheDocument();
+  });
+
+  // Picking a reply unmounts the option button that was pressed. Left alone
+  // focus falls to <body>, and on a growing chat transcript that is the
+  // worst case in the app: the learner re-tabs from Back through every past
+  // line, speaker button and translation toggle to reach turn two's options.
+  // Focus belongs on the new line from the other speaker — the reply to what
+  // the learner just said, and the node the new options sit directly after.
+  it("moves focus to the new line instead of dropping it to the body", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    await user.click(screen.getByText(cafe.steps[0].options[0].it));
+
+    expect(document.activeElement).not.toBe(document.body);
+    const newLine = screen.getByText(cafe.steps[1].them.it);
+    expect(newLine).toHaveFocus();
+    // Not a tab stop of its own: the transcript stays skippable.
+    expect(newLine).toHaveAttribute("tabindex", "-1");
+    // The line above it is history, not a focus target.
+    expect(screen.getByText(cafe.steps[0].them.it)).not.toHaveFocus();
+  });
+
+  // Opening a dialogue unmounts the "Start" button the same way, so it needs
+  // the same landing place.
+  it("puts focus on the opening line when a dialogue opens, not on the body", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    expect(screen.getByText(cafe.steps[0].them.it)).toHaveFocus();
+  });
+
+  // The two dialogues that open with the learner speaking have no "them"
+  // line to land on, so they fall back to the instruction above the options.
+  it("falls back to the opening instruction when the learner speaks first", async () => {
+    const user = userEvent.setup();
+    renderConversations();
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
+    await user.click(screen.getAllByRole("button", { name: /Start/ })[0]);
+
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByText("You start the conversation:")).toHaveFocus();
+  });
+
+  // The focus move above lands on `steps[stepIndex].them` unguarded for
+  // stepIndex > 0, which is only safe because no step past the first opens
+  // with the learner speaking. If that ever changes in the data, this fails
+  // here rather than throwing inside a dialogue.
+  it("gives every step after the first a line from the other speaker", () => {
+    for (const level of CONVERSATION_LEVELS) {
+      for (const dialogue of level.dialogues) {
+        for (const step of dialogue.steps.slice(1)) {
+          expect(step.them, `${dialogue.id} step after the first`).toBeTruthy();
+        }
+      }
+    }
   });
 
   it("completes the dialogue, tallies tone picks, and persists completion", async () => {

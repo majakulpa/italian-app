@@ -53,6 +53,31 @@ describe("VocabHome", () => {
     expect(screen.getAllByText(`${greetings.words.length} parole`).length).toBeGreaterThan(0);
   });
 
+  // WCAG 3.1.2. The eyebrow and the untouched-category subtitle are the only
+  // Italian on this screen — every level tagline and category name in
+  // data/vocab.js is English — and unmarked Italian is read out by a screen
+  // reader with English pronunciation rules.
+  it("marks the Italian eyebrow and the parole count as Italian", () => {
+    renderVocab();
+    expect(screen.getByText("Parole in viaggio")).toHaveAttribute("lang", "it");
+    for (const el of screen.getAllByText(`${greetings.words.length} parole`)) {
+      expect(el).toHaveAttribute("lang", "it");
+    }
+  });
+
+  it("leaves the English progress subtitle unmarked", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /I knew it/ }));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    // The studied form of the subtitle is English, so the lang must come off
+    // again rather than being pinned to the whole node.
+    expect(screen.getByText(`1 / ${greetings.words.length} known`)).not.toHaveAttribute("lang");
+  });
+
   it("hides the Listen button when speech isn't supported, but keeps Cards/Quiz", () => {
     speech.isSpeechSupported.mockReturnValue(false);
     renderVocab();
@@ -144,6 +169,68 @@ describe("Flashcards", () => {
     expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
   });
 
+  // Grading a card unmounts the button that was pressed. Left alone focus
+  // falls to <body>, so a keyboard learner re-tabs from the top of the
+  // document for every card and a screen reader says nothing about the word
+  // that replaced the one they graded. Focus has to land on the new word.
+  it("moves focus to the next word instead of dropping it to the body", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /I knew it/ }));
+
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByText(greetings.words[1].it)).toHaveFocus();
+  });
+
+  it("puts focus on the word when the deck opens, not on the body", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    // Opening the deck unmounts the "Cards" button the same way an advance
+    // unmounts the grade buttons.
+    expect(screen.getByText(greetings.words[0].it)).toHaveFocus();
+  });
+
+  it("does not put the focused word in the tab order", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    expect(screen.getByText(greetings.words[0].it)).toHaveAttribute("tabindex", "-1");
+  });
+
+  // Every other summary in the app lists what you missed; a deck that only
+  // said "4 still learning" left the learner to replay the whole thing to
+  // find out which four.
+  it("lists the words marked still learning in the deck summary", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Cards" })[0]);
+
+    const word0 = greetings.words[0];
+
+    await user.click(screen.getByText("Tap to reveal translation"));
+    await user.click(screen.getByRole("button", { name: /Still learning/ }));
+    for (let i = 1; i < greetings.words.length; i++) {
+      await user.click(screen.getByText("Tap to reveal translation"));
+      await user.click(screen.getByRole("button", { name: /I knew it/ }));
+    }
+
+    expect(screen.getByText("Deck complete")).toBeInTheDocument();
+    expect(screen.getByText("STILL LEARNING")).toBeInTheDocument();
+    // The recap puts the word and its gloss in one paragraph
+    // ("<parola> — <gloss>"), so the gloss isn't a text node of its own.
+    const line = screen.getByText(word0.it);
+    expect(line).toHaveAttribute("lang", "it");
+    expect(line.closest("p").textContent).toContain(word0.en);
+    // The known words are not in the list.
+    expect(screen.queryByText(greetings.words[1].it)).not.toBeInTheDocument();
+  });
+
   it("completes the deck, shows a summary, and persists known words", async () => {
     const user = userEvent.setup();
     renderVocab();
@@ -217,6 +304,22 @@ describe("Quiz", () => {
     expect(screen.getByText("0 correct")).toBeInTheDocument();
     expect(wrongButton).toHaveStyle({ color: TOKENS.corolloDeep });
     expect(screen.getByRole("button", { name: `${word0.en} correct answer` })).toHaveStyle({ color: TOKENS.malachiteDeep });
+  });
+
+  // Same dropped focus as the flashcard deck: "Next word" unmounts itself,
+  // and the prompt for question 2 is both the nearest surviving node and the
+  // one thing that states what changed.
+  it("moves focus to the next question's word instead of dropping it", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: "Quiz" })[0]);
+
+    await user.click(screen.getByRole("button", { name: greetings.words[0].en }));
+    await user.click(screen.getByRole("button", { name: /Next word/ }));
+
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByText(greetings.words[1].it)).toHaveFocus();
+    expect(screen.getByText(greetings.words[1].it)).toHaveAttribute("tabindex", "-1");
   });
 
   it("completes the quiz and lists missed words for review", async () => {
@@ -298,6 +401,21 @@ describe("ListeningQuiz", () => {
     speech.speakItalian.mockClear();
     await user.click(screen.getByRole("button", { name: /Next word/ }));
     expect(speech.speakItalian).toHaveBeenCalledWith(word1.it);
+  });
+
+  // This screen has no visible prompt on purpose — the item is the audio —
+  // so focus goes to the replay control rather than to a word, which would
+  // hand over the answer. It still must not fall to <body>.
+  it("moves focus to the replay control instead of dropping it", async () => {
+    const user = userEvent.setup();
+    renderVocab();
+    await user.click(screen.getAllByRole("button", { name: /Listen/ })[0]);
+
+    await user.click(screen.getByRole("button", { name: greetings.words[0].en }));
+    await user.click(screen.getByRole("button", { name: /Next word/ }));
+
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByRole("button", { name: "Play again" })).toHaveFocus();
   });
 
   it("marks a wrong answer without crediting the score", async () => {

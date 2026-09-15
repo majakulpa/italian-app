@@ -11,28 +11,38 @@
 // design/02-la-citta.html shows a day-one map with five padlocks on it. Four
 // of those five doors are scene districts (Il Bar, La Stazione, La Farmacia)
 // that don't exist yet, and their thresholds are pacing choices nobody has
-// measured. Exactly one number in the design comes out of an experiment
-// rather than out of someone's judgement — Il Cinema's 600 — so exactly one
-// district here is gated on a number. La Piazza's gate isn't a number at
-// all: an empty review queue has nothing to show you, which is a fact about
-// the data rather than a decision about pacing.
+// measured. So the map ships exactly one lock, and it isn't a number at all:
+// an empty review queue has nothing to show you, which is a fact about the
+// data rather than a decision about pacing.
 //
 // Everything else opens from the start. A lock invented to make the map look
 // busier would be the pacing guess the design spent a sweep avoiding.
+//
+// ── Why Il Cinema is no longer gated on 600 solid words ─────────────────
+// It used to be, and the gate could never open. The threshold is real —
+// research/gen-experiment/ measured it — but it is a threshold for *the
+// generated serial*, which is PLAN.md chunk 6 and is not built. This district
+// routes to `stories`: ten hand-written graded readers that ship today.
+//
+// Gating those on 600 solid words made them unreachable, because solid words
+// come from the lexicon and `data/fondamentale.js` holds 400 of its 2,000
+// target — so the ceiling is 400, pinned in `coverage.test.js` at 69.1%. The
+// gate asked for half again as many words as the app contains, and it moved
+// further out of reach rather than closer as the list grew: every entry
+// added raises the ceiling, and 600 needs 200 more than exist. Every test
+// that proved the door opened had to mock a solid count past that ceiling to
+// do it, which is the tell — the district was shut for good, and the ten
+// stories behind it were reachable only through the NavMenu.
+//
+// So the readers open, because reading is what the district is for, and the
+// 600 comes back with the thing it was measured for — the serial goes inside
+// Il Cinema behind its own gate, the way L'Officina holds benches. That keeps
+// PLAN.md's "only gate on numbers you have measured" pointing the right way:
+// the number was measured, it was just measuring something else.
 
 import { Clapperboard, Hammer, RefreshCw, Store, Wrench } from "lucide-react";
 import { moduleStats } from "./stats.js";
 import { dueCount } from "./srs.js";
-import { coverage } from "./coverage.js";
-
-// The threshold out of research/gen-experiment/: at 400 known words the best
-// achievable coverage of text written *for* the learner is 90.1%, which is
-// roughly one unknown word in ten — decoding rather than reading. At 600 it
-// is 97.2%, comfortably past Nation's 95% floor. The second half of the
-// condition is about output rather than input: two districts finished means
-// the learner has produced Italian before being handed a page of it to read.
-export const CINEMA_SOLID_WORDS = 600;
-export const CINEMA_DISTRICTS = 2;
 
 // `x`/`y` are percentages of the map plate, used both for the button's
 // position and for the endpoints of the streets drawn under it — one set of
@@ -104,7 +114,10 @@ export const DISTRICTS = [
     accent: "bubble",
     icon: Clapperboard,
     unit: "stories",
-    blurb: "Where the story is, once there are enough words to write you one.",
+    // The blurb used to promise a story written once you had enough words,
+    // which was the serial's promise rather than this district's. What is
+    // behind the door today is ten graded readers, so it says that instead.
+    blurb: "Where you read something that was graded to meet you.",
     x: 76,
     y: 79,
   },
@@ -144,46 +157,15 @@ function plural(n, word) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
-// A district counts as finished when every unit of its module is done. La
-// Piazza has no content of its own — it replays other districts' — so it is
-// not a district you can finish, and it doesn't count toward Il Cinema.
-//
-// No guard against an empty module, which would read 0/0 as finished: every
-// module ships content and levels.test.js holds it that way, so the guard
-// would be a branch nothing could reach and therefore nothing could honestly
-// cover. Add it back the day a district can legitimately be empty.
-function isFinished(progress, district) {
-  const stats = moduleStats(progress, district.module);
-  return stats.done === stats.total;
-}
-
-function finishedCount(progress) {
-  return DISTRICTS.filter((d) => d.module).filter((d) => isFinished(progress, d)).length;
-}
-
 // The lock on one district, or null if it's open. `why` is the sentence the
 // map states underneath — a padlock on its own tells you nothing, so every
 // locked district says what opens it. `short` is the live counter that goes
 // on the tile itself.
-function lockFor(district, { due, solid, finished }) {
+function lockFor(district, { due }) {
   if (district.id === "piazza" && due === 0) {
     return {
       short: "nothing due yet",
       why: "Opens the moment a word is waiting. Answer anything in L'Officina or Il Cantiere and the first ones come back tomorrow.",
-    };
-  }
-
-  if (district.id === "cinema") {
-    const wordsToGo = Math.max(CINEMA_SOLID_WORDS - solid, 0);
-    const districtsToGo = Math.max(CINEMA_DISTRICTS - finished, 0);
-    if (wordsToGo === 0 && districtsToGo === 0) return null;
-
-    return {
-      short: wordsToGo > 0 ? `${plural(wordsToGo, "word")} to go` : `${plural(districtsToGo, "district")} to go`,
-      why:
-        `Opens at ${CINEMA_SOLID_WORDS} solid words and ${CINEMA_DISTRICTS} districts finished — ` +
-        `you have ${solid} and ${finished}. Below ${CINEMA_SOLID_WORDS} the best a story written for you ` +
-        "can manage is about 90% known words, and that is decoding rather than reading.",
     };
   }
 
@@ -214,11 +196,7 @@ function stateFor(district, progress, context) {
 // comes through here so the tiles, the streets and the locked-door notes
 // below them can't disagree about which districts are open.
 export function cityState(progress) {
-  const context = {
-    due: dueCount(progress),
-    solid: coverage(progress).counts.solid,
-    finished: finishedCount(progress),
-  };
+  const context = { due: dueCount(progress) };
 
   return DISTRICTS.map((district) => stateFor(district, progress, context));
 }

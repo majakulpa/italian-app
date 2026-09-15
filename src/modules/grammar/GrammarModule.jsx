@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { TOKENS, tint } from "../../shared/theme.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
@@ -123,7 +123,7 @@ function GrammarHome({ onPick, onExit, progress }) {
       </div>
 
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
+        <p lang="it" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 3, color: TOKENS.adriaticDeep, marginBottom: 6, textTransform: "uppercase" }}>
           Regole in tasca
         </p>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.1 }}>
@@ -141,10 +141,18 @@ function GrammarHome({ onPick, onExit, progress }) {
         {level.topics.map((topic) => {
           const known = topicKnownCount(progress, level, topic);
           return (
+            // The topic name is Italian ("Presente: verbi in -ARE") and says
+            // so; the subtitle is not. The taglines are English sentences
+            // that happen to quote Italian inside them ("Mi alzo, ti svegli
+            // — describing your day"), and `lang` is per-element: marking
+            // the whole string Italian would have a screen reader read the
+            // English half in an Italian voice, which is worse than leaving
+            // it. Splitting those sentences is a data change, not a markup
+            // one, so it is left alone here.
             <TicketCard
               key={topic.id}
               level={level}
-              title={topic.name}
+              title={<span lang="it">{topic.name}</span>}
               subtitle={known > 0 ? `${known} / ${topic.drills.length} mastered` : topic.tagline}
             >
               <button
@@ -200,7 +208,7 @@ function Lesson({ level, topic, onBack, onPick }) {
     <div>
       <TopBar level={level} label={topic.name} onBack={onBack} />
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 20px 60px" }}>
-        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: "0 0 12px" }}>
+        <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: "0 0 12px" }}>
           {topic.name}
         </h2>
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: TOKENS.inkSoft, lineHeight: 1.6, margin: "0 0 20px" }}>
@@ -282,8 +290,29 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
   const [done, setDone] = useState(false);
+  const promptRef = useRef(null);
 
   const q = questions[index];
+
+  // Advancing unmounts the "Next" button the learner just pressed, and
+  // nothing else takes its place, so focus falls back to <body>: a keyboard
+  // learner re-tabs from the top of the document for every question and a
+  // screen-reader user is told nothing about the item that replaced the one
+  // they answered. The newer benches (review/ReviewModule.jsx,
+  // mappe/MappeModule.jsx, riserva/DrillRound.jsx) avoid it by keeping one
+  // button mounted in both states, which works there because the answer is
+  // typed and "Check" and "Next" are the same control. Here the answer *is*
+  // a button, and a permanently mounted "Next" would either be dead before
+  // an answer or let the learner skip the question — so this screen takes
+  // the other half of the same pattern, the one riserva/RiservaModule.jsx
+  // uses when its control disappears: move focus deliberately to the
+  // nearest thing that is still there. That is the new prompt, which is
+  // also the sentence a screen reader needs to hear. `index` only ever
+  // moves forward and only `next` moves it, so index > 0 means the learner
+  // advanced rather than opened the drill.
+  useEffect(() => {
+    if (index > 0) promptRef.current.focus();
+  }, [index]);
 
   const choose = (opt) => {
     if (selected) return;
@@ -337,10 +366,31 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
           Complete the sentence
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <h2 lang="it" style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: 0, letterSpacing: 0.2 }}>
+          {/* tabIndex={-1} makes the prompt focusable without putting it in
+              the tab order: it is the target of the focus move above, not a
+              stop a learner tabs through. The browser's own focus ring is
+              left in place — this is where the keyboard user now is. */}
+          <h2
+            ref={promptRef}
+            tabIndex={-1}
+            lang="it"
+            style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, color: TOKENS.ink, margin: 0, letterSpacing: 0.2 }}
+          >
             {q.item.prompt}
           </h2>
-          <SpeakButton text={fillBlank(q.item)} color={level.accentDeep} size={17} />
+          {/* The speaker here reads the sentence with the gap filled in, so
+              it cannot be offered before the item is answered: tapping it
+              would simply say the answer, and SpeakButton's accessible name
+              is `Pronounce "<text>"`, which hands the answer to a screen
+              reader on tab-focus alone — before an answer is even spent.
+              Speaking the gapped prompt instead is no fix either: speech
+              synthesis reads "___" as a stumble or as nothing, and a
+              sentence with a hole in it is not a pronunciation model. So the
+              control waits for the answer, which is also when hearing the
+              whole sentence is worth most. The per-option speakers stay
+              available throughout — they only ever say what is already on
+              screen. */}
+          {selected && <SpeakButton text={fillBlank(q.item)} color={level.accentDeep} size={17} />}
         </div>
         {/* The English is shown outright rather than behind a tap-to-reveal:
             here the exercise is the conjugation, not reading comprehension,
@@ -350,6 +400,9 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.inkSoft, margin: "0 0 6px" }}>
           {q.item.en}
         </p>
+        {/* Unmarked on purpose: the hint is one string mixing both languages
+            ("parlare (to speak) — io"), so neither `lang` value is true of
+            it. Same case as the taglines on the home screen. */}
         <p style={{ fontFamily: "'Inter', sans-serif", fontStyle: "italic", fontSize: 13, color: TOKENS.inkSoft, margin: "0 0 22px" }}>
           {q.item.hint}
         </p>
@@ -417,7 +470,13 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
           })}
         </div>
 
-        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} />
+        {/* The spoken feedback is an English sentence with one Italian word
+            dropped into it ("Not quite. The answer is parlo."), so the answer
+            needs marking without marking the English around it. AnswerStatus
+            renders it as its own element now and takes the language from
+            here, because the answer is not Italian everywhere — the
+            vocabulary quiz's answer is an English gloss. */}
+        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} answerLang="it" />
 
         {selected && (
           <button

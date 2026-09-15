@@ -7,7 +7,7 @@ import { STORY_LEVELS } from "./data/stories.js";
 import { wordKey, storyKey } from "./shared/storage.js";
 import { reviewItem } from "./shared/srs.js";
 import { LEXICON_COVERAGE } from "./shared/coverage.js";
-import { CINEMA_SOLID_WORDS, DISTRICTS } from "./shared/districts.js";
+import { DISTRICTS } from "./shared/districts.js";
 import { MODULE_STATS } from "./shared/stats.js";
 import { FONDAMENTALE, FONDAMENTALE_TARGET } from "./data/fondamentale.js";
 
@@ -198,13 +198,16 @@ describe("the map", () => {
   });
 });
 
+// La Piazza is the one shut district on a day-one map, so it is the one these
+// tests use. They used to use Il Cinema, which was shut on a 600-solid-word
+// gate the app could never satisfy — see districts.js for why that gate went.
 describe("a shut district", () => {
   it("says on the tile that it is locked, and how far away it is", () => {
     render(<Dashboard onSelect={() => {}} />);
 
-    const cinema = district("Il Cinema");
-    expect(cinema).toHaveAccessibleName(/locked/);
-    expect(cinema).toHaveTextContent(`${CINEMA_SOLID_WORDS} words to go`);
+    const piazza = district("La Piazza");
+    expect(piazza).toHaveAccessibleName(/locked/);
+    expect(piazza).toHaveTextContent("nothing due yet");
   });
 
   // The rule the design insists on: never a padlock alone. The condition is
@@ -213,10 +216,9 @@ describe("a shut district", () => {
     render(<Dashboard onSelect={() => {}} />);
 
     const shut = screen.getByRole("region", { name: /Shut for now/i });
-    expect(within(shut).getByText(/Il Cinema/)).toBeInTheDocument();
-    expect(shut).toHaveTextContent(new RegExp(`${CINEMA_SOLID_WORDS} solid words`));
-    expect(shut).toHaveTextContent(/decoding rather than reading/);
+    expect(within(shut).getByText(/La Piazza/)).toBeInTheDocument();
     expect(shut).toHaveTextContent(/Opens the moment a word is waiting/);
+    expect(shut).toHaveTextContent(/the first ones come back tomorrow/);
   });
 
   it("goes nowhere when pressed", async () => {
@@ -224,7 +226,7 @@ describe("a shut district", () => {
     const picked = [];
     render(<Dashboard onSelect={(id) => picked.push(id)} />);
 
-    await user.click(district("Il Cinema"));
+    await user.click(district("La Piazza"));
     expect(picked).toEqual([]);
   });
 
@@ -234,20 +236,33 @@ describe("a shut district", () => {
   it("stays reachable by keyboard, announced as unavailable", () => {
     render(<Dashboard onSelect={() => {}} />);
 
-    const cinema = district("Il Cinema");
-    expect(cinema).toHaveAttribute("aria-disabled", "true");
-    expect(cinema).not.toBeDisabled();
+    const piazza = district("La Piazza");
+    expect(piazza).toHaveAttribute("aria-disabled", "true");
+    expect(piazza).not.toBeDisabled();
 
-    cinema.focus();
-    expect(document.activeElement).toBe(cinema);
+    piazza.focus();
+    expect(document.activeElement).toBe(piazza);
   });
 
+  // The readers ship, so their door is open from the first visit.
+  it("leaves Il Cinema open, and lets it through to the stories", async () => {
+    const user = userEvent.setup();
+    const picked = [];
+    render(<Dashboard onSelect={(id) => picked.push(id)} />);
+
+    const cinema = district("Il Cinema");
+    expect(cinema).not.toHaveAttribute("aria-disabled");
+    await user.click(cinema);
+    expect(picked).toEqual(["stories"]);
+  });
+
+  // La Piazza is the only district that can be shut, so opening it empties the
+  // note entirely — the region is not drawn at all rather than drawn empty.
   it("drops the note once the district opens", () => {
     seed({ [A1_WORD]: "learning" });
     render(<Dashboard onSelect={() => {}} />);
 
-    const shut = screen.getByRole("region", { name: /Shut for now/i });
-    expect(shut).not.toHaveTextContent(/La Piazza/);
+    expect(screen.queryByRole("region", { name: /Shut for now/i })).toBeNull();
     expect(district("La Piazza")).not.toHaveAccessibleName(/locked/);
   });
 

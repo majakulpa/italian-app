@@ -104,14 +104,23 @@ describe("the city map", () => {
   // there" the design argues against — so it carries aria-disabled instead,
   // and this is the test that stops anyone swapping it back.
   it("keeps a shut district focusable, and announced as unavailable", () => {
+    // La Piazza is the shut one on a fresh account. This used to use Il
+    // Cinema, which was shut on a threshold the app could not reach — see
+    // districts.js for why that gate went and this example moved.
+    //
+    // The empty save is written rather than assumed. La Piazza is the only
+    // district that can be shut now, and it shuts on the queue being empty,
+    // so any progress surviving into this test opens it and the assertion
+    // reads as a markup regression instead of the storage leak it is.
+    saveProgress({ words: {}, schedule: {} });
     render(<App />);
 
-    const cinema = screen.getByRole("button", { name: /Il Cinema/ });
-    expect(cinema).toHaveAttribute("aria-disabled", "true");
-    expect(cinema).not.toBeDisabled();
+    const piazza = screen.getByRole("button", { name: /La Piazza/ });
+    expect(piazza).toHaveAttribute("aria-disabled", "true");
+    expect(piazza).not.toBeDisabled();
 
-    cinema.focus();
-    expect(document.activeElement).toBe(cinema);
+    piazza.focus();
+    expect(document.activeElement).toBe(piazza);
   });
 
   it("leaves no district out of the tab order, open or shut", () => {

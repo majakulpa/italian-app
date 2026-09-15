@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LevelPicker from "./LevelPicker.jsx";
-import { LEVEL_ACCENTS } from "./theme.js";
+import { LEVEL_ACCENTS, TOKENS, CITY_RULES } from "./theme.js";
 
 const LEVELS = [
   { id: "A1", label: "A1", name: "Principiante", ...LEVEL_ACCENTS.A1 },
@@ -40,6 +40,22 @@ describe("LevelPicker", () => {
     expect(active.style.background).toContain("color-mix");
     expect(active.style.background).not.toBe(LEVEL_ACCENTS.A2.accent);
     expect(inactive.style.background).toBe("transparent");
+  });
+
+  // La Città's 3px rule and hard shadow — but the edge of an idle pill is
+  // still controlLine, the token promised 3:1 for a control (SC 1.4.11), and
+  // the active one is the level's own accentDeep.
+  it("draws every pill with the city's 3px edge and hard shadow, in control-safe colours", () => {
+    render(<LevelPicker levels={LEVELS} active={LEVELS[1]} onSelect={() => {}} />);
+
+    const active = screen.getByRole("button", { name: /Elementare/ });
+    const inactive = screen.getByRole("button", { name: /Principiante/ });
+
+    expect(active.style.border).toBe(`${CITY_RULES.border}px solid ${LEVEL_ACCENTS.A2.accentDeep}`);
+    expect(inactive.style.border).toBe(`${CITY_RULES.border}px solid ${TOKENS.controlLine}`);
+    for (const pill of [active, inactive]) {
+      expect(pill.style.boxShadow).toBe(`${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`);
+    }
   });
 });
 

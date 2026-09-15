@@ -179,10 +179,13 @@ export function reviewItem(progress, key, correct, today = todayISO()) {
 
 // The write for a wrong answer above the learner's stage (see stage.js), in
 // place of reviewItem. Not wrong, so nothing is demoted; not right, so nothing
-// is promoted. It comes back tomorrow, so it neither clogs today's round nor
-// drops out of the queue.
+// is promoted. It comes back no sooner than tomorrow, so it neither clogs
+// today's round nor drops out of the queue.
 //
-// - A met item keeps its status and its box, and is only moved to tomorrow.
+// - A met item keeps its status and its box, and its due date moves to
+//   tomorrow or stays where it is, whichever is later. The grammar drill can
+//   be opened any day, so a box-5 item not due for three weeks can be answered
+//   there; deferring it must not drag it forward to tomorrow.
 // - An unmet item — first contact, answered wrong above stage — is written as
 //   learning in box 1. Without that it would have no status, and dueUnits()
 //   only serves met units, so the item could never come round again.
@@ -203,5 +206,7 @@ export function deferItem(progress, key, today = todayISO()) {
     };
   }
 
-  return { ...shown, schedule: { ...shown.schedule, [key]: { ...shown.schedule[key], due: tomorrow, last: today } } };
+  const entry = shown.schedule[key];
+  const due = entry?.due > tomorrow ? entry.due : tomorrow; // ISO dates sort as strings
+  return { ...shown, schedule: { ...shown.schedule, [key]: { ...entry, due, last: today } } };
 }

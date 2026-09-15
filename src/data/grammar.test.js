@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "./grammar.js";
-import { STAGES, EMERGENCE_ITEMS, itemStage } from "../shared/stage.js";
+import { STAGES, EMERGENCE_ITEMS, itemStage, formStage } from "../shared/stage.js";
 
 const allTopics = GRAMMAR_LEVELS.flatMap((level) => level.topics.map((topic) => ({ level, topic })));
 const allTables = allTopics.map(({ level, topic }) => ({ level, topic, table: topic.explanation.table }));
@@ -177,10 +177,38 @@ describe("stage tags", () => {
     }
   });
 
-  // A stage with fewer items than it takes to establish it could never be
-  // reached, and every stage above it would stay ungraded for good.
-  it.each(LADDER)("has enough items to establish stage %i", (stage) => {
-    const count = allItems.filter(({ topic, item }) => resolved(topic, item) === stage).length;
+  it("resolves every item's typed form to a stage on the ladder, or to null", () => {
+    for (const { name, topic, item } of allItems) {
+      const stage = formStage(topic, item);
+      expect(stage === null || LADDER.includes(stage), `${name} form resolved to ${stage}`).toBe(true);
+    }
+  });
+
+  // The form answers the choice, so it cannot outrank it: a congiuntivo typed
+  // in a drill graded as presente would mean the grading tag is wrong.
+  it("never puts a typed form above the choice it answers", () => {
+    for (const { name, topic, item } of allItems) {
+      const form = formStage(topic, item);
+      const grading = itemStage(topic, item);
+      if (form === null) continue;
+      expect(grading, `${name} types a stage-${form} form under a null grading stage`).not.toBeNull();
+      expect(form, `${name} types a form above its grading stage`).toBeLessThanOrEqual(grading);
+    }
+  });
+
+  // `formStage` marks where the form differs from the choice. One that repeats
+  // the grading stage says nothing, and hides the ones that matter.
+  it("only carries formStage where it differs from the grading stage", () => {
+    for (const { name, topic, item } of allItems.filter(({ item }) => "formStage" in item)) {
+      expect(item.formStage, `${name} repeats its grading stage`).not.toBe(itemStage(topic, item));
+    }
+  });
+
+  // Counted on the typed form, because that is what evidence counts: a stage
+  // with fewer forms of its own than it takes to establish it could only ever
+  // be established by typing something else, or never.
+  it.each(LADDER)("has enough items typing a stage-%i form to establish it", (stage) => {
+    const count = allItems.filter(({ topic, item }) => formStage(topic, item) === stage).length;
     expect(count).toBeGreaterThanOrEqual(EMERGENCE_ITEMS);
   });
 });

@@ -10,7 +10,7 @@
 // and its "known"/"learning" status are written together by reviewItem below,
 // so the dashboard's counts and the queue can't disagree.
 
-import { markWord, todayISO, addDaysISO } from "./storage.js";
+import { markWord, markStageShown, todayISO, addDaysISO } from "./storage.js";
 import { MODULE_STATS } from "./stats.js";
 import { lemmaKey } from "./lemma.js";
 import { shuffle } from "./shuffle.js";
@@ -175,4 +175,33 @@ export function reviewItem(progress, key, correct, today = todayISO()) {
       schedule: { ...withStatus.schedule, [settled]: nextSchedule(acc.schedule[settled], correct, today) },
     };
   }, progress);
+}
+
+// The write for a wrong answer above the learner's stage (see stage.js), in
+// place of reviewItem. Not wrong, so nothing is demoted; not right, so nothing
+// is promoted. It comes back tomorrow, so it neither clogs today's round nor
+// drops out of the queue.
+//
+// - A met item keeps its status and its box, and is only moved to tomorrow.
+// - An unmet item — first contact, answered wrong above stage — is written as
+//   learning in box 1. Without that it would have no status, and dueUnits()
+//   only serves met units, so the item could never come round again.
+//
+// The form has just been shown, so the stage evidence marker goes to "shown"
+// here rather than being left for every caller to remember.
+//
+// One key, not collapsedKeys(): only grammar drills carry a stage, and a
+// drill has no Italian of its own for another bench to share.
+export function deferItem(progress, key, today = todayISO()) {
+  const tomorrow = addDaysISO(today, 1);
+  const shown = markStageShown(progress, key);
+
+  if (!progress.words[key]) {
+    return {
+      ...markWord(shown, key, "learning"),
+      schedule: { ...shown.schedule, [key]: { box: 1, due: tomorrow, last: today } },
+    };
+  }
+
+  return { ...shown, schedule: { ...shown.schedule, [key]: { ...shown.schedule[key], due: tomorrow, last: today } } };
 }

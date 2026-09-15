@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "./grammar.js";
+import { STAGES, EMERGENCE_ITEMS, itemStage } from "../shared/stage.js";
 
 const allTopics = GRAMMAR_LEVELS.flatMap((level) => level.topics.map((topic) => ({ level, topic })));
 const allTables = allTopics.map(({ level, topic }) => ({ level, topic, table: topic.explanation.table }));
@@ -145,15 +146,12 @@ describe("GRAMMAR_LEVELS", () => {
 // The stage tags the grading gate reads. See the note at the top of grammar.js
 // for the rule, and shared/stage.js for the ladder.
 describe("stage tags", () => {
-  const LADDER = [1, 2, 3, 4, 5, 6, 7];
-  // How many distinct items establish a stage. Mirrors EMERGENCE_ITEMS in
-  // shared/stage.js.
-  const EMERGENCE_ITEMS = 4;
+  const LADDER = STAGES.map((s) => s.stage);
 
   const allItems = allTopics.flatMap(({ level, topic }) =>
     topic.drills.map((item) => ({ name: `${level.id} · ${topic.id} · ${item.id}`, topic, item })),
   );
-  const resolved = (topic, item) => item.stage ?? topic.stage;
+  const resolved = itemStage;
 
   it("tags every topic, so no item falls through to undefined", () => {
     for (const { topic } of allTopics) expect(topic).toHaveProperty("stage");

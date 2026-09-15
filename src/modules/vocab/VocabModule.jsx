@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
 import { loadProgress, saveProgress, wordKey, categoryKnownCount } from "../../shared/storage.js";
 import { reviewItem } from "../../shared/srs.js";
@@ -16,11 +16,67 @@ import SessionSummary from "../../shared/SessionSummary.jsx";
 import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 
+const SANS = "'Inter', sans-serif";
+
+// La Città, as this module's own surfaces draw it. The shapes are the ones
+// La Riserva (riserva/DrillRound.jsx) and Gli Articoli (articoli/cards.jsx)
+// already use, so a deck reached from L'Officina doesn't change design
+// language on the way in.
+//
+// The primary action is the pistachio block every city screen moves forward
+// on; its outline is the fixed city ink, and in dark mode the bright fill
+// itself is what carries the 3:1 boundary against the page.
+const PRIMARY = {
+  border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+  borderRadius: CITY_RULES.radius,
+  boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+  background: CITY_ACCENTS.pistachio.fill,
+  color: CITY_ACCENTS.pistachio.ink,
+  fontFamily: SANS,
+  fontWeight: 700,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+};
+
+// Its quieter twin: no fill, so the outline alone is the control boundary,
+// which is why it is the flipping city edge rather than the fixed ink.
+const SECONDARY = {
+  border: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+  borderRadius: CITY_RULES.radius,
+  background: "transparent",
+  color: TOKENS.ink,
+  fontFamily: SANS,
+  fontWeight: 600,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+};
+
+// One answer option, before and after answering, drawn the way Gli Articoli
+// draws its three: a neutral card in the control line until it is settled,
+// then a pistachio tile for the answer and a tomato one for a wrong pick,
+// each in its own ink. Colour is never the only signal — AnswerMark rides
+// along inside the button — and the unpicked distractors stay neutral.
+function optionStyle(state) {
+  const paint = state === "correct" ? CITY_ACCENTS.pistachio : state === "incorrect" ? CITY_ACCENTS.tomato : null;
+  return {
+    ...citySurface(),
+    background: paint ? paint.fill : TOKENS.card,
+    color: paint ? paint.ink : TOKENS.ink,
+    border: `${CITY_RULES.border}px solid ${paint ? TOKENS.cityInk : TOKENS.controlLine}`,
+  };
+}
+
 function VocabHome({ onPick, onExit, exitLabel, progress }) {
   const [level, setLevel] = useState(LEVELS[0]);
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
+    <div className="citta" style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <button
           onClick={onExit}
@@ -71,60 +127,21 @@ function VocabHome({ onPick, onExit, exitLabel, progress }) {
             >
               <button
                 onClick={() => onPick(level, cat, "flashcards")}
-                style={{
-                  border: `1.5px solid ${TOKENS.ink}`,
-                  background: "transparent",
-                  color: TOKENS.ink,
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                style={{ ...SECONDARY, padding: "7px 12px", fontSize: 13 }}
               >
                 <Layers size={15} /> Cards
               </button>
               {isSpeechSupported() && (
                 <button
                   onClick={() => onPick(level, cat, "listening")}
-                  style={{
-                    border: `1.5px solid ${TOKENS.ink}`,
-                    background: "transparent",
-                    color: TOKENS.ink,
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
+                  style={{ ...SECONDARY, padding: "7px 12px", fontSize: 13 }}
                 >
                   <Headphones size={15} /> Listen
                 </button>
               )}
               <button
                 onClick={() => onPick(level, cat, "quiz")}
-                style={{
-                  border: "none",
-                  background: TOKENS.ink,
-                  color: TOKENS.paper,
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                style={{ ...PRIMARY, padding: "7px 12px", fontSize: 13 }}
               >
                 Quiz <ChevronRight size={15} />
               </button>
@@ -212,7 +229,7 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
   }
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={category.name} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 10 }}>
@@ -223,9 +240,10 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
         <div
           onClick={() => setFlipped((f) => !f)}
           style={{
-            background: TOKENS.card,
-            border: `1px solid ${TOKENS.controlLine}`,
-            borderRadius: 18,
+            // The whole card flips on a tap, so its outline is a control
+            // boundary: the flipping city edge, which clears 3:1 on the page
+            // in both themes where the old hairline was only just there.
+            ...citySurface(),
             padding: "32px 26px 22px",
             cursor: "pointer",
             minHeight: 220,
@@ -243,8 +261,9 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* tabIndex={-1} makes the word focusable without adding a
                     tab stop: it is the target of the focus move above, not
-                    somewhere a learner tabs through. The browser's own focus
-                    ring stays — that is where the keyboard user now is. */}
+                    somewhere a learner tabs through. The focus ring stays —
+                    the grape one, from .citta — because that is where the
+                    keyboard user now is. */}
                 <h2
                   ref={wordRef}
                   tabIndex={-1}
@@ -305,43 +324,13 @@ function Flashcards({ level, category, onBack, onMarkWord }) {
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button
               onClick={() => advance(false)}
-              style={{
-                flex: 1,
-                border: `1.5px solid ${TOKENS.corolloDeep}`,
-                background: "transparent",
-                color: TOKENS.corolloDeep,
-                borderRadius: 10,
-                padding: "12px 0",
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
+              style={{ ...SECONDARY, flex: 1, padding: "11px 0", fontSize: 14 }}
             >
               <X size={16} /> Still learning
             </button>
             <button
               onClick={() => advance(true)}
-              style={{
-                flex: 1,
-                border: `1.5px solid ${TOKENS.malachiteDeep}`,
-                background: tint(TOKENS.malachite, 14),
-                color: TOKENS.malachiteDeep,
-                borderRadius: 10,
-                padding: "12px 0",
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
+              style={{ ...PRIMARY, flex: 1, padding: "11px 0", fontSize: 14 }}
             >
               <Check size={16} /> I knew it
             </button>
@@ -425,7 +414,7 @@ function Quiz({ level, category, onBack, onMarkWord }) {
   }
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={category.name} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
@@ -450,37 +439,21 @@ function Quiz({ level, category, onBack, onMarkWord }) {
           <SpeakButton text={q.word.it} color={level.accentDeep} size={19} />
         </div>
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gap: 12 }}>
           {q.options.map((opt) => {
             const isSelected = selected && selected.it === opt.it;
             const isAnswer = opt.it === q.word.it;
-            let bg = TOKENS.card;
-            let border = TOKENS.controlLine;
-            let color = TOKENS.ink;
-            if (selected) {
-              if (isAnswer) {
-                bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachiteDeep;
-                color = TOKENS.malachiteDeep;
-              } else if (isSelected) {
-                bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corolloDeep;
-                color = TOKENS.corolloDeep;
-              }
-            }
+            const state = !selected ? null : isAnswer ? "correct" : isSelected ? "incorrect" : null;
             return (
               <button
                 key={opt.it}
                 onClick={() => choose(opt)}
                 style={{
+                  ...optionStyle(state),
                   textAlign: "left",
-                  border: `1.5px solid ${border}`,
-                  background: bg,
-                  color,
-                  borderRadius: 10,
-                  padding: "13px 16px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
+                  padding: "12px 16px",
+                  fontFamily: SANS,
+                  fontWeight: 600,
                   fontSize: 15,
                   cursor: selected ? "default" : "pointer",
                   display: "flex",
@@ -501,23 +474,7 @@ function Quiz({ level, category, onBack, onMarkWord }) {
         {selected && (
           <button
             onClick={next}
-            style={{
-              marginTop: 20,
-              width: "100%",
-              border: "none",
-              background: TOKENS.ink,
-              color: TOKENS.paper,
-              borderRadius: 10,
-              padding: "13px 0",
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
+            style={{ ...PRIMARY, marginTop: 20, width: "100%", padding: "12px 0", fontSize: 15 }}
           >
             {index + 1 >= questions.length ? "See results" : "Next word"} <ChevronRight size={16} />
           </button>
@@ -598,7 +555,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
   }
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={category.name} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
@@ -616,11 +573,15 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
             onClick={() => speakItalian(q.word.it)}
             aria-label="Play again"
             style={{
+              // A neutral city surface, kept round: it is the one control on
+              // the screen that stands for the item, and a round play button
+              // is what the design draws for audio (screen 16's mic). The
+              // icon keeps the level's deep accent, which is text-grade on
+              // the card in both themes.
+              ...citySurface(),
               width: 84,
               height: 84,
               borderRadius: "50%",
-              border: `2px solid ${level.accentDeep}`,
-              background: TOKENS.card,
               color: level.accentDeep,
               cursor: "pointer",
               display: "flex",
@@ -641,37 +602,21 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
           </p>
         )}
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gap: 12 }}>
           {q.options.map((opt) => {
             const isSelected = selected && selected.it === opt.it;
             const isAnswer = opt.it === q.word.it;
-            let bg = TOKENS.card;
-            let border = TOKENS.controlLine;
-            let color = TOKENS.ink;
-            if (selected) {
-              if (isAnswer) {
-                bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachiteDeep;
-                color = TOKENS.malachiteDeep;
-              } else if (isSelected) {
-                bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corolloDeep;
-                color = TOKENS.corolloDeep;
-              }
-            }
+            const state = !selected ? null : isAnswer ? "correct" : isSelected ? "incorrect" : null;
             return (
               <button
                 key={opt.it}
                 onClick={() => choose(opt)}
                 style={{
+                  ...optionStyle(state),
                   textAlign: "left",
-                  border: `1.5px solid ${border}`,
-                  background: bg,
-                  color,
-                  borderRadius: 10,
-                  padding: "13px 16px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
+                  padding: "12px 16px",
+                  fontFamily: SANS,
+                  fontWeight: 600,
                   fontSize: 15,
                   cursor: selected ? "default" : "pointer",
                   display: "flex",
@@ -692,23 +637,7 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
         {selected && (
           <button
             onClick={next}
-            style={{
-              marginTop: 20,
-              width: "100%",
-              border: "none",
-              background: TOKENS.ink,
-              color: TOKENS.paper,
-              borderRadius: 10,
-              padding: "13px 0",
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
+            style={{ ...PRIMARY, marginTop: 20, width: "100%", padding: "12px 0", fontSize: 15 }}
           >
             {index + 1 >= questions.length ? "See results" : "Next word"} <ChevronRight size={16} />
           </button>

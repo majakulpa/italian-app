@@ -47,16 +47,32 @@ export function itemStage(topic, item) {
   return item.stage ?? topic.stage;
 }
 
-// Every staged grammar item with the key its evidence marker hangs off.
-const STAGED_ITEMS = GRAMMAR_LEVELS.flatMap((level) =>
+// The stage of the form the learner actually types, which is what a clean
+// answer is evidence of. Usually the same as itemStage; a drill whose answer
+// is a contrast form (`ho visto` picked against the imperfetto) or no tense at
+// all (an infinitive, a clitic) says otherwise with `formStage`, and `null`
+// there means the answer is evidence of no stage. It never exceeds itemStage —
+// grammar.test.js holds that.
+//
+// Grading and evidence are split on purpose. Grading asks whether the choice
+// is within reach, so it takes the higher stage; evidence asks what was
+// produced, so it takes the form. Counting by itemStage would let the four
+// stage-6 drills that type no congiuntivo establish the congiuntivo.
+export function formStage(topic, item) {
+  return "formStage" in item ? item.formStage : itemStage(topic, item);
+}
+
+// Every grammar item that can be evidence, with the key its marker hangs off.
+const EVIDENCE_ITEMS = GRAMMAR_LEVELS.flatMap((level) =>
   level.topics.flatMap((topic) =>
-    topic.drills.map((item) => ({ key: drillKey(level, topic, item), stage: itemStage(topic, item) })),
+    topic.drills.map((item) => ({ key: drillKey(level, topic, item), stage: formStage(topic, item) })),
   ),
 ).filter((unit) => unit.stage !== null);
 
 // Where the learner is on the ladder.
 //
-//   stages[i].evidence    distinct items of that stage produced clean — "N of 4"
+//   stages[i].evidence    distinct items whose typed form is of that stage,
+//                         produced clean — "N of 4"
 //   stages[i].established evidence has reached EMERGENCE_ITEMS
 //   stages[i].status      "established" | "current" | "above"
 //   current               the lowest stage not yet established
@@ -68,7 +84,7 @@ const STAGED_ITEMS = GRAMMAR_LEVELS.flatMap((level) =>
 // last rung.
 export function stageState(progress) {
   const stages = STAGES.map(({ stage, name }) => {
-    const evidence = STAGED_ITEMS.filter((unit) => unit.stage === stage && hasStageEvidence(progress, unit.key)).length;
+    const evidence = EVIDENCE_ITEMS.filter((unit) => unit.stage === stage && hasStageEvidence(progress, unit.key)).length;
     return { stage, name, evidence, needed: EMERGENCE_ITEMS, established: evidence >= EMERGENCE_ITEMS };
   });
 

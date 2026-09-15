@@ -33,7 +33,16 @@ import { LEVEL_ACCENTS } from "../shared/theme.js";
 // only ever raises: the topic stage is what the drill is testing, and the
 // form being lower doesn't make the choice easier. In the imperfetto topic,
 // `ho visto` is a passato prossimo form picked *against* the imperfetto, so it
-// is stage 3. grammar.test.js holds both rules.
+// is stage 3.
+//
+// That stage decides grading. Evidence is a different question — "dedotto da
+// quello che produci giusto" — so it follows the form actually typed. Where the
+// two differ a drill says so with `formStage`: `ho visto` grades at 3 and is
+// evidence of 2; `abita` after «so che» grades at 6 and is evidence of the
+// presente; an infinitive, a bare clitic or a preposition is evidence of
+// nothing (`formStage: null`). Without the split, four stage-6 drills that type
+// no congiuntivo at all could establish the congiuntivo on their own. A form
+// never sits above the choice it answers. grammar.test.js holds all of it.
 
 // The `lei` = formal "you" sense is deliberately left out: in a conjugation
 // table this column is the third person, and the register point belongs in
@@ -401,13 +410,13 @@ export const GRAMMAR_LEVELS = [
         },
         drills: [
           { id: "1", prompt: "Io ___ alle sette ogni mattina.", en: "I get up at seven every morning.", hint: "alzarsi (to get up) — io", options: ["mi alzo", "ti alzi", "si alza", "mi alza"], answer: "mi alzo" },
-          { id: "2", prompt: "Come ___ chiami?", en: "What's your name? — Italian says \"how do you call yourself?\"", hint: "chiamarsi (to be called) — the pronoun for tu", options: ["ti", "mi", "si", "ci"], answer: "ti" },
+          { id: "2", formStage: null, prompt: "Come ___ chiami?", en: "What's your name? — Italian says \"how do you call yourself?\"", hint: "chiamarsi (to be called) — the pronoun for tu", options: ["ti", "mi", "si", "ci"], answer: "ti" }, // form: a bare clitic
           { id: "3", prompt: "Lei ___ sempre tardi la domenica.", en: "She always wakes up late on Sundays.", hint: "svegliarsi (to wake up) — lei", options: ["si sveglia", "mi sveglio", "si svegliano", "ti svegli"], answer: "si sveglia" },
           { id: "4", prompt: "Noi ___ molto alle feste.", en: "We enjoy ourselves a lot at parties.", hint: "divertirsi (to enjoy oneself) — noi", options: ["ci divertiamo", "vi divertite", "si divertono", "mi diverto"], answer: "ci divertiamo" },
           { id: "5", prompt: "Voi ___ prima di uscire?", en: "Do you (plural) get dressed before going out?", hint: "vestirsi (to get dressed) — voi", options: ["vi vestite", "ci vestiamo", "si vestono", "ti vesti"], answer: "vi vestite" },
           { id: "6", prompt: "I bambini ___ le mani prima di mangiare.", en: "The children wash their hands before eating.", hint: "lavarsi (to wash oneself) — loro", options: ["si lavano", "si lava", "ci laviamo", "vi lavate"], answer: "si lavano" },
           { id: "7", stage: 2, prompt: "Stamattina Anna ___ alle sei.", en: "This morning Anna got up at six.", hint: "alzarsi (to get up) — passato prossimo, lei", options: ["si è alzata", "si è alzato", "ha alzato", "si era alzata"], answer: "si è alzata" }, // A passato prossimo with essere and participle agreement.
-          { id: "8", prompt: "Devo ___ presto domani.", en: "I have to get up early tomorrow.", hint: "alzarsi (to get up) — after an infinitive the pronoun joins on, io", options: ["alzarmi", "alzarsi", "alzarti", "alzarci"], answer: "alzarmi" },
+          { id: "8", formStage: null, prompt: "Devo ___ presto domani.", en: "I have to get up early tomorrow.", hint: "alzarsi (to get up) — after an infinitive the pronoun joins on, io", options: ["alzarmi", "alzarsi", "alzarti", "alzarci"], answer: "alzarmi" }, // form: an infinitive with the clitic joined on: no tense typed
         ],
       },
     ],
@@ -536,10 +545,10 @@ export const GRAMMAR_LEVELS = [
           { id: "1", prompt: "Da bambino ___ sempre al mare in estate.", en: "As a child I always went to the seaside in summer.", hint: "andare (to go) — imperfetto, io", options: ["andavo", "sono andato", "andrò", "andassi"], answer: "andavo" },
           { id: "2", prompt: "___ le sette e pioveva.", en: "It was seven o'clock and it was raining.", hint: "essere (to be) — imperfetto, loro (telling the time takes the plural)", options: ["Erano", "Era", "Sono state", "Sarebbero"], answer: "Erano" },
           { id: "3", prompt: "Mentre noi ___, è arrivato Marco.", en: "While we were eating, Marco arrived.", hint: "mangiare (to eat) — imperfetto, noi", options: ["mangiavamo", "abbiamo mangiato", "mangeremo", "mangiassimo"], answer: "mangiavamo" },
-          { id: "4", prompt: "Ieri sera ___ un film bellissimo.", en: "Last night I watched a wonderful film.", hint: "vedere (to see) — one finished event, so passato prossimo, io", options: ["ho visto", "vedevo", "vedrò", "vedessi"], answer: "ho visto" },
+          { id: "4", formStage: 2, prompt: "Ieri sera ___ un film bellissimo.", en: "Last night I watched a wonderful film.", hint: "vedere (to see) — one finished event, so passato prossimo, io", options: ["ho visto", "vedevo", "vedrò", "vedessi"], answer: "ho visto" },
           { id: "5", prompt: "Mia nonna ___ sempre il pane in casa.", en: "My grandmother always made bread at home.", hint: "fare (to do, to make) — imperfetto, lei", options: ["faceva", "ha fatto", "farà", "facesse"], answer: "faceva" },
           { id: "6", prompt: "Quando ___ piccoli, abitavamo a Bologna.", en: "When we were little, we lived in Bologna.", hint: "essere (to be) — imperfetto, noi", options: ["eravamo", "siamo stati", "saremo", "fossimo"], answer: "eravamo" },
-          { id: "7", prompt: "All'improvviso qualcuno ___ alla porta.", en: "Suddenly someone knocked at the door.", hint: "bussare (to knock) — a sudden event, so passato prossimo, lui", options: ["ha bussato", "bussava", "busserà", "bussasse"], answer: "ha bussato" },
+          { id: "7", formStage: 2, prompt: "All'improvviso qualcuno ___ alla porta.", en: "Suddenly someone knocked at the door.", hint: "bussare (to knock) — a sudden event, so passato prossimo, lui", options: ["ha bussato", "bussava", "busserà", "bussasse"], answer: "ha bussato" },
           { id: "8", prompt: "Ogni estate mio padre ___ in una fabbrica.", en: "Every summer my father worked in a factory.", hint: "lavorare (to work) — imperfetto, lui", options: ["lavorava", "ha lavorato", "lavorerà", "lavorasse"], answer: "lavorava" },
         ],
       },
@@ -647,7 +656,7 @@ export const GRAMMAR_LEVELS = [
           { id: "5", prompt: "Voglio che loro ___ la verità.", en: "I want them to tell the truth.", hint: "dire (to say, to tell) — congiuntivo, loro", options: ["dicano", "dicono", "diranno", "dica"], answer: "dicano" },
           { id: "6", prompt: "Spero che loro ___ il lavoro entro venerdì.", en: "I hope they finish the work by Friday.", hint: "finire (to finish) — congiuntivo, loro", options: ["finiscano", "finiscono", "finiranno", "finiamo"], answer: "finiscano" },
           { id: "7", prompt: "Sebbene lei ___ molto, non è mai soddisfatta.", en: "Although she studies a lot, she's never satisfied.", hint: "studiare (to study) — congiuntivo, lei", options: ["studi", "studia", "studino", "studierà"], answer: "studi" },
-          { id: "8", prompt: "So che lui ___ a Roma da tre anni.", en: "I know he has lived in Rome for three years.", hint: "abitare (to live) — after «so che» you stay in the indicative, lui", options: ["abita", "abiti", "abitino", "abitasse"], answer: "abita" },
+          { id: "8", formStage: 1, prompt: "So che lui ___ a Roma da tre anni.", en: "I know he has lived in Rome for three years.", hint: "abitare (to live) — after «so che» you stay in the indicative, lui", options: ["abita", "abiti", "abitino", "abitasse"], answer: "abita" },
         ],
       },
       {
@@ -783,14 +792,14 @@ export const GRAMMAR_LEVELS = [
           ],
         },
         drills: [
-          { id: "1", prompt: "___ più lentamente, per favore!", en: "Speak more slowly, please! — to a friend.", hint: "parlare (to speak) — imperativo, tu", options: ["Parla", "Parli", "Parlare", "Parlate"], answer: "Parla" },
+          { id: "1", formStage: null, prompt: "___ più lentamente, per favore!", en: "Speak more slowly, please! — to a friend.", hint: "parlare (to speak) — imperativo, tu", options: ["Parla", "Parli", "Parlare", "Parlate"], answer: "Parla" }, // form: the tu imperative of an -are verb: the presente would give parli
           // The Lei imperative is the congiuntivo presente, and that is the form typed
           // — even though parli! is often learnt early, as a formula.
           { id: "2", stage: 6, prompt: "Signora, ___ pure, la ascolto.", en: "Madam, do go ahead and speak, I'm listening.", hint: "parlare (to speak) — imperativo, Lei (the formal you)", options: ["parli", "parla", "parlate", "parlare"], answer: "parli" },
           { id: "3", prompt: "___ questa strada e poi gira a destra.", en: "Take this street and then turn right — to a friend.", hint: "prendere (to take) — imperativo, tu", options: ["Prendi", "Prenda", "Prendete", "Prendere"], answer: "Prendi" },
           { id: "4", prompt: "Ragazzi, ___ attenzione!", en: "Guys, pay attention!", hint: "fare (to do, to make) — imperativo, voi", options: ["fate", "fai", "faccia", "facciamo"], answer: "fate" },
-          { id: "5", prompt: "Non ___ così in fretta!", en: "Don't eat so fast! — to a friend.", hint: "to eat (an -are verb) — negative imperativo, tu", options: ["mangiare", "mangi", "mangia", "mangiate"], answer: "mangiare" },
-          { id: "6", prompt: "___ la verità, ti prego.", en: "Tell me the truth, please — to a friend.", hint: "dirmi (to tell me) — imperativo tu, with the pronoun attached", options: ["Dimmi", "Mi dica", "Dimmelo", "Dici"], answer: "Dimmi" },
+          { id: "5", formStage: null, prompt: "Non ___ così in fretta!", en: "Don't eat so fast! — to a friend.", hint: "to eat (an -are verb) — negative imperativo, tu", options: ["mangiare", "mangi", "mangia", "mangiate"], answer: "mangiare" }, // form: non + infinitive: no tense typed
+          { id: "6", formStage: null, prompt: "___ la verità, ti prego.", en: "Tell me the truth, please — to a friend.", hint: "dirmi (to tell me) — imperativo tu, with the pronoun attached", options: ["Dimmi", "Mi dica", "Dimmelo", "Dici"], answer: "Dimmi" }, // form: di' + mi: an imperative, not the presente dici
           { id: "7", stage: 6, prompt: "Prego, ___, il dottore arriva subito.", en: "Please take a seat, the doctor will be right with you — formal.", hint: "accomodarsi (to take a seat) — imperativo, Lei: the pronoun stays in front", options: ["si accomodi", "accomodati", "si accomoda", "accomodatevi"], answer: "si accomodi" }, // Same as drill 2: si accomodi is a congiuntivo presente form.
           { id: "8", prompt: "___ subito, è tardi!", en: "Let's go right away, it's late!", hint: "andare (to go) — imperativo, noi", options: ["Andiamo", "Andate", "Vai", "Vada"], answer: "Andiamo" },
         ],
@@ -841,15 +850,15 @@ export const GRAMMAR_LEVELS = [
           // The form is a condizionale (5), but the choice is which clause takes the
           // congiuntivo: the distractor is accettassi. Topic stage wins, as ho visto
           // does in the imperfetto.
-          { id: "2", stage: 6, prompt: "Se fossi al tuo posto, non ___ quell'offerta.", en: "If I were in your place, I wouldn't accept that offer.", hint: "accettare (to accept) — condizionale, io", options: ["accetterei", "accettassi", "accetto", "accetterò"], answer: "accetterei" },
+          { id: "2", stage: 6, formStage: 5, prompt: "Se fossi al tuo posto, non ___ quell'offerta.", en: "If I were in your place, I wouldn't accept that offer.", hint: "accettare (to accept) — condizionale, io", options: ["accetterei", "accettassi", "accetto", "accetterò"], answer: "accetterei" },
           { id: "3", stage: 6, prompt: "Se me lo ___, ti avrei aspettato.", en: "If you had told me, I would have waited for you.", hint: "dire (to say, to tell) — congiuntivo trapassato, tu", options: ["avessi detto", "avresti detto", "hai detto", "dicessi"], answer: "avessi detto" }, // congiuntivo trapassato
           { id: "4", stage: 6, prompt: "Se ___ meno, dormirebbe meglio.", en: "If he worked less, he'd sleep better.", hint: "lavorare (to work) — congiuntivo imperfetto, lui", options: ["lavorasse", "lavorerebbe", "lavora", "lavorerà"], answer: "lavorasse" }, // congiuntivo imperfetto
           // condizionale passato (5), picked against fossimo arrivati — as drill 2.
-          { id: "5", stage: 6, prompt: "Se non ci fosse stato lo sciopero, ___ in orario.", en: "If there hadn't been a strike, we would have arrived on time.", hint: "arrivare (to arrive) — condizionale passato, noi", options: ["saremmo arrivati", "fossimo arrivati", "siamo arrivati", "arriveremmo"], answer: "saremmo arrivati" },
+          { id: "5", stage: 6, formStage: 5, prompt: "Se non ci fosse stato lo sciopero, ___ in orario.", en: "If there hadn't been a strike, we would have arrived on time.", hint: "arrivare (to arrive) — condizionale passato, noi", options: ["saremmo arrivati", "fossimo arrivati", "siamo arrivati", "arriveremmo"], answer: "saremmo arrivati" },
           { id: "6", stage: 6, prompt: "Parla come se ___ tutto.", en: "He talks as if he knew everything.", hint: "sapere (to know) — after «come se»: congiuntivo imperfetto, lui", options: ["sapesse", "sa", "saprebbe", "sapeva"], answer: "sapesse" }, // congiuntivo imperfetto after come se
           // A presente, but the drill exists to refuse the congiuntivo in a real
           // if-clause, like congiuntivo-presente drill 8 after so che.
-          { id: "7", stage: 6, prompt: "Se voi ___ presto, troverete posto.", en: "If you (plural) arrive early, you'll find a seat.", hint: "arrivare (to arrive) — a real hypothesis takes the indicative, voi", options: ["arrivate", "arrivaste", "arrivereste", "arriviate"], answer: "arrivate" },
+          { id: "7", stage: 6, formStage: 1, prompt: "Se voi ___ presto, troverete posto.", en: "If you (plural) arrive early, you'll find a seat.", hint: "arrivare (to arrive) — a real hypothesis takes the indicative, voi", options: ["arrivate", "arrivaste", "arrivereste", "arriviate"], answer: "arrivate" },
           { id: "8", stage: 6, prompt: "Se loro ___ la verità, sarebbero più tranquilli.", en: "If they knew the truth, they'd be calmer.", hint: "sapere (to know) — congiuntivo imperfetto, loro", options: ["sapessero", "saprebbero", "sanno", "sapranno"], answer: "sapessero" }, // congiuntivo imperfetto
         ],
       },
@@ -894,8 +903,8 @@ export const GRAMMAR_LEVELS = [
           { id: "6", stage: 1, prompt: "Il film ___ recensito ogni anno dagli studenti.", en: "The film is reviewed every year by the students.", hint: "venire (to come) — passive with venire, lui", options: ["viene", "va", "ha", "sono"], answer: "viene" }, // presente of venire
           { id: "7", stage: 2, prompt: "Ieri ___ molto bene in quella trattoria.", en: "Yesterday we ate very well in that trattoria.", hint: "mangiare (to eat) — impersonal «si» in the past, which takes essere", options: ["si è mangiato", "si ha mangiato", "si mangiano", "si mangerebbe"], answer: "si è mangiato" }, // si è mangiato: passato prossimo.
           // A preposition, so no form of its own: max(topic 1, null) is 1, which is
-          // graded for everyone exactly as null would be.
-          { id: "8", stage: 1, prompt: "Il quadro è stato dipinto ___ un allievo di Giotto.", en: "The painting was painted by a pupil of Giotto.", hint: "by (the agent of a passive sentence)", options: ["da", "di", "con", "per"], answer: "da" },
+          // graded for everyone exactly as null would be, and it is evidence of nothing.
+          { id: "8", stage: 1, formStage: null, prompt: "Il quadro è stato dipinto ___ un allievo di Giotto.", en: "The painting was painted by a pupil of Giotto.", hint: "by (the agent of a passive sentence)", options: ["da", "di", "con", "per"], answer: "da" },
         ],
       },
       {
@@ -945,7 +954,7 @@ export const GRAMMAR_LEVELS = [
           { id: "5", prompt: "Noi ___ in silenzio fino all'alba.", en: "We stayed in silence until dawn.", hint: "stare (to stay) — passato remoto, noi", options: ["stemmo", "stettemmo", "stavamo", "staremmo"], answer: "stemmo" },
           { id: "6", prompt: "Il vecchio ___ il mare per l'ultima volta.", en: "The old man saw the sea for the last time.", hint: "vedere (to see) — passato remoto, lui", options: ["vide", "vedette", "vedeva", "vedrà"], answer: "vide" },
           { id: "7", prompt: "Loro ___ a piedi fino al paese.", en: "They came on foot as far as the village.", hint: "venire (to come) — passato remoto, loro", options: ["vennero", "venirono", "venivano", "verranno"], answer: "vennero" },
-          { id: "8", prompt: "Mentre il treno ___, qualcuno gridò il suo nome.", en: "As the train was leaving, someone shouted his name.", hint: "partire (to leave) — the background scene stays in the imperfetto, lui", options: ["partiva", "partì", "partirà", "partisse"], answer: "partiva" },
+          { id: "8", formStage: 3, prompt: "Mentre il treno ___, qualcuno gridò il suo nome.", en: "As the train was leaving, someone shouted his name.", hint: "partire (to leave) — the background scene stays in the imperfetto, lui", options: ["partiva", "partì", "partirà", "partisse"], answer: "partiva" },
         ],
       },
       {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { STAGES, EMERGENCE_ITEMS, itemStage, stageState, isGraded } from "./stage.js";
+import { STAGES, EMERGENCE_ITEMS, itemStage, formStage, stageState, isGraded } from "./stage.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { drillKey, stageEvidenceKey, markStageProduced, markStageShown, markWord, riservaKey } from "./storage.js";
 import { reviewItem, deferItem, dueCount, dueItems } from "./srs.js";
@@ -19,10 +19,10 @@ const drill = (topicId, itemId) => {
   return { topic, item, key: drillKey(levelOf(topic), topic, item) };
 };
 
-// Every grammar drill with its resolved stage.
+// Every grammar drill with the stage its clean answer is evidence of.
 const ALL = GRAMMAR_LEVELS.flatMap((level) =>
   level.topics.flatMap((topic) =>
-    topic.drills.map((item) => ({ topic, item, key: drillKey(level, topic, item), stage: itemStage(topic, item) })),
+    topic.drills.map((item) => ({ topic, item, key: drillKey(level, topic, item), stage: formStage(topic, item) })),
   ),
 );
 const ofStage = (stage) => ALL.filter((d) => d.stage === stage);
@@ -66,7 +66,46 @@ describe("itemStage", () => {
   });
 });
 
+describe("formStage", () => {
+  it("is the grading stage wherever the item types a form of that stage", () => {
+    const { topic, item } = drill("verbi-modali", "8");
+    expect(formStage(topic, item)).toBe(2);
+  });
+
+  it("is the stage of the contrast form where it differs from the choice", () => {
+    const { topic, item } = drill("imperfetto", "4"); // ho visto
+    expect(itemStage(topic, item)).toBe(3);
+    expect(formStage(topic, item)).toBe(2);
+  });
+
+  // Null has to survive: a clitic in a stage-1 topic is evidence of nothing,
+  // not of the presente by default.
+  it("is null where the typed answer has no tense, even in a staged topic", () => {
+    const { topic, item } = drill("riflessivi", "2"); // ti
+    expect(itemStage(topic, item)).toBe(1);
+    expect(formStage(topic, item)).toBeNull();
+  });
+});
+
 describe("stageState", () => {
+  // The finding that split the two stages: these four grade at 6 and type no
+  // congiuntivo. Four clean answers to them are exactly EMERGENCE_ITEMS, and
+  // must not establish a mood never produced.
+  it("does not establish the congiuntivo on answers that type no congiuntivo", () => {
+    const noCongiuntivo = [
+      drill("congiuntivo-presente", "8"),
+      drill("periodo-ipotetico", "2"),
+      drill("periodo-ipotetico", "5"),
+      drill("periodo-ipotetico", "7"),
+    ];
+    for (const d of noCongiuntivo) expect(itemStage(d.topic, d.item)).toBe(6);
+
+    const state = stageState(produce(EMPTY, noCongiuntivo));
+    expect(state.stages[5]).toMatchObject({ evidence: 0, established: false });
+    expect(state.stages[4].evidence).toBe(2);
+    expect(state.stages[0].evidence).toBe(2);
+  });
+
   it("starts everyone at stage 1, with no evidence anywhere", () => {
     const state = stageState(EMPTY);
 

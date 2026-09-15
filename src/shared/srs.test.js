@@ -367,6 +367,19 @@ describe("deferItem", () => {
     expect(after.schedule[DRILL_KEY]).toEqual({ box: 4, due: TOMORROW, last: TODAY });
   });
 
+  // Answered in the grammar drill, which can be opened any day, three weeks
+  // before the queue would have asked. Deferred means later, never sooner.
+  it("never pulls a met item's due date forward", () => {
+    const farOff = progressWith({ [DRILL_KEY]: "known" }, { [DRILL_KEY]: { box: 5, due: "2026-09-06", last: "2026-08-16" } });
+    const after = deferItem(farOff, DRILL_KEY, TODAY);
+
+    expect(after.schedule[DRILL_KEY]).toEqual({ box: 5, due: "2026-09-06", last: TODAY });
+    expect(dueCount(after, TOMORROW)).toBe(0);
+
+    const dueTomorrow = progressWith({ [DRILL_KEY]: "known" }, { [DRILL_KEY]: { box: 2, due: TOMORROW } });
+    expect(deferItem(dueTomorrow, DRILL_KEY, TODAY).schedule[DRILL_KEY].due).toBe(TOMORROW);
+  });
+
   // reviewItem(false) would put this in box 1 due today — the demotion the
   // stage gate exists to withhold.
   it("does not do what a wrong answer does", () => {

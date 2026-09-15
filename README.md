@@ -262,8 +262,8 @@ categories/dialogues/stories each, and four grammar topics.
 
   It also distinguishes a rank with **no word written down yet** from one the
   learner has not met — a claim about the file against a claim about her — so
-  the lexicon being 300 of a 2,000 target is visible on the grid instead of
-  reading as 1,700 words she failed to learn. The drill keeps that
+  the lexicon being 500 of a 2,000 target is visible on the grid instead of
+  reading as 1,500 words she failed to learn. The drill keeps that
   distinction: a band with no word behind its ranks offers no round rather
   than a drill of nothing, and a band whose words have all been met says so
   instead. And the grid is a picture, not
@@ -300,7 +300,7 @@ categories/dialogues/stories each, and four grammar topics.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency
-  order with English *and* Polish glosses (300 of a 2,000 target so far);
+  order with English *and* Polish glosses (500 of a 2,000 target so far);
   `src/shared/coverage.js` weights each word by 1/rank, Zipf-style, normalised
   so the whole 2,000 comes to 86% of running text. That weighting is the whole
   point — counted flat, memorising the back half of the list would claim half
@@ -318,13 +318,13 @@ categories/dialogues/stories each, and four grammar topics.
 
   La Riserva's drill widened the bridge. Every entry in `fondamentale.js` is a
   unit of its own now, so the ceiling is the worth of the ranks that have a
-  word behind them — **66.1%** and **300 / 2000 solid**, which is the same
+  word behind them — **71.4%** and **500 / 2000 solid**, which is the same
   "top 300 words are worth about two thirds of running text" the weighting
   predicts, arriving from the other side. `coverage.test.js` pins it so it
   cannot move, or fail to move, unnoticed.
 
-  What is left under the cap is the honest bottleneck: 1,700 ranks have no
-  word to drill. Raising it past 66.1% is a content job — accurate entries
+  What is left under the cap is the honest bottleneck: 1,500 ranks have no
+  word to drill. Raising it past 71.4% is a content job — accurate entries
   with English and Polish glosses — and no longer an engineering one.
 - **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
   (boxes 3–4) or `solid` (the top box, reached by answering right at the end of

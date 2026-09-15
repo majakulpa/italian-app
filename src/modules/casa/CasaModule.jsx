@@ -1,9 +1,12 @@
 import React, { useId, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { TOKENS, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { loadProgress, loadCoverageHistory, todayISO } from "../../shared/storage.js";
 import { coverage } from "../../shared/coverage.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
+import { stageState, STAGES } from "../../shared/stage.js";
 import ThemeToggle from "../../shared/ThemeToggle.jsx";
+import StadioScreen from "./StadioScreen.jsx";
 
 // Casa — design screen 19, the fourth tab. What the learner has, said without
 // a streak, and the place settings live.
@@ -29,6 +32,12 @@ import ThemeToggle from "../../shared/ThemeToggle.jsx";
 export default function CasaModule() {
   const [progress] = useState(loadProgress);
   const [points] = useState(loadCoverageHistory);
+  // Lo Stadio opens inside Casa, the way a bench opens inside L'Officina: the
+  // design draws it under the Casa tab, so the tab stays current, and pressing
+  // it comes back here.
+  const [stadio, setStadio] = useState(false);
+
+  if (stadio) return <StadioScreen onExit={() => setStadio(false)} />;
 
   return (
     <div className="citta" style={{ maxWidth: 560, margin: "0 auto", padding: "48px 20px 40px" }}>
@@ -40,6 +49,7 @@ export default function CasaModule() {
       </div>
 
       <CoverageCard progress={progress} points={points} />
+      <StadioDoor progress={progress} onOpen={() => setStadio(true)} />
       <FsiCard />
       <Settings />
 
@@ -162,6 +172,40 @@ function Curve({ points }) {
         Recorded from {formatDate(first.date)}, the first day this app wrote it down. Nothing earlier is drawn.
       </p>
     </figure>
+  );
+}
+
+// The way into Lo Stadio, saying the one thing worth knowing before you go
+// in: which rung you are on.
+function StadioDoor({ progress, onOpen }) {
+  const { name, stage } = STAGES[stageState(progress).current - 1];
+
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        ...citySurface("grape"),
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "12px 16px",
+        marginBottom: 16,
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span lang="it" style={EYEBROW}>
+          Lo Stadio
+        </span>
+        <span style={{ fontFamily: SANS, fontSize: 15, fontWeight: 600 }}>
+          Stage {stage} · <span lang="it">{name}</span>
+        </span>
+      </span>
+      <ChevronRight size={18} aria-hidden="true" style={{ flexShrink: 0 }} />
+    </button>
   );
 }
 

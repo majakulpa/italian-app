@@ -25,6 +25,7 @@ import { TRAP_SETS, FALSI_AMICI } from "./data/falsiAmici.js";
 import { saveProgress, saveCoverageHistory, wordKey, drillKey, trapCaughtKey, riservaKey, articoliKey } from "./shared/storage.js";
 import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
+import { STAGES, formStage } from "./shared/stage.js";
 import * as speech from "./shared/speech.js";
 
 // Accessibility is the one property that isn't any single component's — a
@@ -106,6 +107,26 @@ describe("the app shell", () => {
     await user.click(screen.getByRole("button", { name: "Casa" }));
     expect(screen.getByRole("img", { name: /^Coverage from/ })).toBeInTheDocument();
     await expectNoViolations(container, { fragment: false });
+  });
+
+  // Lo Stadio with all three kinds of rung on it — established, current and
+  // above — and the vorrei card, which is only drawn while stage 5 is above.
+  it("has an accessible Lo Stadio, every kind of rung and the vorrei card", async () => {
+    const stageOne = GRAMMAR_LEVELS.flatMap((level) =>
+      level.topics.flatMap((topic) => topic.drills.filter((item) => formStage(topic, item) === 1).map((item) => drillKey(level, topic, item))),
+    );
+    saveProgress({ words: Object.fromEntries(stageOne.slice(0, 4).map((key) => [`stage-evidence:${key}`, "produced"])), schedule: {} });
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Casa" }));
+    await user.click(screen.getByRole("button", { name: /Lo Stadio/ }));
+    expect(screen.getByText("You are here · 0 of 4 items")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Perché vedi/ })).toBeInTheDocument();
+    await expectNoViolations(container, { fragment: false });
+
+    for (const { name } of STAGES) {
+      expect(screen.getByText(name).closest("[lang]")).toHaveAttribute("lang", "it");
+    }
   });
 
   it("marks the tab labels and Casa's heading as Italian", async () => {

@@ -203,8 +203,8 @@ describe("opening a bench", () => {
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 
-  // The hub bench is Gli Articoli's front door — the NavMenu entry is the
-  // second way in, not the first — so this is the route that has to work.
+  // The hub bench is Gli Articoli's front door, and since the NavMenu went
+  // its only one, so this is the route that has to work.
   it("opens Gli Articoli and comes back to the workshop", async () => {
     const user = userEvent.setup();
     render(<OfficinaModule onExit={() => {}} />);
@@ -230,9 +230,9 @@ describe("opening a bench", () => {
     expect(screen.getByRole("heading", { name: "L'Officina" })).toBeInTheDocument();
   });
 
-  // The hub bench is one of La Riserva's two front doors, the other being the
-  // NavMenu entry it gained when the fascia drill made it a module. Coming
-  // back from here must land in the workshop rather than on the map.
+  // The hub bench is La Riserva's front door — the NavMenu entry it gained
+  // when the fascia drill made it a module went with the menu. Coming back
+  // from here must land in the workshop rather than on the map.
   it("opens La Riserva and comes back to the workshop", async () => {
     const user = userEvent.setup();
     render(<OfficinaModule onExit={() => {}} />);

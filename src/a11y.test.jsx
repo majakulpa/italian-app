@@ -76,10 +76,14 @@ describe("the app shell", () => {
     await expectNoViolations(container, { fragment: false });
   });
 
-  it("has an accessible navigation menu when it's open", async () => {
+  // The tab bar replaced the navigation menu, and the state worth scanning is
+  // the one the menu used to cover: a module open underneath it, with a tab
+  // other than the first marked current.
+  it("has an accessible tab bar over a module, with a tab other than the map current", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
-    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("button", { name: "Officina" }));
+    await user.click(screen.getByRole("button", { name: /Vocabulary/ }));
     await expectNoViolations(container, { fragment: false });
   });
 

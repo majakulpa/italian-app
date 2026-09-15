@@ -7,6 +7,7 @@ import { shuffle } from "../../shared/shuffle.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import { tokenize, splitToken, lookupGloss } from "./gloss.js";
 import TopBar from "../../shared/TopBar.jsx";
+import { TAB_BAR_CLEARANCE } from "../../shared/TabBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
@@ -156,7 +157,9 @@ function Paragraph({ paragraph, level, onWordTap }) {
 }
 
 // Sits at the bottom of the viewport so tapping a word never reflows the
-// text you're reading. Tapping another word swaps its contents in place.
+// text you're reading — just above the app's tab bar, which is fixed there
+// too and would otherwise be covered by it. Tapping another word swaps its
+// contents in place.
 //
 // This is the visual half only. The spoken half is GlossAnnouncer below —
 // this bar is mounted and unmounted with the gloss, which is exactly what a
@@ -178,7 +181,7 @@ function GlossBar({ entry, level, onClose }) {
         position: "fixed",
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: TAB_BAR_CLEARANCE,
         background: TOKENS.card,
         borderTop: `1.5px solid ${level.accent}`,
         boxShadow: "0 -10px 24px -16px rgba(0,0,0,0.5)",

@@ -1,0 +1,50 @@
+# Builds the app and publishes it to GitHub Pages on every merge to main.
+#
+# The site is served from https://majakulpa.github.io/italian-app/, so the
+# build gets `--base=/italian-app/`. It is passed here rather than set in
+# vite.config.js so `npm run dev` and the test suite keep serving from `/`.
+#
+# No SPA fallback (404.html) is needed: the app has no URL router — screens
+# are React state inside one page — so there is only ever one URL to load.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # CLAUDE.md: nothing ships on a red suite.
+      - run: npm test
+      - run: npx vite build --base=/italian-app/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -16,7 +16,12 @@ export default defineConfig({
         theme_color: "#1C3F4A",
         background_color: "#F5F1E6",
         display: "standalone",
-        start_url: "/",
+        // Relative rather than "/": the GitHub Pages build is served from
+        // /italian-app/, and an absolute start_url sends the installed app to
+        // the account root, which 404s. "./" resolves against the manifest's
+        // own URL, so the same manifest works at any base.
+        start_url: "./",
+        scope: "./",
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png" },

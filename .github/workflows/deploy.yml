@@ -11,6 +11,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # The build job (suite + build) also runs on pull requests, so a broken
+  # pipeline shows up on the PR instead of as a 404 after merging. Only the
+  # deploy job is restricted to main.
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -26,10 +30,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          # Not 20: jsdom (via undici) needs Node >= 22.22 or >= 24.15, and on
+          # Node 20 every test file fails to start with
+          # "webidl.util.markAsUncloneable is not a function" — no test runs,
+          # the step fails, and nothing deploys. That was the first run.
+          node-version: 24
           cache: npm
       - run: npm ci
       # CLAUDE.md: nothing ships on a red suite.
@@ -41,6 +49,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -46,7 +46,7 @@ layer](#polish-is-a-first-class-layer).
 | 3 | **L'Officina** — mapping cards, word detail, La Riserva grid + drill, the articles strand | ✅ complete |
 | 4 | **La Piazza** — the review district: typed production, located feedback, a landing screen | ✅ complete |
 | 5 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
-| 6 | **Il Cinema** — the generated serial | later, gated at 600 solid words |
+| 6 | **Il Cinema** — the generated serial | later, gated at 600 solid words. The *district* is open: it routes to the graded readers, which ship |
 | 7 | **Scenes with voice** — the four-phase task loop | last, biggest build |
 
 ### What exists on `main` today
@@ -111,11 +111,27 @@ consecutive days.
 **Coverage is frequency-weighted, not `count / 2000`.** Word rank 12 is worth far
 more than rank 1,900.
 
-**Il Cinema unlocks at 600 solid words + 2 districts finished.** This is the only
-threshold in the design that came out of an experiment rather than judgement: at
-400 known words the best achievable coverage of text written *for* the learner is
-90.1% — roughly one unknown word in ten, which is decoding, not reading. At 600
-it is 97.2%. See [`../research/gen-experiment/`](../research/gen-experiment/).
+**The generated serial unlocks at 600 solid words + 2 districts finished.** This
+is the only threshold in the design that came out of an experiment rather than
+judgement: at 400 known words the best achievable coverage of text written *for*
+the learner is 90.1% — roughly one unknown word in ten, which is decoding, not
+reading. At 600 it is 97.2%. See
+[`../research/gen-experiment/`](../research/gen-experiment/).
+
+**What changed is what it gates, not the number.** It used to gate Il Cinema's
+*district tile*, and that was wrong: the tile routes to the ten hand-written
+graded readers that ship, and solid words come from a lexicon holding 400 of
+its 2,000 target — so the gate asked for more words than the app contains and
+could never open. Worse, it was drifting further out of reach rather than
+closer, since every entry added raises the ceiling and 600 needs 200 more than
+exist. The readers open now; the 600 waits for the serial it was measured for,
+which will live *inside* Il Cinema the way L'Officina holds benches. See
+`src/shared/districts.js`.
+
+This is also a worked example of "only gate on numbers you have measured"
+failing in the other direction: the number was measured, it was just attached
+to the wrong door. A measured threshold still has to be checked against what
+ships before it becomes a lock.
 
 **Coverage is never shown as a percentage of ability, and La Riserva shows no
 percentage at all.** This was open question 1, and the arithmetic was never the

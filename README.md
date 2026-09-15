@@ -33,7 +33,7 @@ install icon appears in the address bar.
 ```
 src/
   App.jsx                        App shell + the MODULES registry
-  Dashboard.jsx                  Home screen: coverage + solid words, level ladder, module cards, review band
+  Dashboard.jsx                  La Città: the coverage headline, the five districts as a map, and what each shut door is waiting on
   shared/
     theme.js                     Colors, fonts, level accent colors — shared by all modules
     storage.js                   localStorage progress persistence (versioned + migrated), shared by all modules
@@ -163,7 +163,9 @@ categories/dialogues/stories each, and four grammar topics.
   imperfetto and passato prossimo, B2 adding congiuntivo and condizionale,
   C1 bringing in the passato remoto, the passive and impersonal si (one C1
   reader is literary, the other journalistic — register is a C1 skill too).
-  From B1 up the comprehension questions are themselves in Italian.
+  The comprehension questions are in Italian at every level, A1 included —
+  an A1 reader is asked `Come beve il caffè Marta?` — so the whole question
+  block is marked `lang="it"`, options and all.
   The whole story scrolls on one page: each paragraph has
   a tap-to-reveal English translation and a pronounce button, and glossed
   words are underlined — tapping one opens a gloss bar at the bottom of the
@@ -332,11 +334,13 @@ categories/dialogues/stories each, and four grammar topics.
   There is no `met` state: reading a story glosses a word but writes no word
   status, so a fifth state for "seen in input, never recalled" would be one no
   code path could produce. It comes back when stories get a word-level write.
-- **Dashboard** — the home screen reads that progress back: coverage and the
-  solid-word count in a header band, an A1–C1 ladder of roundels
-  showing how far each level is, and a progress bar with a real count on each
-  module card. Read-only, and it re-reads storage every time you come back from
-  a module. `src/shared/stats.js` is the only place that counts: its registry
+- **Dashboard** — the home screen reads that progress back as **La Città**: a
+  coverage headline with the solid-word count beside it, and the five
+  districts drawn as a map with a real fraction on each tile. It replaced a
+  ladder of A1–C1 roundels and four module cards; the ladder went because its
+  per-level percentage was the "% complete" figure — content consumed — that
+  the coverage headline exists to replace. Read-only, and it re-reads storage
+  every time you come back from a module. `src/shared/stats.js` is the only place that counts: its registry
   reuses the same key builders the modules write with, so a module card can't
   drift from what that module considers done. Note that "done" on a module
   card and "known" in the coverage band are deliberately different bars — a
@@ -491,6 +495,30 @@ What that translated into in the app:
   tick/cross with visually hidden text, and `shared/AnswerStatus.jsx` is a
   `role="status"` live region that speaks the result after each answer
   (SC 4.1.3), since answering repaints the options without moving focus.
+
+  `AnswerStatus` renders the answer as its own element rather than
+  interpolating it into the sentence, and takes its language from the caller.
+  It used to build one string — `Not quite. The answer is ${answer}.` — so an
+  Italian answer was read with English phonetics (SC 3.1.2), and `lang` marks
+  elements, not substrings. The language is per caller rather than defaulted
+  to Italian because the answer is not always Italian: the grammar drill and
+  the story questions pass an Italian form, the vocabulary quiz passes
+  `word.en`. Defaulting to `it` would mispronounce every vocabulary answer —
+  the same defect pointed the other way.
+
+- **Focus survives an advance.** Every graded screen moves focus deliberately
+  when the control that was just pressed disappears, because otherwise it
+  falls to `<body>` and a keyboard learner re-tabs from the top for every
+  question while a screen reader is told nothing about the new item. Where
+  the screen keeps one control mounted across the transition (the typed
+  benches) it refocuses that; where the answer *is* the control (the quizzes
+  and drills) it focuses the new prompt, which sits immediately before the
+  options in tab order. The landing place is argued in a comment on each
+  screen, because it differs: a deck focuses the word, a chat focuses the new
+  line from the other speaker, and the listening round focuses the replay
+  button, since rendering the word there would answer the question.
+  `SessionSummary` takes focus onto its own title, which covers the last
+  advance in all four modules at once.
   The story reader's word gloss has the same problem and the same answer:
   tapping a glossed word opens a bar at the bottom of the screen without
   moving focus, so `GlossAnnouncer` in `StoriesModule.jsx` reads the word

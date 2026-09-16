@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { SCENES, SCENE_STAGE_PRESENTE } from "./scenes.js";
 import { FONDAMENTALE } from "./fondamentale.js";
+import { DISTRICTS } from "../shared/districts.js";
 
 // Le scene are authored linguistic data, so the invariants below are the ones
 // a human proofreader would apply, written down — the same bargain
@@ -99,7 +100,13 @@ describe("the scenes themselves", () => {
   it("ships the three Mercato scenes, distinctly identified", () => {
     expect(SCENES.map((s) => s.id)).toEqual(["verdura", "salumiere", "quanto-costa"]);
     expect(new Set(SCENES.map((s) => s.title)).size).toBe(SCENES.length);
-    for (const scene of SCENES) expect(scene.district).toBe("mercato");
+    // `district` is resolved against shared/districts.js rather than trusted
+    // as a string, for the same reason `knownRanks` is: nothing wires scenes
+    // into a district yet, so a typo here would sit undetected until the hub
+    // is built and then fail somewhere else entirely.
+    const mercato = DISTRICTS.find((d) => d.name === "Il Mercato");
+    expect(mercato).toBeDefined();
+    for (const scene of SCENES) expect(scene.district).toBe(mercato.id);
   });
 
   it("puts every scene at the presente stage", () => {

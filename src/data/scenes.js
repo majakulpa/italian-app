@@ -128,7 +128,7 @@ export const SCENES = [
         en: "half",
         pl: "pół",
         fondamentaleRank: null,
-        note: "Si accorda con la cosa: mezzo chilo, mezza bottiglia. Il polacco pół non cambia mai.",
+        note: "Si accorda con la cosa: mezzo chilo, mezza bottiglia. In polacco pół davanti a una misura non cambia (pół kilo); è połowa, il sostantivo, che si declina.",
       },
       {
         it: "chilo",
@@ -345,9 +345,12 @@ export const SCENES = [
         en: "to taste, to try (food)",
         // Not `kosztować`, which is a dictionary sense of "taste" and the
         // everyday word for *to cost* — and scene 3 teaches `costare` as
-        // exactly that. `skosztować` carries the tasting sense with nothing
-        // else attached.
-        pl: "spróbować · skosztować",
+        // exactly that. The pair rather than one perfective, because that is
+        // how this repo glosses a verb (`provare` is `próbować` at rank 134,
+        // and the aspect pairs in `fondamentale.js` list the imperfective
+        // first): `próbować` is what you ask at a counter, `spróbować` the
+        // single taste you are asking for.
+        pl: "próbować · spróbować",
         fondamentaleRank: null,
         // The one genuine Polish-only fact in this scene, and the reason the
         // scene has no Polish grammar card: it is a difference to switch off,

@@ -14,7 +14,9 @@ import {
   saveProgress,
   todayISO,
   addDaysISO,
+  stageEvidenceKey,
 } from "../../shared/storage.js";
+import * as srs from "../../shared/srs.js";
 import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, SESSION_LIMIT } from "../../shared/srs.js";
@@ -522,6 +524,174 @@ describe("La Piazza — the round", () => {
 // anything else — that is the whole reason the drill goes through reviewItem
 // rather than keeping a scheduler of its own. What it must not lose on the
 // way is its Polish half.
+// PLAN.md: never grade a structure above the learner's stage. A fresh save is
+// at stage 1, presente, so the congiuntivo is five rungs above it. A wrong
+// typed answer there settles on the spot with every "wrong" surface R3 lists
+// absent, and the queue write is deferItem, not reviewItem.
+describe("a grammar item above the learner's stage", () => {
+  const b2 = GRAMMAR_LEVELS.find((l) => l.id === "B2");
+  const congiuntivo = b2.topics.find((t) => t.id === "congiuntivo-presente");
+  const cong = congiuntivo.drills[0]; // "Penso che Marco ___ ragione." — abbia
+  const CONG_KEY = drillKey(b2, congiuntivo, cong);
+  const TODAY = todayISO();
+  const NOTE =
+    "This form belongs to stage 6, congiuntivo. You are at stage 1, presente, so it is not corrected yet.";
+
+  const seedCong = () => seedDue({ [CONG_KEY]: "known" }, { [CONG_KEY]: { box: 3, due: TODAY, last: TODAY } });
+
+  const expectNoWrongSurface = () => {
+    expect(screen.queryByText("Not there yet")).not.toBeInTheDocument();
+    expect(screen.queryByText("your answer, incorrect")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Have another go/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Write it in Italian")).not.toHaveAttribute("aria-invalid");
+    expect(spoken()).not.toMatch(/Not quite/);
+    // Settled at once: no second attempt, no escape hatch left to press.
+    expect(screen.getByLabelText("Write it in Italian")).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: "Show me" })).not.toBeInTheDocument();
+  };
+
+  it("settles a wrong answer without a single wrong surface, and gives the stage and the form", async () => {
+    const user = userEvent.setup();
+    seedCong();
+    renderReview();
+    await startRound(user);
+    await answer(user, "ha");
+
+    expectNoWrongSurface();
+    expect(screen.getByText("Not corrected yet")).toBeInTheDocument();
+    expect(screen.getByText("congiuntivo").closest('[lang="it"]')).not.toBeNull();
+    expect(screen.getByText(cong.answer).closest('[lang="it"]')).not.toBeNull();
+    expect(spoken()).toBe(`${NOTE} The form is abbia.`);
+  });
+
+  it("defers the item rather than demoting it, and marks it shown", async () => {
+    const reviewSpy = vi.spyOn(srs, "reviewItem");
+    const deferSpy = vi.spyOn(srs, "deferItem");
+    const user = userEvent.setup();
+    seedCong();
+    renderReview();
+    await startRound(user);
+    await answer(user, "ha");
+
+    expect(deferSpy).toHaveBeenCalledWith(expect.anything(), CONG_KEY);
+    expect(reviewSpy).not.toHaveBeenCalled();
+    const saved = loadProgress();
+    expect(saved.words[CONG_KEY]).toBe("known");
+    expect(saved.schedule[CONG_KEY]).toEqual({ box: 3, due: addDaysISO(TODAY, 1), last: TODAY });
+    expect(saved.words[stageEvidenceKey(CONG_KEY)]).toBe("shown");
+  });
+
+  it("treats Show me the same way", async () => {
+    const deferSpy = vi.spyOn(srs, "deferItem");
+    const user = userEvent.setup();
+    seedCong();
+    renderReview();
+    await startRound(user);
+    await user.click(screen.getByRole("button", { name: "Show me" }));
+
+    expectNoWrongSurface();
+    expect(spoken()).toBe(`${NOTE} The form is abbia.`);
+    expect(deferSpy).toHaveBeenCalledWith(expect.anything(), CONG_KEY);
+  });
+
+  it("keeps it out of what is coming back and what is worth another look, and says how many", async () => {
+    const user = userEvent.setup();
+    seedCong();
+    renderReview();
+    await startRound(user);
+    await answer(user, "ha");
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
+
+    expect(screen.queryByText("Worth another look")).not.toBeInTheDocument();
+    expect(screen.getByText("coming back").previousSibling).toHaveTextContent("0");
+    expect(screen.getByText(/1 form was shown but not corrected/)).toBeInTheDocument();
+  });
+
+  // Asymmetric on purpose: a right answer is real evidence of the form.
+  it("promotes a right first answer above stage and counts it as produced", async () => {
+    const user = userEvent.setup();
+    seedCong();
+    renderReview();
+    await startRound(user);
+    await answer(user, cong.answer);
+
+    const saved = loadProgress();
+    expect(saved.schedule[CONG_KEY].box).toBe(4);
+    expect(saved.words[stageEvidenceKey(CONG_KEY)]).toBe("produced");
+  });
+
+  it("does not let the clean answer straight after a showing count", async () => {
+    const user = userEvent.setup();
+    saveProgress({ words: { [CONG_KEY]: "known", [stageEvidenceKey(CONG_KEY)]: "shown" }, schedule: {} });
+    renderReview();
+    await startRound(user);
+    await answer(user, cong.answer);
+
+    expect(loadProgress().words).not.toHaveProperty(stageEvidenceKey(CONG_KEY));
+  });
+});
+
+// At stage 1 a presente item is graded as it always was, and the evidence
+// marker follows R4 on the typed path.
+describe("a grammar item at the learner's stage", () => {
+  it("counts a right first answer as produced", async () => {
+    const user = userEvent.setup();
+    seedDue({ [DRILL_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+    await answer(user, drill.answer);
+
+    expect(loadProgress().words[stageEvidenceKey(DRILL_KEY)]).toBe("produced");
+  });
+
+  it("marks a wrong first answer shown at once, and a second-go right answer does not count", async () => {
+    const user = userEvent.setup();
+    seedDue({ [DRILL_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+    await answer(user, "parla");
+
+    expect(screen.getByText("Not there yet")).toBeInTheDocument();
+    expect(loadProgress().words[stageEvidenceKey(DRILL_KEY)]).toBe("shown");
+
+    await answer(user, drill.answer);
+    expect(loadProgress().words[stageEvidenceKey(DRILL_KEY)]).toBe("shown");
+    expect(loadProgress().schedule[DRILL_KEY].box).toBe(1);
+  });
+
+  it("marks a reveal shown", async () => {
+    const user = userEvent.setup();
+    seedDue({ [DRILL_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+    await user.click(screen.getByRole("button", { name: "Show me" }));
+
+    expect(screen.getByText("Here it is")).toBeInTheDocument();
+    expect(loadProgress().words[stageEvidenceKey(DRILL_KEY)]).toBe("shown");
+  });
+
+  // Articles and vocabulary have no stage: no gate, and no marker ever.
+  it("writes no evidence marker for a vocabulary or article item", async () => {
+    const user = userEvent.setup();
+    seedDue({ [WORD_KEY]: "learning", [CAFFE_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    for (let i = 0; i < 2; i += 1) {
+      if (screen.queryByLabelText("Write it in Italian")) {
+        await answer(user, "zzz");
+        await user.click(screen.getByRole("button", { name: "Show me" }));
+      } else {
+        await pick(user, caffe.options.find((o) => o !== caffe.answer));
+        await pick(user, caffe.options.filter((o) => o !== caffe.answer)[1] ?? caffe.answer);
+      }
+      await user.click(screen.getByRole("button", { name: /Next|See how it went/ }));
+    }
+
+    expect(Object.keys(loadProgress().words).some((k) => k.startsWith("stage-evidence:"))).toBe(false);
+  });
+});
+
 describe("a word from La Riserva", () => {
   // `dire` is rank 17 and splits in Polish: "mówić · powiedzieć".
   const dire = FONDAMENTALE.find((e) => e.it === "dire");

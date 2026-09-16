@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
+import { optionPaint } from "./optionPaint.js";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "../../data/grammar.js";
-import { loadProgress, saveProgress, drillKey, topicKnownCount } from "../../shared/storage.js";
-import { reviewItem } from "../../shared/srs.js";
+import { loadProgress, saveProgress, drillKey, topicKnownCount, markStageShown } from "../../shared/storage.js";
+import { reviewItem, deferItem } from "../../shared/srs.js";
+import { aboveStage, shownNotCorrected } from "../../shared/stage.js";
+import StageNote from "../../shared/StageNote.jsx";
 import { shuffle } from "../../shared/shuffle.js";
 import PerforatedDivider from "../../shared/PerforatedDivider.jsx";
 import TopBar from "../../shared/TopBar.jsx";
@@ -283,12 +286,16 @@ function fillBlank(item) {
   return item.prompt.replace("___", item.answer);
 }
 
-function Drill({ level, topic, onBack, onMarkDrill }) {
+function Drill({ level, topic, progress, onBack, onMarkDrill, onDefer }) {
   const questions = useMemo(() => buildDrillQuestions(topic), [topic]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState([]);
+  // The current item's stage gate when a wrong pick landed above the
+  // learner's stage (shared/stage.js), else null; and how many did.
+  const [gate, setGate] = useState(null);
+  const [deferred, setDeferred] = useState(0);
   const [done, setDone] = useState(false);
   const promptRef = useRef(null);
 
@@ -317,13 +324,28 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
   const choose = (opt) => {
     if (selected) return;
     setSelected(opt);
-    const isCorrect = opt === q.item.answer;
-    onMarkDrill(drillKey(level, topic, q.item), isCorrect ? "known" : "learning");
-    if (isCorrect) {
+    const key = drillKey(level, topic, q.item);
+    if (opt === q.item.answer) {
+      // Promotes exactly as it always has. A pick out of four is recognition,
+      // so it is no evidence of a stage and writes no marker.
+      onMarkDrill(key, "known");
       setCorrectCount((c) => c + 1);
-    } else {
-      setMissed((m) => [...m, q.item]);
+      return;
     }
+
+    // A wrong pick above the learner's stage is not marked wrong: it is
+    // deferred rather than demoted, it is not counted against the score and
+    // it is not listed to review. The gate is read at the moment of the pick,
+    // from progress as it stands.
+    const above = aboveStage(progress, topic, q.item);
+    if (above) {
+      setGate(above);
+      setDeferred((d) => d + 1);
+      onDefer(key);
+      return;
+    }
+    onMarkDrill(key, "learning");
+    setMissed((m) => [...m, q.item]);
   };
 
   const next = () => {
@@ -332,6 +354,7 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
     } else {
       setIndex((i) => i + 1);
       setSelected(null);
+      setGate(null);
     }
   };
 
@@ -341,12 +364,13 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
         level={level}
         title="Drill complete"
         primary={correctCount}
-        primaryLabel={`correct out of ${questions.length}`}
+        primaryLabel={`correct out of ${questions.length - deferred}`}
         secondary={missed.length}
         secondaryLabel="to review"
         missed={missed.map((item) => ({ id: item.id, primary: fillBlank(item), secondary: item.hint }))}
         missedLang="it"
         missedHeading="TO REVIEW"
+        note={deferred > 0 ? shownNotCorrected(deferred) : undefined}
         backLabel="Back to topics"
         onBack={onBack}
       />
@@ -356,7 +380,10 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
   return (
     <div>
       <TopBar level={level} label={topic.name} onBack={onBack} />
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
+      {/* La Città, like the chrome around it and La Piazza, which asks these
+          same items typed: `citta` is what gives every control here the grape
+          focus ring. */}
+      <div className="citta" style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
           <span>{index + 1} / {questions.length}</span>
           <span>{correctCount} correct</span>
@@ -409,47 +436,35 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
 
         <div style={{ display: "grid", gap: 10 }}>
           {q.options.map((opt) => {
-            const isSelected = selected === opt;
             const isAnswer = opt === q.item.answer;
-            let bg = TOKENS.card;
-            let border = TOKENS.controlLine;
-            let color = TOKENS.ink;
-            if (selected) {
-              if (isAnswer) {
-                bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachiteDeep;
-                color = TOKENS.malachiteDeep;
-              } else if (isSelected) {
-                bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corolloDeep;
-                color = TOKENS.corolloDeep;
-              }
-            }
+            // An above-stage pick is not judged, so it stays idle: no tomato,
+            // no cross. See optionPaint.js for the three states.
+            const state = !selected ? "idle" : isAnswer ? "answer" : selected === opt && !gate ? "wrong" : "idle";
+            const paint = optionPaint(state);
             // The option is a real <button> rather than a div with
             // role="button", and the speaker sits beside it rather than
             // inside it: a control nested in a control is announced
             // unpredictably, and Enter/Space come free on the real thing.
+            //
+            // The button is the painted tile and the speaker sits outside it
+            // on the page, rather than both inside one painted row. Inside a
+            // row, each control's grape focus ring would land on the fill,
+            // and dark grape on pistachio or tomato is under 2:1. Out here
+            // both rings land on paper, which theme.test.js holds at 3:1.
             return (
-              <div
-                key={opt}
-                style={{
-                  border: `1.5px solid ${border}`,
-                  background: bg,
-                  borderRadius: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  paddingRight: 10,
-                }}
-              >
+              <div key={opt} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <button
                   onClick={() => choose(opt)}
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     textAlign: "left",
-                    border: "none",
-                    background: "transparent",
-                    color,
-                    padding: "13px 6px 13px 16px",
+                    background: paint.background,
+                    color: paint.color,
+                    border: paint.border,
+                    borderRadius: CITY_RULES.radius,
+                    boxShadow: state === "idle" ? "none" : `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+                    padding: "12px 14px 12px 16px",
                     fontFamily: "'Fraunces', serif",
                     fontWeight: 600,
                     fontSize: 16,
@@ -460,15 +475,45 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
                     gap: 8,
                   }}
                 >
-                  <span lang="it">{opt}</span>
-                  {selected && isAnswer && <AnswerMark state="correct" />}
-                  {selected && isSelected && !isAnswer && <AnswerMark state="incorrect" />}
+                  <span lang="it" style={{ color: paint.color }}>
+                    {opt}
+                  </span>
+                  {state === "answer" && <AnswerMark state="correct" style={{ color: paint.color }} />}
+                  {state === "wrong" && <AnswerMark state="incorrect" style={{ color: paint.color }} />}
                 </button>
-                <SpeakButton text={opt} color={color} size={15} />
+                <SpeakButton text={opt} color={TOKENS.ink} size={15} />
               </div>
             );
           })}
         </div>
+
+        {/* Above the learner's stage the pick is not judged, so what replaces
+            "Not quite" says why and gives the form — on screen here, and
+            spoken through the same live region below. A neutral city card,
+            not a lemon or tomato one: those are the colours of a miss. */}
+        {gate && (
+          <div style={{ ...citySurface(), padding: "14px 16px", marginTop: 16, fontFamily: "'Inter', sans-serif", fontSize: 14, lineHeight: 1.55 }}>
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: 1.6,
+                textTransform: "uppercase",
+                color: TOKENS.inkSoft,
+              }}
+            >
+              Not corrected yet
+            </p>
+            <p style={{ margin: "0 0 6px", color: TOKENS.ink }}>
+              <StageNote gate={gate} />
+            </p>
+            <p style={{ margin: 0, color: TOKENS.ink }}>
+              The form is <b lang="it">{q.item.answer}</b>.
+            </p>
+          </div>
+        )}
 
         {/* The spoken feedback is an English sentence with one Italian word
             dropped into it ("Not quite. The answer is parlo."), so the answer
@@ -476,7 +521,12 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
             renders it as its own element now and takes the language from
             here, because the answer is not Italian everywhere — the
             vocabulary quiz's answer is an English gloss. */}
-        <AnswerStatus correct={selected === null ? null : selected === q.item.answer} answer={q.item.answer} answerLang="it" />
+        <AnswerStatus
+          correct={selected === null ? null : selected === q.item.answer}
+          answer={q.item.answer}
+          answerLang="it"
+          gate={gate}
+        />
 
         {selected && (
           <button
@@ -484,10 +534,11 @@ function Drill({ level, topic, onBack, onMarkDrill }) {
             style={{
               marginTop: 20,
               width: "100%",
-              border: "none",
-              background: TOKENS.ink,
-              color: TOKENS.paper,
-              borderRadius: 10,
+              border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+              boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+              background: CITY_ACCENTS.pistachio.fill,
+              color: CITY_ACCENTS.pistachio.ink,
+              borderRadius: CITY_RULES.radius,
               padding: "13px 0",
               fontFamily: "'Inter', sans-serif",
               fontWeight: 600,
@@ -520,7 +571,15 @@ export default function GrammarModule({ onExit }) {
   const onBack = () => setSession(null);
   // Goes through reviewItem rather than markWord so every answer also moves
   // the drill's Leitner box — ordinary study is what feeds the review queue.
-  const onMarkDrill = (key, status) => setProgress((p) => reviewItem(p, key, status === "known"));
+  //
+  // A wrong pick at or below the learner's stage also marks the item "shown":
+  // the drill has just painted the right option, so the next clean typed
+  // answer to it in La Piazza is a copy of that, not evidence.
+  const onMarkDrill = (key, status) =>
+    setProgress((p) => (status === "known" ? reviewItem(p, key, true) : markStageShown(reviewItem(p, key, false), key)));
+  // Above the learner's stage: deferred, never demoted. deferItem marks the
+  // item "shown" itself.
+  const onDefer = (key) => setProgress((p) => deferItem(p, key));
 
   if (!session) return <GrammarHome onPick={onPick} onExit={onExit} progress={progress} />;
   if (session.mode === "lesson") {
@@ -537,8 +596,10 @@ export default function GrammarModule({ onExit }) {
     <Drill
       level={session.level}
       topic={session.topic}
+      progress={progress}
       onBack={onBack}
       onMarkDrill={onMarkDrill}
+      onDefer={onDefer}
     />
   );
 }

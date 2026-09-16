@@ -19,6 +19,10 @@ import {
   trapCaughtKey,
   isTrapCaught,
   trapsCaughtCount,
+  stageEvidenceKey,
+  hasStageEvidence,
+  markStageShown,
+  markStageProduced,
   PROGRESS_VERSION,
 } from "./storage.js";
 
@@ -328,6 +332,88 @@ describe("trapKey / trapCaughtKey", () => {
     saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
     expect(trapsCaughtCount(loadProgress(), [trap])).toBe(0);
     expect(loadProgress().words["A1:greetings:ciao"]).toBe("known");
+  });
+});
+
+// The marker that decides whether a right answer is evidence of a stage. Every
+// transition is here, because the rule is only as good as its worst edge: one
+// that let a correction be followed straight by a counted answer would make
+// the stage measure how well you copy what you were just shown.
+describe("stage evidence markers", () => {
+  const KEY = "grammar:B1:imperfetto:4";
+  const MARKER = "stage-evidence:grammar:B1:imperfetto:4";
+  const withMarker = (value) => ({ words: { [KEY]: "known", [MARKER]: value }, schedule: {} });
+  const NONE = { words: { [KEY]: "known" }, schedule: {} };
+
+  it("namespaces the marker apart from the unit's own grade", () => {
+    expect(stageEvidenceKey(KEY)).toBe(MARKER);
+    expect(stageEvidenceKey(KEY)).not.toBe(KEY);
+  });
+
+  it("counts as evidence only when the marker says produced", () => {
+    expect(hasStageEvidence(NONE, KEY)).toBe(false);
+    expect(hasStageEvidence(withMarker("shown"), KEY)).toBe(false);
+    expect(hasStageEvidence(withMarker("produced"), KEY)).toBe(true);
+  });
+
+  // The unit's grade is a different fact. A known item is not produced.
+  it("does not read the unit's own status as evidence", () => {
+    expect(hasStageEvidence({ words: { [KEY]: "produced" } }, KEY)).toBe(false);
+  });
+
+  describe("markStageShown", () => {
+    it("marks an item with no marker as shown", () => {
+      expect(markStageShown(NONE, KEY).words[MARKER]).toBe("shown");
+    });
+
+    // Showing always wins: being shown the form undoes earlier evidence.
+    it("overwrites produced", () => {
+      expect(markStageShown(withMarker("produced"), KEY).words[MARKER]).toBe("shown");
+    });
+
+    it("leaves shown as shown", () => {
+      expect(markStageShown(withMarker("shown"), KEY).words[MARKER]).toBe("shown");
+    });
+  });
+
+  describe("markStageProduced", () => {
+    it("marks an item with no marker as produced", () => {
+      expect(markStageProduced(NONE, KEY).words[MARKER]).toBe("produced");
+    });
+
+    it("leaves produced as produced", () => {
+      expect(markStageProduced(withMarker("produced"), KEY).words[MARKER]).toBe("produced");
+    });
+
+    // The clean answer straight after a correction clears the flag and does
+    // not count; the one after that does.
+    it("clears shown without counting it", () => {
+      const cleared = markStageProduced(withMarker("shown"), KEY);
+      expect(cleared.words).not.toHaveProperty(MARKER);
+      expect(hasStageEvidence(cleared, KEY)).toBe(false);
+
+      expect(markStageProduced(cleared, KEY).words[MARKER]).toBe("produced");
+    });
+
+    it("needs a clean answer after the last showing, however many came before", () => {
+      let progress = NONE;
+      progress = markStageProduced(progress, KEY);
+      progress = markStageShown(progress, KEY);
+      progress = markStageProduced(progress, KEY);
+      expect(hasStageEvidence(progress, KEY)).toBe(false);
+      progress = markStageProduced(progress, KEY);
+      expect(hasStageEvidence(progress, KEY)).toBe(true);
+    });
+  });
+
+  it("touches nothing but the marker, and leaves the original progress untouched", () => {
+    const before = withMarker("shown");
+    const snapshot = structuredClone(before);
+
+    expect(markStageShown(before, KEY).words[KEY]).toBe("known");
+    expect(markStageProduced(before, KEY).words[KEY]).toBe("known");
+    expect(markStageProduced(withMarker("produced"), KEY).words[KEY]).toBe("known");
+    expect(before).toEqual(snapshot);
   });
 });
 

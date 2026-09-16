@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { judge, reveal, announce, LOCATED, ATTEMPTS } from "./locatedFeedback.js";
+import { judge, reveal, announce, answered, aboveStageVerdict, LOCATED, ATTEMPTS } from "./locatedFeedback.js";
 import { foldTyped } from "./typedAnswer.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
@@ -316,5 +316,29 @@ describe("announcing a verdict", () => {
     for (const kind of ["exact", "spelling", "revealed"]) {
       expect(LOCATED[kind], kind).toBeUndefined();
     }
+  });
+});
+
+// The verdict for a miss above the learner's stage. It is built by the screen,
+// never by judge(), and everything about it has to stop reading as wrong.
+describe("aboveStageVerdict", () => {
+  const question = { answer: "abbia" };
+  const gate = { stage: { stage: 6, name: "congiuntivo" }, current: { stage: 1, name: "presente" } };
+  const verdict = aboveStageVerdict(question, gate);
+
+  it("settles the item at once and gives the form", () => {
+    expect(verdict).toMatchObject({ correct: false, kind: "above-stage", spent: true, last: true, answer: "abbia", gate });
+  });
+
+  // answered() is what the cross and aria-invalid follow.
+  it("is not an answer the screen may mark wrong", () => {
+    expect(answered(verdict)).toBe(false);
+  });
+
+  it("has no located sentence, and is spoken as the stage and the form", () => {
+    expect(LOCATED["above-stage"]).toBeUndefined();
+    expect(announce(verdict)).toBe(
+      "This form belongs to stage 6, congiuntivo. You are at stage 1, presente, so it is not corrected yet. The form is abbia.",
+    );
   });
 });

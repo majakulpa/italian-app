@@ -5,8 +5,10 @@
 //
 // "learning" and "known" are written by reviewItem for a graded vocab or
 // grammar answer; "done" is written by the stories and conversations modules,
-// whose units are finished rather than known. Those three are the whole set —
-// wordState.test.js pins that no other status can reach the map.
+// whose units are finished rather than known. Those three are the whole set
+// for a unit's own key. The one other value in the map is the stage evidence
+// marker, "shown" or "produced", which lives under its own `stage-evidence:`
+// namespace, is not a unit and is never read as one — see stageEvidenceKey.
 //
 // `words` and `schedule` are deliberately two maps rather than one map of
 // richer objects: the status string is read by every module home and every
@@ -189,6 +191,48 @@ export function isTrapCaught(progress, trap) {
 
 export function trapsCaughtCount(progress, traps) {
   return traps.filter((trap) => isTrapCaught(progress, trap)).length;
+}
+
+// Stage evidence: whether one item's right answer may count toward
+// establishing its stage (see stage.js). Like `falsi-caught:`, a second fact
+// about a unit that already has a grade, so it gets its own namespace rather
+// than widening the status string — no migration, and a save from before the
+// stage model simply has no evidence in it.
+//
+//   stage-evidence:<unit key>  "shown"     the app has put this form on screen
+//                                          for you since your last clean answer
+//                              "produced"  you typed it right first time,
+//                                          without having been shown it
+//
+// The two rules that make this evidence rather than recall of a correction:
+//
+// - Showing always wins. A reveal, a wrong answer — anything after which the
+//   form is on screen — writes "shown", over "produced" if need be.
+// - A clean answer after being shown does not count; it only clears "shown".
+//   So evidence always needs one right answer *after* the last time the app
+//   gave the form away, not the answer that immediately follows it.
+//
+// Which answers are clean is the caller's call: markStageProduced is for a
+// typed, right-first-time answer, and nothing else should reach it.
+export function stageEvidenceKey(key) {
+  return `stage-evidence:${key}`;
+}
+
+export function hasStageEvidence(progress, key) {
+  return progress.words[stageEvidenceKey(key)] === "produced";
+}
+
+export function markStageShown(progress, key) {
+  return markWord(progress, stageEvidenceKey(key), "shown");
+}
+
+export function markStageProduced(progress, key) {
+  const marker = stageEvidenceKey(key);
+  if (progress.words[marker] !== "shown") return markWord(progress, marker, "produced");
+
+  const words = { ...progress.words };
+  delete words[marker];
+  return { ...progress, words };
 }
 
 // La Riserva drills the base vocabulary itself: a gloss, and you type the

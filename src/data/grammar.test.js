@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GRAMMAR_LEVELS, PRONOUN_GLOSS } from "./grammar.js";
+import { STAGES, EMERGENCE_ITEMS, itemStage, formStage } from "../shared/stage.js";
 
 const allTopics = GRAMMAR_LEVELS.flatMap((level) => level.topics.map((topic) => ({ level, topic })));
 const allTables = allTopics.map(({ level, topic }) => ({ level, topic, table: topic.explanation.table }));
@@ -140,4 +141,74 @@ describe("GRAMMAR_LEVELS", () => {
       }
     }
   );
+});
+
+// The stage tags the grading gate reads. See the note at the top of grammar.js
+// for the rule, and shared/stage.js for the ladder.
+describe("stage tags", () => {
+  const LADDER = STAGES.map((s) => s.stage);
+
+  const allItems = allTopics.flatMap(({ level, topic }) =>
+    topic.drills.map((item) => ({ name: `${level.id} · ${topic.id} · ${item.id}`, topic, item })),
+  );
+  const resolved = itemStage;
+
+  it("tags every topic, so no item falls through to undefined", () => {
+    for (const { topic } of allTopics) expect(topic).toHaveProperty("stage");
+  });
+
+  it("resolves every one of the 160 drill items to a stage on the ladder, or to null", () => {
+    expect(allItems).toHaveLength(160);
+    for (const { name, topic, item } of allItems) {
+      const stage = resolved(topic, item);
+      expect(stage === null || LADDER.includes(stage), `${name} resolved to ${stage}`).toBe(true);
+    }
+  });
+
+  // An override is the form typed outranking its topic. A lower one would say
+  // the choice being tested got easier because the answer did, which is how
+  // `ho visto` would end up graded for someone who has never met the imperfetto.
+  it("only lets a per-item stage raise its topic's, never lower it", () => {
+    for (const { name, topic, item } of allItems.filter(({ item }) => "stage" in item)) {
+      expect(LADDER.includes(item.stage), `${name} overrides with ${item.stage}`).toBe(true);
+      if (topic.stage !== null) {
+        expect(item.stage, `${name} lowers ${topic.id}`).toBeGreaterThanOrEqual(topic.stage);
+      }
+    }
+  });
+
+  it("resolves every item's typed form to a stage on the ladder, or to null", () => {
+    for (const { name, topic, item } of allItems) {
+      const stage = formStage(topic, item);
+      expect(stage === null || LADDER.includes(stage), `${name} form resolved to ${stage}`).toBe(true);
+    }
+  });
+
+  // The form answers the choice, so it cannot outrank it: a congiuntivo typed
+  // in a drill graded as presente would mean the grading tag is wrong.
+  it("never puts a typed form above the choice it answers", () => {
+    for (const { name, topic, item } of allItems) {
+      const form = formStage(topic, item);
+      const grading = itemStage(topic, item);
+      if (form === null) continue;
+      expect(grading, `${name} types a stage-${form} form under a null grading stage`).not.toBeNull();
+      expect(form, `${name} types a form above its grading stage`).toBeLessThanOrEqual(grading);
+    }
+  });
+
+  // `formStage` marks where the form differs from the choice. One that repeats
+  // the grading stage says nothing, and hides the ones that matter.
+  it("only carries formStage where it differs from the grading stage", () => {
+    for (const { name, topic, item } of allItems.filter(({ item }) => "formStage" in item)) {
+      expect(item.formStage, `${name} repeats its grading stage`).not.toBe(itemStage(topic, item));
+    }
+  });
+
+  // Counted on the typed form, because that is what evidence counts: a stage
+  // with fewer forms of its own than it takes to establish it could only ever
+  // be established by typing something else, or never.
+  it.each(LADDER)("has enough items typing a stage-%i form to establish it", (stage) => {
+    const count = allItems.filter(({ topic, item }) => formStage(topic, item) === stage).length;
+    expect(count).toBeGreaterThanOrEqual(EMERGENCE_ITEMS);
+  });
 });

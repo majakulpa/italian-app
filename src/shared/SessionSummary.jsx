@@ -38,6 +38,10 @@ export default function SessionSummary({
   // Italian is the same defect in the other direction (WCAG 3.1.2).
   missedLang,
   missedHeading = "TO REVIEW",
+  // One optional sentence under the tallies, for a session with an outcome
+  // neither tally is for — the grammar drill's items above the learner's
+  // stage, which were neither right nor to review.
+  note,
   backLabel = "Back",
   onBack,
 }) {
@@ -79,7 +83,7 @@ export default function SessionSummary({
       >
         {title}
       </h2>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 28 }}>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: note ? 14 : 28 }}>
         <div style={{ ...citySurface("pistachio"), ...TALLY }}>
           <p style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 600, color: CITY_ACCENTS.pistachio.ink, margin: 0 }}>{primary}</p>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: CITY_ACCENTS.pistachio.ink, margin: "4px 0 0" }}>{primaryLabel}</p>
@@ -89,6 +93,12 @@ export default function SessionSummary({
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: CITY_ACCENTS.lemon.ink, margin: "4px 0 0" }}>{secondaryLabel}</p>
         </div>
       </div>
+
+      {note && (
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: TOKENS.inkSoft, margin: "0 0 28px", lineHeight: 1.5 }}>
+          {note}
+        </p>
+      )}
 
       {missed && missed.length > 0 && (
         <div style={{ ...citySurface(), textAlign: "left", padding: "16px 20px", marginBottom: 28 }}>

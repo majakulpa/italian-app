@@ -202,6 +202,27 @@ describe("the grammar module", () => {
     await user.click(screen.getByRole("button", { name: presentAre.drills[0].answer }));
     await expectNoViolations(container);
   });
+
+  // A fresh learner is at stage 1, so a wrong pick in the passato prossimo is
+  // above her stage: the neutral note in place of the red, and its summary.
+  it("has an accessible above-stage pick and the summary line it adds", async () => {
+    const passato = GRAMMAR_LEVELS.find((l) => l.id === "B1").topics.find((t) => t.id === "passato-prossimo");
+    const user = userEvent.setup();
+    const { container } = render(<GrammarModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Intermedio/ }));
+    await user.click(screen.getAllByRole("button", { name: /Drill/ })[0]);
+
+    const [first, ...rest] = passato.drills;
+    await user.click(screen.getByRole("button", { name: first.options.find((o) => o !== first.answer) }));
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: /Next/ }));
+    for (const item of rest) {
+      await user.click(screen.getByRole("button", { name: item.answer }));
+      await user.click(screen.getByRole("button", { name: /Next|See results/ }));
+    }
+    await expectNoViolations(container);
+  });
 });
 
 describe("the conversations module", () => {
@@ -680,6 +701,26 @@ describe("the review session", () => {
     // Wrong twice: settled, revealed, rule and anchor drawn, and the button
     // that carries the item forward has appeared under them.
     await user.click(screen.getByRole("button", { name: "no article" }));
+    await expectNoViolations(container);
+  });
+
+  // The stage gate's own state: a wrong typed answer on an item above a fresh
+  // learner's stage, settled with the neutral card, and the summary line it
+  // adds.
+  it("has an accessible above-stage verdict and summary", async () => {
+    const b2 = GRAMMAR_LEVELS.find((l) => l.id === "B2");
+    const congiuntivo = b2.topics.find((t) => t.id === "congiuntivo-presente");
+    const key = drillKey(b2, congiuntivo, congiuntivo.drills[0]);
+    saveProgress({ words: { [key]: "known" }, schedule: { [key]: { box: 3, due: "2020-01-01" } } });
+
+    const user = userEvent.setup();
+    const { container } = render(<ReviewModule onExit={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Start the round/ }));
+    await user.type(screen.getByLabelText("Write it in Italian"), "ha");
+    await user.click(screen.getByRole("button", { name: /^Check/ }));
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: /See how it went/ }));
     await expectNoViolations(container);
   });
 });

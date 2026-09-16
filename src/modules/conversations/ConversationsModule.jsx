@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, ChevronRight, Check, User } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { CONVERSATION_LEVELS } from "../../data/conversations.js";
 import { loadProgress, saveProgress, markWord, conversationKey, isConversationDone } from "../../shared/storage.js";
 import TopBar from "../../shared/TopBar.jsx";
@@ -14,7 +14,7 @@ function ConversationsHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(CONVERSATION_LEVELS[0]);
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
+    <div className="citta" style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <button
           onClick={onExit}
@@ -61,13 +61,16 @@ function ConversationsHome({ onPick, onExit, progress }) {
               <button
                 onClick={() => onPick(level, dialogue)}
                 style={{
-                  border: "none",
-                  background: TOKENS.ink,
-                  color: TOKENS.paper,
-                  borderRadius: 8,
-                  padding: "8px 12px",
+                  // The pistachio block every city screen moves forward on
+                  // (riserva/DrillRound.jsx's PrimaryButton), at ticket size.
+                  border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+                  borderRadius: CITY_RULES.radius,
+                  boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+                  background: CITY_ACCENTS.pistachio.fill,
+                  color: CITY_ACCENTS.pistachio.ink,
+                  padding: "7px 12px",
                   fontFamily: "'Inter', sans-serif",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 13,
                   cursor: "pointer",
                   display: "flex",
@@ -116,9 +119,12 @@ function ThemBubble({ speakerName, line, level, lineRef }) {
       </div>
       <div
         style={{
-          background: TOKENS.card,
-          border: `1px solid ${TOKENS.line}`,
-          borderRadius: "4px 16px 16px 16px",
+          // Design screen 16: the other speaker's line is a plain city card,
+          // outline and hard shadow, with the corner nearest the speaker
+          // tucked in. Not a control, so the edge is there for the rule, not
+          // for 1.4.11 — it clears 3:1 all the same.
+          ...citySurface(),
+          borderRadius: `4px ${CITY_RULES.radius}px ${CITY_RULES.radius}px ${CITY_RULES.radius}px`,
           padding: "12px 16px",
           maxWidth: "85%",
           display: "flex",
@@ -152,9 +158,13 @@ function YouBubble({ pick, level }) {
       </p>
       <div
         style={{
-          background: tint(level.accent, 15),
-          border: `1.5px solid ${level.accent}`,
-          borderRadius: "16px 4px 16px 16px",
+          // Screen 16 again: the learner's own line is the flat variant — no
+          // fill, no shadow, a dashed outline — so the transcript reads as
+          // two voices without a second colour doing the work. The dash keeps
+          // the level's deep accent, and the text sits straight on the page.
+          background: "transparent",
+          border: `${CITY_RULES.border}px dashed ${level.accentDeep}`,
+          borderRadius: `${CITY_RULES.radius}px 4px ${CITY_RULES.radius}px ${CITY_RULES.radius}px`,
           padding: "12px 16px",
           maxWidth: "85%",
           display: "flex",
@@ -263,7 +273,7 @@ function Dialogue({ level, dialogue, onBack, onMarkDone }) {
   const currentStep = dialogue.steps[stepIndex];
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={dialogue.title} onBack={onBack} />
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 18 }}>
@@ -299,7 +309,7 @@ function Dialogue({ level, dialogue, onBack, onMarkDone }) {
           </p>
         )}
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gap: 12 }}>
           {currentStep.options.map((opt, i) => (
             // The card is a plain container: the reply itself is a real
             // <button>, and the speaker and the translation toggle sit beside
@@ -312,10 +322,12 @@ function Dialogue({ level, dialogue, onBack, onMarkDone }) {
               // the next step's option in the same list position.
               key={`${stepIndex}-${i}`}
               style={{
-                border: `1.5px solid ${TOKENS.controlLine}`,
-                background: TOKENS.card,
-                borderRadius: 10,
-                padding: "13px 16px",
+                // Drawn as Gli Articoli draws an open option (articoli/cards.jsx):
+                // a city card whose 3px outline is the control line, because
+                // this outline is what bounds the reply button inside it.
+                ...citySurface(),
+                border: `${CITY_RULES.border}px solid ${TOKENS.controlLine}`,
+                padding: "12px 16px",
                 display: "flex",
                 flexDirection: "column",
                 gap: 3,

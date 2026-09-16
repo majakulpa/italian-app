@@ -320,6 +320,63 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
       expect(round(contrastRatio(vars[fill], vars["--color-card"])), fill).toBeLessThan(AA_NON_TEXT);
     }
   });
+
+  // The vocab, conversations and stories interiors, as La Città redraws them.
+  // Most of these pairings are held generically above; they are listed here
+  // by what paints them, so a change to one of these screens can be checked
+  // against the list and a pairing nobody thought of has an obvious home.
+  // `min` is 4.5 for text and 3 for a boundary or an icon.
+  const INTERIOR_PAIRS = [
+    // An answered option: the pistachio tile (the answer) and the tomato one
+    // (a wrong pick), each in its own ink, with AnswerMark in currentColor.
+    ["answer text on pistachio", "--color-pistachio-ink", "--color-pistachio", AA_TEXT],
+    ["wrong-pick text on tomato", "--color-tomato-ink", "--color-tomato", AA_TEXT],
+    // Its outline is the fixed city ink, which carries the boundary in light
+    // mode and is invisible on the dark page, where the tile's own fill
+    // carries it instead. Either half may: a list means "the better of".
+    ["pistachio tile on the page", ["--color-city-ink", "--color-pistachio"], "--color-paper", AA_NON_TEXT],
+    ["tomato tile on the page", ["--color-city-ink", "--color-tomato"], "--color-paper", AA_NON_TEXT],
+    ["pistachio action on a ticket", ["--color-city-ink", "--color-pistachio"], "--color-card", AA_NON_TEXT],
+    // An open option, a reply card: the control line, 3px.
+    ["open option outline on the page", "--color-control-line", "--color-paper", AA_NON_TEXT],
+    ["open option outline on its card", "--color-control-line", "--color-card", AA_NON_TEXT],
+    // The flashcard, the secondary buttons, the replay button, the gloss bar
+    // and its close button: the flipping city edge.
+    ["city edge on the page", "--color-city-edge", "--color-paper", AA_NON_TEXT],
+    ["city edge on a card", "--color-city-edge", "--color-card", AA_NON_TEXT],
+    ["secondary button text on the page", "--color-ink", "--color-paper", AA_TEXT],
+    // The grape ring, now that .citta wraps each interior.
+    ["focus ring on the page", "--color-grape", "--color-paper", AA_NON_TEXT],
+    ["focus ring on a card", "--color-grape", "--color-card", AA_NON_TEXT],
+  ];
+
+  it.each(MODES)("%s: every pairing the module interiors paint clears its threshold", (_mode, vars) => {
+    const failures = INTERIOR_PAIRS.map(([label, fg, bg, min]) => [
+      label,
+      Math.max(...[fg].flat().map((colour) => contrastRatio(vars[colour], vars[bg]))),
+      min,
+    ])
+      .filter(([, ratio, min]) => ratio < min)
+      .map(([label, ratio]) => `${label}: ${round(ratio)}`);
+
+    expect(failures).toEqual([]);
+  });
+
+  // The per-level half. The learner's own line in a dialogue is a transparent
+  // bubble with its text in the level's deep accent straight on the page, and
+  // a dashed outline in the same colour; the replay button's icon and the
+  // gloss bar's headword are that accent on the card.
+  it.each(MODES)("%s: every level's deep accent is text-grade on the page and on a card", (_mode, vars) => {
+    const named = (token) => token.match(/var\((--color-[a-z-]+)\)/)[1];
+    const failures = [];
+    for (const [id, { accentDeep }] of Object.entries(LEVEL_ACCENTS)) {
+      for (const surface of ["--color-paper", "--color-card"]) {
+        const ratio = contrastRatio(vars[named(accentDeep)], vars[surface]);
+        if (ratio < AA_TEXT) failures.push(`${id} accentDeep on ${surface}: ${round(ratio)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
 });
 
 describe("the four rules of the city design system", () => {

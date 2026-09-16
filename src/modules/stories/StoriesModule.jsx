@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { ArrowLeft, ChevronRight, Check, Clock, X } from "lucide-react";
-import { TOKENS, tint } from "../../shared/theme.js";
+import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { STORY_LEVELS } from "../../data/stories.js";
 import { loadProgress, saveProgress, markWord, storyKey, isStoryDone } from "../../shared/storage.js";
 import { shuffle } from "../../shared/shuffle.js";
@@ -16,11 +16,31 @@ import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
 
+const SANS = "'Inter', sans-serif";
+
+// The pistachio block every city screen moves forward on — the same shape as
+// riserva/DrillRound.jsx's PrimaryButton. Its outline is the fixed city ink;
+// in dark mode the bright fill is what carries 3:1 against the page.
+const PRIMARY = {
+  border: `${CITY_RULES.border}px solid ${TOKENS.cityInk}`,
+  borderRadius: CITY_RULES.radius,
+  boxShadow: `${CITY_RULES.shadowSmall} ${TOKENS.cityShadow}`,
+  background: CITY_ACCENTS.pistachio.fill,
+  color: CITY_ACCENTS.pistachio.ink,
+  fontFamily: SANS,
+  fontWeight: 700,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+};
+
 function StoriesHome({ onPick, onExit, progress }) {
   const [level, setLevel] = useState(STORY_LEVELS[0]);
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
+    <div className="citta" style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <button
           onClick={onExit}
@@ -65,21 +85,7 @@ function StoriesHome({ onPick, onExit, progress }) {
             >
               <button
                 onClick={() => onPick(level, story)}
-                style={{
-                  border: "none",
-                  background: TOKENS.ink,
-                  color: TOKENS.paper,
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  whiteSpace: "nowrap",
-                }}
+                style={{ ...PRIMARY, padding: "7px 12px", fontSize: 13, whiteSpace: "nowrap" }}
               >
                 {done ? "Read again" : "Read"} <ChevronRight size={15} />
               </button>
@@ -181,10 +187,27 @@ function GlossBar({ entry, level, onClose }) {
         position: "fixed",
         left: 0,
         right: 0,
+        // Docked above the tab bar rather than at bottom: 0 — the bar owns
+        // that strip now, and the gloss would sit under it.
         bottom: TAB_BAR_CLEARANCE,
+        // The reader drops the design system (screen 14); the gloss does not
+        // (screen 15), so this is where the city comes back: a neutral card
+        // in the 3px flipping edge, rounded at the top where it rises off the
+        // page. No blurred shadow — rule 2 — and none offset either, since a
+        // down-right shadow on a bar docked to the bottom would fall off the
+        // screen.
+        //
+        // The edge used to be the level's fill accent. It bounds a region,
+        // not a control, so 1.4.11 never asked it for 3:1 — but it is also
+        // the only line between the gloss and the paragraph it overlaps, and
+        // in the fill accent it sat under 3:1 against the dark card at every
+        // level (1.82 for B2 up to 2.71 for C1). The city edge clears 3:1 on
+        // every surface in both themes.
         background: TOKENS.card,
-        borderTop: `1.5px solid ${level.accent}`,
-        boxShadow: "0 -10px 24px -16px rgba(0,0,0,0.5)",
+        borderTop: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+        borderLeft: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+        borderRight: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+        borderRadius: `${CITY_RULES.radius}px ${CITY_RULES.radius}px 0 0`,
         zIndex: 15,
       }}
     >
@@ -203,7 +226,18 @@ function GlossBar({ entry, level, onClose }) {
         <button
           onClick={onClose}
           aria-label="Close gloss"
-          style={{ border: "none", background: "transparent", cursor: "pointer", color: TOKENS.inkSoft, display: "flex", padding: 6, flexShrink: 0 }}
+          style={{
+            // A real outline now, in the flipping edge: the icon alone was
+            // the only sign this was a button.
+            border: `${CITY_RULES.border}px solid ${TOKENS.cityEdge}`,
+            borderRadius: CITY_RULES.radius,
+            background: "transparent",
+            cursor: "pointer",
+            color: TOKENS.ink,
+            display: "flex",
+            padding: 7,
+            flexShrink: 0,
+          }}
         >
           <X size={18} />
         </button>
@@ -248,7 +282,7 @@ function Reader({ level, story, onBack, onStartQuestions }) {
   const [glossEntry, setGlossEntry] = useState(null);
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={story.title} onBack={onBack} />
       {/* The bottom padding leaves room for the gloss bar, so the last
           paragraph and the questions button stay reachable while it's up. */}
@@ -266,23 +300,7 @@ function Reader({ level, story, onBack, onStartQuestions }) {
 
         <button
           onClick={onStartQuestions}
-          style={{
-            marginTop: 10,
-            width: "100%",
-            border: "none",
-            background: TOKENS.ink,
-            color: TOKENS.paper,
-            borderRadius: 10,
-            padding: "14px 0",
-            fontFamily: "'Inter', sans-serif",
-            fontWeight: 600,
-            fontSize: 15,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-          }}
+          style={{ ...PRIMARY, marginTop: 10, width: "100%", padding: "13px 0", fontSize: 15 }}
         >
           Comprehension questions <ChevronRight size={16} />
         </button>
@@ -365,7 +383,7 @@ function Questions({ level, story, onBack, onMarkDone }) {
   }
 
   return (
-    <div>
+    <div className="citta">
       <TopBar level={level} label={story.title} onBack={onBack} />
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "28px 20px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginBottom: 14 }}>
@@ -386,37 +404,29 @@ function Questions({ level, story, onBack, onMarkDone }) {
           {q.prompt}
         </h2>
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gap: 12 }}>
           {q.options.map((opt) => {
             const isSelected = selected === opt;
             const isAnswer = opt === q.answer;
-            let bg = TOKENS.card;
-            let border = TOKENS.controlLine;
-            let color = TOKENS.ink;
-            if (selected) {
-              if (isAnswer) {
-                bg = tint(TOKENS.malachite, 12);
-                border = TOKENS.malachiteDeep;
-                color = TOKENS.malachiteDeep;
-              } else if (isSelected) {
-                bg = tint(TOKENS.corallo, 12);
-                border = TOKENS.corolloDeep;
-                color = TOKENS.corolloDeep;
-              }
-            }
+            // Settled the way Gli Articoli settles an option
+            // (articoli/cards.jsx): a pistachio tile for the answer, a tomato
+            // one for a wrong pick, each in its own ink, and a neutral card in
+            // the control line for everything else. AnswerMark below is what
+            // keeps that from being colour alone.
+            const paint = !selected ? null : isAnswer ? CITY_ACCENTS.pistachio : isSelected ? CITY_ACCENTS.tomato : null;
             return (
               <button
                 key={opt}
                 onClick={() => choose(opt)}
                 style={{
+                  ...citySurface(),
+                  background: paint ? paint.fill : TOKENS.card,
+                  color: paint ? paint.ink : TOKENS.ink,
+                  border: `${CITY_RULES.border}px solid ${paint ? TOKENS.cityInk : TOKENS.controlLine}`,
                   textAlign: "left",
-                  border: `1.5px solid ${border}`,
-                  background: bg,
-                  color,
-                  borderRadius: 10,
-                  padding: "13px 16px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
+                  padding: "12px 16px",
+                  fontFamily: SANS,
+                  fontWeight: 600,
                   fontSize: 15,
                   cursor: selected ? "default" : "pointer",
                   display: "flex",
@@ -442,23 +452,7 @@ function Questions({ level, story, onBack, onMarkDone }) {
             </p>
             <button
               onClick={next}
-              style={{
-                marginTop: 18,
-                width: "100%",
-                border: "none",
-                background: TOKENS.ink,
-                color: TOKENS.paper,
-                borderRadius: 10,
-                padding: "13px 0",
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: 15,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
+              style={{ ...PRIMARY, marginTop: 18, width: "100%", padding: "12px 0", fontSize: 15 }}
             >
               {index + 1 >= questions.length ? "See results" : "Next question"} <ChevronRight size={16} />
             </button>

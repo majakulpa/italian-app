@@ -25,11 +25,11 @@
 // routes to `stories`: ten hand-written graded readers that ship today.
 //
 // Gating those on 600 solid words made them unreachable, because solid words
-// come from the lexicon and `data/fondamentale.js` holds 400 of its 2,000
-// target — so the ceiling is 400, pinned in `coverage.test.js` at 69.1%. The
-// gate asked for half again as many words as the app contains, and it moved
-// further out of reach rather than closer as the list grew: every entry
-// added raises the ceiling, and 600 needs 200 more than exist. Every test
+// come from the lexicon and `data/fondamentale.js` holds 500 of its 2,000
+// target — so the ceiling is 500, pinned in `coverage.test.js` at 71.4%. The
+// gate asked for a fifth again as many words as the app contains, and it
+// moved further out of reach rather than closer as the list grew: every
+// entry added raises the ceiling, and 600 needs 100 more than exist. Every test
 // that proved the door opened had to mock a solid count past that ceiling to
 // do it, which is the tell — the district was shut for good, and the ten
 // stories behind it were reachable only through the NavMenu.

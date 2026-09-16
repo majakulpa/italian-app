@@ -26,8 +26,8 @@ const legalArticle = (article, noun) => {
 };
 
 describe("FONDAMENTALE", () => {
-  it("ships the first 400 of a 2,000-word target", () => {
-    expect(FONDAMENTALE).toHaveLength(400);
+  it("ships the first 500 of a 2,000-word target", () => {
+    expect(FONDAMENTALE).toHaveLength(500);
     expect(FONDAMENTALE_TARGET).toBe(2000);
     expect(FONDAMENTALE.length).toBeLessThanOrEqual(FONDAMENTALE_TARGET);
   });
@@ -176,6 +176,14 @@ describe("FONDAMENTALE — the article convention", () => {
     // which are nouns either — the same cost the comment above already names.
     "due", "tre", "cinque", "sei", "sette", "nove", "dieci", "mille",
     "blu", "verde", "marrone", "felice", "triste",
+    // Ranks 401–500 added the rest of the numerals under a hundred, one
+    // opaque-ending adjective (`arancione`), and four reflexive infinitives
+    // whose `-arsi`/`-ersi` ending the verb regex below doesn't recognise
+    // as a verb ending, plus three opaque-ending adverbs.
+    "undici", "dodici", "tredici", "quattordici", "quindici", "sedici",
+    "diciassette", "diciannove", "venti", "arancione",
+    "chiamarsi", "alzarsi", "svegliarsi", "sedersi",
+    "tardi", "insieme", "forse",
   ]);
 
   it("leaves no noun with an opaque ending standing bare", () => {

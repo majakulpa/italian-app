@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import VocabModule from "./VocabModule.jsx";
 import { LEVELS } from "../../data/vocab.js";
-import { TOKENS } from "../../shared/theme.js";
+import { TOKENS, CITY_ACCENTS } from "../../shared/theme.js";
 import { loadProgress, wordKey, todayISO } from "../../shared/storage.js";
 import * as speech from "../../shared/speech.js";
 
@@ -281,7 +281,9 @@ describe("Quiz", () => {
     await user.click(correctButton);
 
     expect(screen.getByText("1 correct")).toBeInTheDocument();
-    expect(correctButton).toHaveStyle({ color: TOKENS.malachiteDeep });
+    // Painted as La Città paints a settled answer (articoli/cards.jsx): the
+    // pistachio tile in its own ink. AnswerMark carries the same news in text.
+    expect(correctButton).toHaveStyle({ background: CITY_ACCENTS.pistachio.fill, color: CITY_ACCENTS.pistachio.ink });
 
     await user.click(screen.getByRole("button", { name: /Next word/ }));
     expect(screen.getByText(greetings.words[1].it)).toBeInTheDocument();
@@ -302,8 +304,14 @@ describe("Quiz", () => {
     await user.click(wrongButton);
 
     expect(screen.getByText("0 correct")).toBeInTheDocument();
-    expect(wrongButton).toHaveStyle({ color: TOKENS.corolloDeep });
-    expect(screen.getByRole("button", { name: `${word0.en} correct answer` })).toHaveStyle({ color: TOKENS.malachiteDeep });
+    expect(wrongButton).toHaveStyle({ background: CITY_ACCENTS.tomato.fill, color: CITY_ACCENTS.tomato.ink });
+    expect(screen.getByRole("button", { name: `${word0.en} correct answer` })).toHaveStyle({
+      background: CITY_ACCENTS.pistachio.fill,
+      color: CITY_ACCENTS.pistachio.ink,
+    });
+    // A distractor nobody picked stays a neutral card: only the pick and the
+    // answer are painted.
+    expect(screen.getByRole("button", { name: greetings.words[2].en })).toHaveStyle({ background: TOKENS.card, color: TOKENS.ink });
   });
 
   // Same dropped focus as the flashcard deck: "Next word" unmounts itself,

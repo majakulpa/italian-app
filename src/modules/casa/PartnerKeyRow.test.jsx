@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { configure, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import SceneKeyRow, { SAVED, REMOVED } from "./SceneKeyRow.jsx";
-import { forget, isUnlocked, lockedKey, hasStoredKey } from "../../shared/sceneKey.js";
+import PartnerKeyRow, { SAVED, REMOVED } from "./PartnerKeyRow.jsx";
+import { forget, isUnlocked, lockedKey, hasStoredKey } from "../../shared/partnerKey.js";
 import { loadProgress, saveProgress, riservaKey } from "../../shared/storage.js";
 import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { FAKE_KEY } from "../../test/fakeKey.js";
@@ -48,7 +48,7 @@ async function setKey(user, key = FAKE_KEY, pin = "4821") {
 
 describe("Casa's scene-partner key row", () => {
   it("states the four facts about the key whether or not one is stored", () => {
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     expect(screen.getByRole("heading", { name: "Partner di scena" })).toBeInTheDocument();
     // The shared origin, named, with the number of sites on it.
@@ -64,7 +64,7 @@ describe("Casa's scene-partner key row", () => {
   });
 
   it("marks its Italian as Italian", () => {
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     expect(screen.getByText("Partner di scena")).toHaveAttribute("lang", "it");
     expect(screen.getByText("Prova")).toHaveAttribute("lang", "it");
@@ -72,7 +72,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("takes a key and a PIN, stores ciphertext, and then offers Remove", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await setKey(user);
 
@@ -94,7 +94,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("shows a masked tail from memory, and nothing of the key itself", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await setKey(user);
 
@@ -103,13 +103,13 @@ describe("Casa's scene-partner key row", () => {
 
   it("says a key is stored on a fresh load, with no tail, because the key is locked", async () => {
     const user = userEvent.setup();
-    const first = render(<SceneKeyRow />);
+    const first = render(<PartnerKeyRow />);
     await setKey(user);
     first.unmount();
 
     // A reload: storage survives, the decrypted key does not.
     forget();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     expect(shown(new RegExp(SAVED))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove the key" })).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("removes the key from storage and from memory, and announces it", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
     await setKey(user);
 
     await user.click(screen.getByRole("button", { name: "Remove the key" }));
@@ -135,7 +135,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("keeps focus and the announcement on the heading after a save", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await setKey(user);
 
@@ -145,7 +145,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("refuses something that is not a key, on the key field, and stores nothing", async () => {
     const user = userEvent.setup();
-    const { container } = render(<SceneKeyRow />);
+    const { container } = render(<PartnerKeyRow />);
 
     await user.type(keyField(), "hunter2");
     await user.type(pinField(), "4821");
@@ -166,7 +166,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("refuses a PIN that is too short, on the PIN field", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await user.type(keyField(), FAKE_KEY);
     await user.type(pinField(), "12");
@@ -185,7 +185,7 @@ describe("Casa's scene-partner key row", () => {
       throw new Error("QuotaExceededError");
     });
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await user.type(keyField(), FAKE_KEY);
     await user.type(pinField(), "4821");
@@ -201,7 +201,7 @@ describe("Casa's scene-partner key row", () => {
 
   it("says what it is doing while the PIN is being stretched", async () => {
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await user.type(keyField(), FAKE_KEY);
     await user.type(pinField(), "4821");
@@ -215,7 +215,7 @@ describe("Casa's scene-partner key row", () => {
   it("writes nothing into the progress blob", async () => {
     saveProgress({ words: { [riservaKey(FONDAMENTALE[0])]: "known" }, schedule: {} });
     const user = userEvent.setup();
-    render(<SceneKeyRow />);
+    render(<PartnerKeyRow />);
 
     await setKey(user);
 

@@ -1,12 +1,12 @@
 import React, { useId, useRef, useState } from "react";
 import { KeyRound, Trash2 } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
-import { save, remove, hasStoredKey, maskedKey } from "../../shared/sceneKey.js";
+import { save, remove, hasStoredKey, maskedKey } from "../../shared/partnerKey.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 
 // Casa's second settings row: where the scene-partner key is set and removed.
 //
-// The crypto and the argument for it are in shared/sceneKey.js. This file is
+// The crypto and the argument for it are in shared/partnerKey.js. This file is
 // the form, and the copy — which is the half that is easy to get wrong, so it
 // is worth saying what the copy is for.
 //
@@ -37,7 +37,7 @@ const MESSAGES = {
 export const SAVED = "The key is stored on this device, encrypted with your PIN.";
 export const REMOVED = "The key has been removed from this device.";
 
-export default function SceneKeyRow() {
+export default function PartnerKeyRow() {
   const [stored, setStored] = useState(hasStoredKey);
   const [masked, setMasked] = useState(maskedKey);
   const [key, setKey] = useState("");
@@ -68,7 +68,7 @@ export default function SceneKeyRow() {
     if (!result.ok) return setError(result.reason);
 
     // Cleared from the form as well as from the screen: the state that held
-    // the key was the last copy of it outside sceneKey's own memory.
+    // the key was the last copy of it outside partnerKey's own memory.
     setKey("");
     setPin("");
     setStored(true);

@@ -2,13 +2,14 @@
 // memory. Nothing here talks to Anthropic — that is the next slice. This file
 // is only the lock on the drawer.
 //
-// ── Not to be confused with storage.js's sceneKey() ─────────────────────
+// ── Named partnerKey, not sceneKey, on purpose ──────────────────────────
 // `storage.js` exports a `sceneKey(scene, word)` that builds a progress key
-// for a word a scene introduced. It has nothing to do with this file, which
-// is about an API key. The two never meet: nothing imports both, and the
-// progress blob must never contain anything from here. The clash is in the
-// English word "key", and is worth knowing about before a search for
-// "sceneKey" returns two unrelated things.
+// for a word a scene introduced — nothing to do with an API key. This file
+// was called `sceneKey.js` for exactly one commit, which put two unrelated
+// meanings of "key" one letter apart in the same directory. It is the
+// *partner* key: the credential for the scene partner. The two never meet —
+// nothing imports both, and the progress blob must never contain anything
+// from here.
 //
 // ── Why the key is encrypted at all ─────────────────────────────────────
 // This app is published to GitHub Pages at majakulpa.github.io/italian-app/,

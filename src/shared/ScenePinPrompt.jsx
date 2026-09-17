@@ -1,12 +1,12 @@
 import React, { useId, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "./theme.js";
-import { unlock } from "./sceneKey.js";
+import { unlock } from "./partnerKey.js";
 import LiveStatus from "./LiveStatus.jsx";
 
 // The PIN gate. Asked for once per app run, immediately before a scene needs
 // its partner, and never anywhere else — this is the only screen in the app
-// that asks for a PIN, and it unlocks exactly one thing (see sceneKey.js).
+// that asks for a PIN, and it unlocks exactly one thing (see partnerKey.js).
 //
 // It is built here, in this slice, without being wired to anything: phase 05
 // is the next slice, and a component with no caller is still worth landing

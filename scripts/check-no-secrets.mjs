@@ -10,7 +10,7 @@
 // ── The four decisions ──────────────────────────────────────────────────
 //
 // 1. A *whole* key shape, not the prefix. `sk-ant-` on its own appears in this
-//    repo legitimately: shared/sceneKey.js checks a pasted key starts with it,
+//    repo legitimately: shared/partnerKey.js checks a pasted key starts with it,
 //    and Casa's copy tells the learner what a key looks like. A guard that
 //    fired on those would be a guard somebody switches off in week one. The
 //    pattern below wants the prefix, the key type, its two digits and forty or

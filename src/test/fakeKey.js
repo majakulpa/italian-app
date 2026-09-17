@@ -12,7 +12,7 @@
 //
 // Joined from pieces, no tracked file contains the shape, the guard stays
 // strict, and what the tests exercise is identical — the string at run time
-// is a whole key shape, which is what `sceneKeyFixture`'s own test asserts by
+// is a whole key shape, which is what `partnerKey`'s own test asserts by
 // feeding it to the guard's matcher.
 export const FAKE_KEY = ["sk", "ant", "api03", `${"Aa1_-".repeat(11)}Zz`].join("-");
 

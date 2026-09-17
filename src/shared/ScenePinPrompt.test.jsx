@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { configure, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ScenePinPrompt, { WRONG_PIN } from "./ScenePinPrompt.jsx";
-import { save, forget, isUnlocked, lockedKey } from "./sceneKey.js";
+import { save, forget, isUnlocked, lockedKey } from "./partnerKey.js";
 import { FAKE_KEY } from "../test/fakeKey.js";
 import { expectNoViolations } from "../test/a11y.js";
 

@@ -31,7 +31,7 @@ import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import { STAGES, formStage } from "./shared/stage.js";
 import * as speech from "./shared/speech.js";
-import { save as saveSceneKey, forget as forgetSceneKey } from "./shared/sceneKey.js";
+import { save as saveSceneKey, forget as forgetSceneKey } from "./shared/partnerKey.js";
 import { FAKE_KEY } from "./test/fakeKey.js";
 
 // Accessibility is the one property that isn't any single component's — a
@@ -133,7 +133,7 @@ describe("the app shell", () => {
   // different markup: a two-field form, and a sentence plus a Remove button.
   // The scan above catches the form (it is the default), so this one catches
   // the other half. Real PBKDF2 runs to get there, which is why it saves
-  // through sceneKey rather than writing a fixture into the slot by hand — a
+  // through partnerKey rather than writing a fixture into the slot by hand — a
   // handwritten blob would not decrypt, and the row would draw the wrong state.
   it("has an accessible Casa with a scene-partner key already stored", async () => {
     await saveSceneKey(FAKE_KEY, "4821");

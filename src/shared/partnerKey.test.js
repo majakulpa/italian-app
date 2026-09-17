@@ -12,7 +12,7 @@ import {
   pinLooksRight,
   PBKDF2_ITERATIONS,
   RECORD_VERSION,
-} from "./sceneKey.js";
+} from "./partnerKey.js";
 import { loadProgress, saveProgress, saveCoverageHistory, saveThemeMode, riservaKey } from "./storage.js";
 import { FONDAMENTALE } from "../data/fondamentale.js";
 import { FAKE_KEY, OTHER_FAKE_KEY } from "../test/fakeKey.js";

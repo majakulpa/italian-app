@@ -197,15 +197,33 @@ describe("FONDAMENTALE — the article convention", () => {
     "forte", "debole", "gentile",
   ]);
 
-  it("leaves no noun with an opaque ending standing bare", () => {
+  // The five months whose ending is opaque. They are nouns, so they are not
+  // in NON_NOUNS, and they are bare rather than articled because a month is
+  // not used with one — `ad aprile`, not `l'aprile`. Nothing is hidden by
+  // that: every month is masculine, which is one fact stated in the data
+  // file rather than twelve articles, five of them teaching a form nobody
+  // would say. Declared here so a *different* opaque noun cannot slip in
+  // bare behind them.
+  const MONTHS = new Set(["aprile", "settembre", "ottobre", "novembre", "dicembre"]);
+
+  it("leaves no noun with an opaque ending standing bare, months aside", () => {
     // A vowel-initial opaque noun elides to `l'` and is not "bare" in the
     // sense this test means — it carries an article, just not a spaced one —
     // so it is excluded here and checked on its own terms below.
     const bare = FONDAMENTALE.filter((w) => !ARTICLES.includes(w.it.split(" ")[0]) && !w.it.startsWith("l'"));
     const opaque = bare.filter(
-      (w) => !/[oa]$/.test(w.it) && !/(are|ere|ire)$/.test(w.it) && !NON_NOUNS.has(w.it),
+      (w) => !/[oa]$/.test(w.it) && !/(are|ere|ire)$/.test(w.it) && !NON_NOUNS.has(w.it) && !MONTHS.has(w.it),
     );
     expect(opaque.map((w) => w.it)).toEqual([]);
+  });
+
+  it("keeps every month bare, so none of them teaches an article it never takes", () => {
+    const months = FONDAMENTALE.filter((w) => w.rank >= 589 && w.rank <= 600);
+    expect(months).toHaveLength(12);
+    for (const month of months) {
+      expect(month.it, `rank ${month.rank}`).not.toMatch(/^(il|lo|la|l')/);
+      expect(month.gender, `rank ${month.rank}`).toBeUndefined();
+    }
   });
 
   it("uses the article form Italian phonology actually requires", () => {

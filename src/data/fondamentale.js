@@ -714,26 +714,33 @@ export const FONDAMENTALE = [
   { rank: 587, it: "resto", en: "change (money); rest, remainder", pl: "reszta" },
   { rank: 588, it: "euro", en: "euro (currency)", pl: "euro" },
 
-  // The twelve months — none were in the list at all. Opaque-ending ones
-  // take the article by the same rule the days of the week already follow
-  // here (`il lunedì`), even though real speech mostly reaches for `a
-  // gennaio` rather than a bare noun phrase: the article is this file's
-  // device for carrying gender, not a claim about the most natural
-  // collocation. Polish month names are their own Slavic set, not Latinate
-  // cognates of the Italian the way the English months are, so there is no
-  // cognate route to point a learner down here.
+  // The twelve months — none were in the list at all, and all twelve are
+  // stored bare, including the five with an opaque `-e` ending.
+  //
+  // This is the one place the article convention is the wrong tool. The
+  // convention exists to carry a gender the ending hides, and `il lunedì`
+  // sets a precedent for it — but a day genuinely takes that article
+  // (`il lunedì` is *on Mondays*), where a month does not: it is `ad
+  // aprile`, `in settembre`, and `l'aprile` is a form to teach only if you
+  // want it produced. The gender is not lost by leaving it off, because it
+  // is one fact rather than twelve: every month is masculine. It is stated
+  // here, and `fondamentale.test.js` declares the five bare opaque ones as
+  // months rather than pretending they are not nouns.
+  //
+  // Polish month names are their own Slavic set, not Latinate cognates the
+  // way the English months are, so there is no cognate route here.
   { rank: 589, it: "gennaio", en: "January", pl: "styczeń" },
   { rank: 590, it: "febbraio", en: "February", pl: "luty" },
   { rank: 591, it: "marzo", en: "March", pl: "marzec" },
-  { rank: 592, it: "l'aprile", en: "April", pl: "kwiecień", gender: "m" },
+  { rank: 592, it: "aprile", en: "April", pl: "kwiecień" },
   { rank: 593, it: "maggio", en: "May", pl: "maj" },
   { rank: 594, it: "giugno", en: "June", pl: "czerwiec" },
   { rank: 595, it: "luglio", en: "July", pl: "lipiec" },
   { rank: 596, it: "agosto", en: "August", pl: "sierpień" },
-  { rank: 597, it: "il settembre", en: "September", pl: "wrzesień" },
-  { rank: 598, it: "l'ottobre", en: "October", pl: "październik", gender: "m" },
-  { rank: 599, it: "il novembre", en: "November", pl: "listopad" },
-  { rank: 600, it: "il dicembre", en: "December", pl: "grudzień" },
+  { rank: 597, it: "settembre", en: "September", pl: "wrzesień" },
+  { rank: 598, it: "ottobre", en: "October", pl: "październik" },
+  { rank: 599, it: "novembre", en: "November", pl: "listopad" },
+  { rank: 600, it: "dicembre", en: "December", pl: "grudzień" },
 ];
 
 // The entries actually written down inside one band, in rank order. Usually

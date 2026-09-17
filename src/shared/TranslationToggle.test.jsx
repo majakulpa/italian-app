@@ -33,4 +33,29 @@ describe("TranslationToggle", () => {
     expect(screen.getByText("Good morning")).toBeInTheDocument();
     expect(onParentClick).not.toHaveBeenCalled();
   });
+
+  // The `color` prop exists for one reason: on a filled city surface, the
+  // default inkSoft measured 3.92:1 against the pistachio bubble in the
+  // browser (SC 1.4.3 wants 4.5 at 12px). A caller on a coloured surface
+  // passes "inherit" and gets that surface's ink instead. jsdom computes no
+  // cascade, so this asserts the declaration rather than a measured ratio —
+  // the arithmetic lives in theme.test.js and the measurement in the browser.
+  describe("the colour it draws itself in", () => {
+    it("defaults to the soft ink every existing caller was built on", () => {
+      render(<TranslationToggle en="Good morning" />);
+      expect(screen.getByRole("button", { name: "Show translation" })).toHaveStyle({ color: "var(--color-ink-soft)" });
+    });
+
+    it("takes the surface's own colour when a caller asks it to inherit", async () => {
+      const user = userEvent.setup();
+      render(<TranslationToggle en="Good morning" color="inherit" />);
+
+      const button = screen.getByRole("button", { name: "Show translation" });
+      expect(button.style.color).toBe("inherit");
+
+      // The revealed English too, not just the button that reveals it.
+      await user.click(button);
+      expect(screen.getByText("Good morning").style.color).toBe("inherit");
+    });
+  });
 });

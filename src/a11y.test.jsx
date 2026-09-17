@@ -31,6 +31,8 @@ import { reviewItem } from "./shared/srs.js";
 import { DISTRICTS } from "./shared/districts.js";
 import { STAGES, formStage } from "./shared/stage.js";
 import * as speech from "./shared/speech.js";
+import { save as saveSceneKey, forget as forgetSceneKey } from "./shared/sceneKey.js";
+import { FAKE_KEY } from "./test/fakeKey.js";
 
 // Accessibility is the one property that isn't any single component's — a
 // screen is only usable if the shell, the module and the shared pieces all
@@ -78,6 +80,9 @@ beforeEach(() => {
 
 afterEach(() => {
   delete window.SpeechRecognition;
+  // The decrypted scene-partner key lives in module memory, which localStorage.clear()
+  // does not touch — so it has to be dropped explicitly between scans.
+  forgetSceneKey();
   vi.restoreAllMocks();
 });
 
@@ -121,6 +126,21 @@ describe("the app shell", () => {
     const { container } = render(<App />);
     await user.click(screen.getByRole("button", { name: "Casa" }));
     expect(screen.getByRole("img", { name: /^Coverage from/ })).toBeInTheDocument();
+    await expectNoViolations(container, { fragment: false });
+  });
+
+  // Casa's scene-key row has two states as well, and they are entirely
+  // different markup: a two-field form, and a sentence plus a Remove button.
+  // The scan above catches the form (it is the default), so this one catches
+  // the other half. Real PBKDF2 runs to get there, which is why it saves
+  // through sceneKey rather than writing a fixture into the slot by hand — a
+  // handwritten blob would not decrypt, and the row would draw the wrong state.
+  it("has an accessible Casa with a scene-partner key already stored", async () => {
+    await saveSceneKey(FAKE_KEY, "4821");
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Casa" }));
+    expect(screen.getByRole("button", { name: "Remove the key" })).toBeInTheDocument();
     await expectNoViolations(container, { fragment: false });
   });
 

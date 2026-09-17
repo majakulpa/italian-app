@@ -6,6 +6,7 @@ import { coverage } from "../../shared/coverage.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { stageState, STAGES } from "../../shared/stage.js";
 import ThemeToggle from "../../shared/ThemeToggle.jsx";
+import SceneKeyRow from "./SceneKeyRow.jsx";
 import StadioScreen from "./StadioScreen.jsx";
 
 // Casa — design screen 19, the fourth tab. What the learner has, said without
@@ -226,7 +227,7 @@ function FsiCard() {
   );
 }
 
-// Settings. One row today; the list is here so the next one has a place.
+// Settings. Two rows: the theme, and the scene-partner key (SceneKeyRow).
 function Settings() {
   const headingId = useId();
 
@@ -239,8 +240,9 @@ function Settings() {
         <li>
           <ThemeToggle />
         </li>
-        {/* Chunk 7 (scenes with voice) adds the scene API key as the next
-            row here. Nothing is built for it yet: no field, no stored key. */}
+        <li>
+          <SceneKeyRow />
+        </li>
       </ul>
     </section>
   );

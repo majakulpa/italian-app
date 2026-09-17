@@ -43,6 +43,17 @@ jobs:
       # CLAUDE.md: nothing ships on a red suite.
       - run: npm test
       - run: npx vite build --base=/italian-app/
+      # Nothing shaped like an Anthropic API key may reach the published site
+      # or the repository — the scene partner is called with the learner's own
+      # key (see src/shared/sceneKey.js), and this is a public repo publishing
+      # to GitHub Pages.
+      #
+      # Its own step, here, and not a `postbuild` hook in package.json: the
+      # line above is `npx vite build`, so `npm run build` never runs in CI and
+      # a hook on it would never fire on the build that actually deploys. It
+      # goes between the build and the upload so that a hit stops the artifact
+      # from being created at all.
+      - run: node scripts/check-no-secrets.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

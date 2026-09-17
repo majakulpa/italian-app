@@ -80,7 +80,17 @@ const PIAZZA = districtById("piazza");
 // spans. "La Riserva" is Italian, so what goes here is what the bench is —
 // the base vocabulary — and the district name beside it carries `lang="it"`
 // where it is drawn.
-const MODULE_LABEL = { vocab: "Vocabulary", grammar: "Grammar", riserva: "Base vocabulary", articoli: "Articles" };
+// English, every one of them, for the reason shared/stats.js states about a
+// container's own `label`: the header prints "<container> · <module>" as one
+// line of prose with no marked spans, so "Le Scene" here would be unmarked
+// Italian (WCAG 3.1.2).
+const MODULE_LABEL = {
+  vocab: "Vocabulary",
+  grammar: "Grammar",
+  riserva: "Base vocabulary",
+  articoli: "Articles",
+  scenes: "Market scenes",
+};
 
 function Eyebrow({ children, style }) {
   return (

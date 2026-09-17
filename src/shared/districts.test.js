@@ -4,10 +4,11 @@ import {
   STREETS,
   cityState,
   districtById,
+  districtForModule,
 } from "./districts.js";
 import { MODULE_STATS } from "./stats.js";
 import { MODULES } from "../App.jsx";
-import { BENCHES } from "../modules/officina/benches.js";
+import { STATIONS, HUBS } from "./stations.js";
 import { CITY_ACCENTS } from "./theme.js";
 import { LEVELS } from "../data/vocab.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
@@ -29,14 +30,31 @@ function allDone(moduleId) {
 }
 
 describe("the district roster", () => {
-  // A district's route is either a module id or one of the two screens that
-  // are routes without being modules — the review session and L'Officina's
-  // hub, both of which hold no content or progress of their own and so have
-  // no MODULES entry to be found under.
+  // A district's route is either a module id, the review session, or a hub.
+  //
+  // This used to spell the hubs out — `"review", "officina"` — which was fine
+  // while L'Officina was the only one and became a special case the moment Il
+  // Mercato stopped routing straight at the conversations module. So the hubs
+  // come from shared/stations.js instead, derived from what actually registers
+  // stations under them. That makes the check stronger rather than looser: a
+  // district may route at a hub exactly when something is inside it, so a
+  // district pointing at a hub screen with no stations registered still fails
+  // here. Review stays named, because it is a route with no stations at all —
+  // it replays what the other districts wrote.
   it("routes every district at something the app can actually show", () => {
-    const routes = new Set([...MODULES.map((m) => m.id), "review", "officina"]);
+    const routes = new Set([...MODULES.map((m) => m.id), "review", ...HUBS]);
     for (const district of DISTRICTS) {
       expect(routes, district.id).toContain(district.route);
+    }
+  });
+
+  // And the other half of that: a hub is only a legal route because stations
+  // sit in it, so every station has to name a hub that is a district on the
+  // map. A station with a `hub` nobody draws would be reachable from nowhere
+  // while still counting toward the reachability check above.
+  it("puts every station inside a district that exists", () => {
+    for (const station of STATIONS) {
+      expect(districtById(station.hub), station.id).toBeDefined();
     }
   });
 
@@ -69,50 +87,46 @@ describe("the district roster", () => {
   // deleted, which is the one thing this test exists to catch.
   //
   // So a door is only a door when something opens it: a district contributes
-  // its module when its route reaches that module directly, a bench
+  // its module when its route reaches that module directly, a station
   // contributes what its route opens, and a district pointing at a hub
-  // contributes nothing on its own. What the hub reaches is its benches' job
+  // contributes nothing on its own. What the hub reaches is its stations' job
   // to say.
+  //
+  // `BENCHES` used to be named here directly, and Il Mercato is why it no
+  // longer is. The dialogues left the map's own routing table when the market
+  // became a hub, so `conversations` is now reached exactly the way `vocab` is
+  // — from inside a hub — and a check that only knew about L'Officina's
+  // benches would have reported the app's oldest conversation module as having
+  // no front door. STATIONS is the union both hubs register in.
   it("gives every module a front door on the map, whether or not it owns a district", () => {
     const fromMap = [
       ...DISTRICTS.filter((d) => d.module && d.route === d.module).map((d) => d.module),
-      ...BENCHES.filter((b) => b.route && b.module).map((b) => b.route),
+      ...STATIONS.filter((s) => s.route && s.module).map((s) => s.route),
     ];
 
     expect([...new Set(fromMap)].sort()).toEqual(MODULE_STATS.map((m) => m.id).sort());
   });
 
-  // The other half of that: a bench that claims a module has to name one
+  // The other half of that: a station that claims a module has to name one
   // that exists, and it has to open it. A `route` pointing nowhere would be
   // a card that does nothing when pressed.
-  it("opens a real module from every bench that says it opens one", () => {
+  it("opens a real module from every station that says it opens one", () => {
     const ids = MODULES.map((m) => m.id);
-    for (const bench of BENCHES.filter((b) => b.module)) {
-      expect(ids, bench.id).toContain(bench.route);
-      expect(bench.module, bench.id).toBe(bench.route);
+    for (const station of STATIONS.filter((s) => s.module)) {
+      expect(ids, station.id).toContain(station.route);
+      expect(station.module, station.id).toBe(station.route);
     }
   });
 
-  // `module` without `route` is not a legal bench shape, and the reason is
-  // the one above: a bench that counts a module's progress but cannot open it
-  // is a card that reports on a door nobody can walk through.
-  //
-  // The converse used to hold too — a route implied a module — and La Riserva
-  // is the first bench for which it does not. It opens a screen that reads the
-  // progress other benches wrote and keeps none of its own, the way
-  // ReviewModule is a route rather than a MODULES entry. The rule is therefore
-  // that a routed bench either names a module it opens, or says outright that
-  // it is a view; what stays illegal is claiming a module without a door, and
-  // opening something while silently claiming to be a module.
-  it("never lets a bench claim a module it cannot open", () => {
-    for (const bench of BENCHES.filter((b) => b.module)) {
-      expect(bench.route, bench.id).toBe(bench.module);
-    }
-  });
-
-  it("makes every routed bench either a module or an admitted view", () => {
-    for (const bench of BENCHES.filter((b) => b.route)) {
-      expect(Boolean(bench.module) !== Boolean(bench.view), bench.id).toBe(true);
+  // A route implied a module until La Riserva, and it no longer does: a
+  // routed station either names a module it opens, or says outright that it
+  // is a view — a screen that reads the progress other stations wrote and
+  // keeps none of its own, the way ReviewModule is a route rather than a
+  // MODULES entry. What stays illegal is opening something while silently
+  // claiming to be a module.
+  it("makes every routed station either a module or an admitted view", () => {
+    for (const station of STATIONS.filter((s) => s.route)) {
+      expect(Boolean(station.module) !== Boolean(station.view), station.id).toBe(true);
     }
   });
 
@@ -121,9 +135,19 @@ describe("the district roster", () => {
   // progress it does not write.
   it("keeps a view out of the module registry", () => {
     const ids = MODULE_STATS.map((m) => m.id);
-    for (const bench of BENCHES.filter((b) => b.view)) {
-      expect(ids, bench.id).not.toContain(bench.route);
-      expect(bench.module, bench.id).toBeNull();
+    for (const station of STATIONS.filter((s) => s.view)) {
+      expect(ids, station.id).not.toContain(station.route);
+      expect(station.module, station.id).toBeNull();
+    }
+  });
+
+  // Every station declares which hub it lives in, and that field is what the
+  // reachability checks above and districtForModule below are driven off — so
+  // a station with no hub would be counted as a door while being drawn by no
+  // screen.
+  it("makes every station name the hub that draws it", () => {
+    for (const station of STATIONS) {
+      expect(HUBS, station.id).toContain(station.hub);
     }
   });
 
@@ -147,6 +171,35 @@ describe("the district roster", () => {
   it("leaves no district off the street network", () => {
     const connected = new Set(STREETS.flat());
     expect(DISTRICTS.filter((d) => !connected.has(d.id))).toEqual([]);
+  });
+});
+
+// La Piazza colours and labels every due item by the district it came from,
+// and the screen carries no "no district" branch — so a scheduled module that
+// does not resolve would throw there rather than degrade.
+describe("districtForModule", () => {
+  it("resolves every scheduled module to a district on the map", () => {
+    for (const mod of MODULE_STATS.filter((m) => m.scheduled)) {
+      expect(districtForModule(mod.id), mod.id).toBeDefined();
+    }
+  });
+
+  it("sends a district's own module to that district", () => {
+    expect(districtForModule("grammar").id).toBe("cantiere");
+    expect(districtForModule("conversations").id).toBe("mercato");
+  });
+
+  // The station path, which is the half that used to be a hand-written map.
+  // A workbench resolves to L'Officina and a stall to Il Mercato, off the same
+  // `hub` field, with nothing in districts.js naming either module.
+  it("sends a station's module to the hub that holds it", () => {
+    expect(districtForModule("riserva").id).toBe("officina");
+    expect(districtForModule("articoli").id).toBe("officina");
+    expect(districtForModule("scenes").id).toBe("mercato");
+  });
+
+  it("resolves nothing for a module id that does not exist", () => {
+    expect(districtForModule("nowhere")).toBeUndefined();
   });
 });
 

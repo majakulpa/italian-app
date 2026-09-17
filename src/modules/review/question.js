@@ -21,6 +21,12 @@
 //            where the argument about the two glosses lives and a second copy
 //            of it would drift. The import direction is the right way round:
 //            La Piazza has no content of its own, it replays other districts'.
+//   scenes   a word met in a market scene: an English gloss and a Polish one,
+//            and no example sentence — the same shape as a Riserva entry and
+//            for the same reason, so it is built the same way. What it does
+//            *not* share is the neighbour set: a base-vocabulary word sits in
+//            a closed list of 400 the learner is working through, and a scene
+//            word sits in a scene. See below.
 //   articoli the one shape that is not typed, and the reason `options` exists
 //            below. Everything above has an answer space the learner writes
 //            into; an article item is a choice between three authored forms,
@@ -132,6 +138,42 @@ export function toQuestion(unit) {
       // the one thing about the item that is useless on its own: the article
       // is only ever an answer to the noun it sits in front of.
       recap: { primary: filled(unit.item), secondary: unit.item.en },
+    };
+  }
+
+  // A word met in a market scene. Built here rather than in the scene module
+  // because there is no argument to keep beside it — unlike La Riserva, whose
+  // question carries the two-glosses ruling and a derived `strictAccents`.
+  //
+  // `neighbours` is empty, and that is the one place this shape parts company
+  // with the lexicon one. La Riserva hands the judge every other word in the
+  // list so that typing a real word aimed at the wrong entry is named as that;
+  // the sentence it produces says "another word from the base vocabulary",
+  // which would be false here — no scene word is in that list. The scene's own
+  // `newWords` would not make it true either: nineteen words across three
+  // scenes is not a list the learner is working through, and "that is another
+  // word from a scene" locates nothing.
+  //
+  // `context` says where the word was met, which is the one true thing left to
+  // say about a word with no example sentence and no rank. The scene's title is
+  // Italian, so it goes in the `it` half — Verdict.jsx marks that half
+  // `lang="it"` and leaves `en` unmarked, so putting an Italian title in the
+  // English half would be unmarked Italian (WCAG 3.1.2).
+  if (unit.moduleId === "scenes") {
+    return {
+      kind: "scene",
+      gloss: unit.item.en,
+      glossPl: unit.item.pl,
+      cloze: null,
+      prompt: null,
+      hint: null,
+      answer: unit.item.it,
+      alternatives: [],
+      neighbours: [],
+      strictAccents: false,
+      options: [],
+      context: { it: unit.group.title, en: "the scene where you met it" },
+      recap: { primary: unit.item.it, secondary: unit.item.en },
     };
   }
 

@@ -250,6 +250,27 @@ export function riservaKey(entry) {
   return `riserva:${entry.it}`;
 }
 
+// A scene's new words (data/scenes.js). Its own namespace again, so a save
+// written before Le Scene existed simply has no "scene:" keys and loads
+// unchanged.
+//
+// ── Why these are not riserva keys ──────────────────────────────────────
+// They look like base-vocabulary words and they are not: not one of the
+// nineteen is in fondamentale.js, which scenes.test.js pins entry by entry.
+// A `riserva:` key is a rank in the reservoir and feeds the coverage figure
+// through coverage.js's rank bridge; a scene word has no rank to feed, so
+// borrowing the namespace would put words into a count of the base list that
+// the base list does not contain.
+//
+// Keyed by the scene as well as the word, the way mappeKey names its map. No
+// two scenes introduce the same word today — scenes.test.js pins that too —
+// so the scene id buys nothing yet; what it buys is that adding a scene which
+// re-meets `etto` cannot silently inherit the first scene's box, which is a
+// decision to make deliberately rather than by key collision.
+export function sceneKey(scene, word) {
+  return `scene:${scene.id}:${word.it}`;
+}
+
 // ── Coverage history ────────────────────────────────────────────────────
 // Casa draws coverage as a curve, and a curve needs past values that nothing
 // else in storage can give back: coverage is derived from the boxes as they

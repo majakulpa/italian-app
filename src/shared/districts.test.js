@@ -174,11 +174,15 @@ describe("what a day-one map looks like", () => {
     expect(city.piazza.status).toBe("nothing due yet");
   });
 
-  // Il Cinema used to be gated at 600 solid words. The lexicon holds 500
-  // entries of a 2,000 target, so 500 solid is the ceiling and the gate asked
-  // for more words than the app contains — the ten graded readers behind it
-  // were shut for good, reachable only through the NavMenu. See districts.js
-  // for why the threshold belongs to the unbuilt serial instead.
+  // Il Cinema used to be gated at 600 solid words. The lexicon held 500
+  // entries of a 2,000 target at the time, so 500 solid was the ceiling and
+  // the gate asked for more words than the app contained — the ten graded
+  // readers behind it were shut for good, reachable only through the
+  // NavMenu. Ranks 501–600 raised the lexicon to exactly 600 entries, so the
+  // gate is no longer unreachable in principle, but that is a fact about the
+  // ceiling, not about any account's progress — the readers stay unlocked
+  // here regardless. See districts.js for why the threshold belongs to the
+  // unbuilt serial instead.
   it("opens Il Cinema from the very first visit, onto the readers that ship", () => {
     const city = state(EMPTY);
 

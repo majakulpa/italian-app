@@ -24,21 +24,26 @@
 // generated serial*, which is PLAN.md chunk 6 and is not built. This district
 // routes to `stories`: ten hand-written graded readers that ship today.
 //
-// Gating those on 600 solid words made them unreachable, because solid words
-// come from the lexicon and `data/fondamentale.js` holds 500 of its 2,000
-// target — so the ceiling is 500, pinned in `coverage.test.js` at 71.4%. The
-// gate asked for a fifth again as many words as the app contains, and it
-// moved further out of reach rather than closer as the list grew: every
-// entry added raises the ceiling, and 600 needs 100 more than exist. Every test
-// that proved the door opened had to mock a solid count past that ceiling to
-// do it, which is the tell — the district was shut for good, and the ten
-// stories behind it were reachable only through the NavMenu.
+// Gating those on 600 solid words made them unreachable at the time, because
+// solid words come from the lexicon and `data/fondamentale.js` held 500 of
+// its 2,000 target — so the ceiling was 500, and the gate asked for a fifth
+// again as many words as the app contained. Every test that proved the door
+// opened had to mock a solid count past that ceiling to do it, which was the
+// tell — the district was shut for good, and the ten stories behind it were
+// reachable only through the NavMenu.
 //
-// So the readers open, because reading is what the district is for, and the
-// 600 comes back with the thing it was measured for — the serial goes inside
-// Il Cinema behind its own gate, the way L'Officina holds benches. That keeps
-// PLAN.md's "only gate on numbers you have measured" pointing the right way:
-// the number was measured, it was just measuring something else.
+// Ranks 501–600 closed that gap: `data/fondamentale.js` now holds exactly
+// 600 entries, and `coverage.test.js` pins the ceiling at 73.3% and 600 / 2000
+// solid. That makes the door unreachable-in-principle no longer — a fully
+// mastered account can now reach 600 solid, for the first time. It does not
+// make the door open: reaching solid on 600 words is study, and no seeding of
+// this file does that study for anyone. So the readers still open unlocked,
+// because reading is what the district is for; the serial's own gate, should
+// it ever get built, goes inside Il Cinema behind its own lock, the way
+// L'Officina holds benches. That keeps PLAN.md's "only gate on numbers you
+// have measured" pointing the right way: the number was measured, it was
+// just measuring something else, and now the number the app can produce and
+// the number the threshold asks for are finally the same number.
 
 import { Clapperboard, Hammer, RefreshCw, Store, Wrench } from "lucide-react";
 import { moduleStats } from "./stats.js";

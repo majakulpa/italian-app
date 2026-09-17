@@ -648,10 +648,10 @@ function ListeningQuiz({ level, category, onBack, onMarkWord }) {
 }
 
 // onExit returns to the app's module menu (see src/App.jsx)
-// `exitLabel` says where the back link goes. It defaults to "All modules"
-// — the NavMenu route, which is where the other module interiors still point
-// — and L'Officina's hub passes its own name, because opening the deck from
-// the workshop comes back to the workshop.
+// `exitLabel` says where the back link goes. L'Officina's hub, the deck's one
+// way in, passes its own name, because opening the deck from the workshop
+// comes back to the workshop. The "All modules" default is the label the other
+// module interiors still carry.
 export default function VocabModule({ onExit, exitLabel = "All modules" }) {
   const [session, setSession] = useState(null);
   const [progress, setProgress] = useState(loadProgress);

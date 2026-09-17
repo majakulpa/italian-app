@@ -4,8 +4,7 @@ import { TOKENS } from "./theme.js";
 
 // Back button + level/label header used at the top of a study session
 // (flashcards, quiz, grammar lesson/drill, ...). Jumping to a different
-// module or back to the module menu from here is handled by the global
-// NavMenu (see App.jsx), not this component.
+// place from here is the tab bar's job (see TabBar.jsx), not this component's.
 //
 // `label` is a node, not a string. It used to be `label.toUpperCase()`, which
 // made the signature string-only and blocked the one thing a session header

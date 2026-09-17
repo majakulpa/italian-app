@@ -411,10 +411,10 @@ function Summary({ strand, results, onBack, onAgain }) {
   );
 }
 
-// Two ways in, so two things `onExit` can mean: L'Officina's hub opens this as
-// a child of itself and comes back to the workshop, and the NavMenu opens it
-// at the top level and comes back to the city. `exitLabel` is how the back
-// link says which of the two it is about to do. Same shape as Mappatura delle parole.
+// L'Officina's hub opens this as a child of itself and comes back to the
+// workshop; `exitLabel` is how the back link says so. The default is for the
+// module rendered on its own, which only its tests do since the NavMenu that
+// opened it at the top level went. Same shape as Mappatura delle parole.
 export default function ArticoliModule({ onExit, exitLabel = "All modules" }) {
   const [progress, setProgress] = useState(loadProgress);
   const [session, setSession] = useState(null);

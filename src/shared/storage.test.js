@@ -24,6 +24,10 @@ import {
   markStageShown,
   markStageProduced,
   PROGRESS_VERSION,
+  loadCoverageHistory,
+  saveCoverageHistory,
+  addCoveragePoint,
+  COVERAGE_HISTORY_VERSION,
 } from "./storage.js";
 
 const level = { id: "A1" };
@@ -453,5 +457,128 @@ describe("loadThemeMode / saveThemeMode", () => {
       throw new Error("QuotaExceededError");
     });
     expect(() => saveThemeMode("dark")).not.toThrow();
+  });
+});
+
+describe("coverage history", () => {
+  const KEY = "italiano:coverage-history:v1";
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe("loadCoverageHistory / saveCoverageHistory", () => {
+    // The migration: a save from before the history existed has no key, and
+    // that is an empty history rather than an error or an invented start.
+    it("loads a save that has never had a history as an empty one", () => {
+      saveProgress({ words: { "A1:greetings:ciao": "known" }, schedule: {} });
+      expect(loadCoverageHistory()).toEqual([]);
+    });
+
+    it("round-trips its points under a versioned blob of its own", () => {
+      const points = [
+        { date: "2026-09-01", pct: 10.5 },
+        { date: "2026-09-03", pct: 12 },
+      ];
+      saveCoverageHistory(points);
+
+      expect(JSON.parse(localStorage.getItem(KEY))).toEqual({ version: COVERAGE_HISTORY_VERSION, points });
+      expect(loadCoverageHistory()).toEqual(points);
+    });
+
+    // It must never ride inside the progress blob, which screens hold in
+    // state and write back whole — see storage.js.
+    it("leaves the progress blob untouched", () => {
+      saveProgress(EMPTY);
+      saveCoverageHistory([{ date: "2026-09-01", pct: 1 }]);
+      expect(loadProgress()).toEqual(EMPTY);
+    });
+
+    it("reads a blob from an unknown version, or with no point list, as no history", () => {
+      localStorage.setItem(KEY, JSON.stringify({ version: 99, points: [{ date: "2026-09-01", pct: 1 }] }));
+      expect(loadCoverageHistory()).toEqual([]);
+
+      localStorage.setItem(KEY, JSON.stringify({ version: COVERAGE_HISTORY_VERSION }));
+      expect(loadCoverageHistory()).toEqual([]);
+
+      localStorage.setItem(KEY, "not json");
+      expect(loadCoverageHistory()).toEqual([]);
+    });
+
+    it("drops a malformed point, and one that does not come after the point before it", () => {
+      localStorage.setItem(
+        KEY,
+        JSON.stringify({
+          version: COVERAGE_HISTORY_VERSION,
+          points: [
+            { date: "2026-09-02", pct: 5 },
+            { date: "yesterday", pct: 6 },
+            { date: "2026-09-03", pct: "7" },
+            null,
+            { date: "2026-09-02", pct: 8 },
+            { date: "2026-09-01", pct: 9 },
+            { date: "2026-09-04", pct: 10 },
+          ],
+        }),
+      );
+
+      expect(loadCoverageHistory()).toEqual([
+        { date: "2026-09-02", pct: 5 },
+        { date: "2026-09-04", pct: 10 },
+      ]);
+    });
+
+    it("reads as no history when storage is unavailable, and swallows a failed write", () => {
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("SecurityError");
+      });
+      vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+
+      expect(loadCoverageHistory()).toEqual([]);
+      expect(() => saveCoverageHistory([{ date: "2026-09-01", pct: 1 }])).not.toThrow();
+    });
+  });
+
+  describe("addCoveragePoint", () => {
+    const history = [
+      { date: "2026-09-01", pct: 10 },
+      { date: "2026-09-03", pct: 12 },
+    ];
+
+    it("starts a history with its first point", () => {
+      expect(addCoveragePoint([], "2026-09-01", 0)).toEqual([{ date: "2026-09-01", pct: 0 }]);
+    });
+
+    // The streak ban, as arithmetic: a day on which coverage did not move
+    // writes nothing, however many times the app was opened on it.
+    it("writes nothing on a later day when coverage has not changed", () => {
+      expect(addCoveragePoint(history, "2026-09-10", 12)).toBe(history);
+    });
+
+    it("adds a point on a later day when coverage has changed", () => {
+      expect(addCoveragePoint(history, "2026-09-10", 13.4)).toEqual([...history, { date: "2026-09-10", pct: 13.4 }]);
+    });
+
+    it("keeps one point a day, replacing that day's point when it changes again", () => {
+      expect(addCoveragePoint(history, "2026-09-03", 12)).toBe(history);
+      expect(addCoveragePoint(history, "2026-09-03", 14)).toEqual([history[0], { date: "2026-09-03", pct: 14 }]);
+    });
+
+    // Up and back down on the same day ends the day where the previous point
+    // stands, so that day has nothing to add.
+    it("takes the day's point back out when the day's change is undone", () => {
+      expect(addCoveragePoint(history, "2026-09-03", 10)).toEqual([history[0]]);
+    });
+
+    it("replaces a lone first point rather than dropping it", () => {
+      const one = [{ date: "2026-09-01", pct: 0 }];
+      expect(addCoveragePoint(one, "2026-09-01", 2)).toEqual([{ date: "2026-09-01", pct: 2 }]);
+    });
+
+    it("writes nothing for a date before the last point, as from a clock set back", () => {
+      expect(addCoveragePoint(history, "2026-08-30", 50)).toBe(history);
+    });
   });
 });

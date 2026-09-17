@@ -7,6 +7,7 @@ import { shuffle } from "../../shared/shuffle.js";
 import LiveStatus from "../../shared/LiveStatus.jsx";
 import { tokenize, splitToken, lookupGloss } from "./gloss.js";
 import TopBar from "../../shared/TopBar.jsx";
+import { TAB_BAR_CLEARANCE } from "../../shared/TabBar.jsx";
 import SessionSummary from "../../shared/SessionSummary.jsx";
 import SpeakButton from "../../shared/SpeakButton.jsx";
 import AnswerMark from "../../shared/AnswerMark.jsx";
@@ -162,7 +163,9 @@ function Paragraph({ paragraph, level, onWordTap }) {
 }
 
 // Sits at the bottom of the viewport so tapping a word never reflows the
-// text you're reading. Tapping another word swaps its contents in place.
+// text you're reading — just above the app's tab bar, which is fixed there
+// too and would otherwise be covered by it. Tapping another word swaps its
+// contents in place.
 //
 // This is the visual half only. The spoken half is GlossAnnouncer below —
 // this bar is mounted and unmounted with the gloss, which is exactly what a
@@ -184,7 +187,9 @@ function GlossBar({ entry, level, onClose }) {
         position: "fixed",
         left: 0,
         right: 0,
-        bottom: 0,
+        // Docked above the tab bar rather than at bottom: 0 — the bar owns
+        // that strip now, and the gloss would sit under it.
+        bottom: TAB_BAR_CLEARANCE,
         // The reader drops the design system (screen 14); the gloss does not
         // (screen 15), so this is where the city comes back: a neutral card
         // in the 3px flipping edge, rounded at the top where it rises off the

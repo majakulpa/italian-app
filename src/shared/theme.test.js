@@ -364,6 +364,23 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
     }
   });
 
+  // The bug this pins actually shipped for the length of one browser pass, and
+  // it is exactly the class CLAUDE.md warns about: `--color-city-ink` is the
+  // one city token that does *not* flip between modes, because it is the ink
+  // that sits on an accent fill and accent fills stay bright in the dark. Put
+  // it around a control whose own fill is `card` and in dark mode it measures
+  // 1.39:1 — an invisible boundary, on a control that passed every arithmetic
+  // check it was given, because the pairing it was checked against was the
+  // wrong one. Le Scene's microphone did that.
+  //
+  // So: a control on a card gets its outline from `--color-city-edge`, which
+  // flips, and this is the test that says why.
+  it("dark: the fixed city ink cannot draw a boundary on the card, which city-edge is for", () => {
+    const vars = palettes.dark;
+    expect(round(contrastRatio(vars["--color-city-ink"], vars["--color-card"]))).toBeLessThan(AA_NON_TEXT);
+    expect(round(contrastRatio(vars["--color-city-edge"], vars["--color-card"]))).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
   it("dark: a state fill accent is not a text colour on the card", () => {
     const vars = palettes.dark;
     for (const fill of ["--color-malachite", "--color-corallo"]) {
@@ -398,6 +415,17 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
     // The grape ring, now that .citta wraps each interior.
     ["focus ring on the page", "--color-grape", "--color-paper", AA_NON_TEXT],
     ["focus ring on a card", "--color-grape", "--color-card", AA_NON_TEXT],
+    // Le Scene. The speaker bubbles in Ascolta are lemon and pistachio tiles
+    // and their ink is held by the generic accent test above; what is new here
+    // is the microphone in Prova, which sits inside a neutral card and changes
+    // what draws its boundary when it starts listening. Idle it is the
+    // flipping city edge (held two rows up); listening, the tomato fill is
+    // what separates it from the card behind it.
+    ["listening microphone on a card", ["--color-city-ink", "--color-tomato"], "--color-card", AA_NON_TEXT],
+    // The stand-in's "back to the scenes" button, and the microphone's own
+    // mode switch: both a 2px control line on a card (held above), with their
+    // label in full ink rather than ink-soft.
+    ["scene button label on a card", "--color-ink", "--color-card", AA_TEXT],
   ];
 
   it.each(MODES)("%s: every pairing the module interiors paint clears its threshold", (_mode, vars) => {

@@ -5,6 +5,10 @@ import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { lexiconQuestion } from "../riserva/drill.js";
 import { GRAMMAR_LEVELS } from "../../data/grammar.js";
 import { STRANDS, ZERO, filled } from "../../data/articoli.js";
+import { SCENES } from "../../data/scenes.js";
+
+const verdura = SCENES[0];
+const sceneWord = verdura.newWords.find((word) => word.it === "maturo");
 
 const determinativo = STRANDS.find((s) => s.id === "determinativo");
 // "Bevo ___ caffè ogni mattina." — answer `il`, options il / un / —, and the
@@ -208,6 +212,7 @@ describe("building a question from a due unit", () => {
     expect(toQuestion({ moduleId: "vocab", item: bene }).options).toEqual([]);
     expect(toQuestion({ moduleId: "grammar", item: drill }).options).toEqual([]);
     expect(toQuestion({ moduleId: "riserva", item: FONDAMENTALE[0] }).options).toEqual([]);
+    expect(toQuestion({ moduleId: "scenes", item: sceneWord, group: verdura }).options).toEqual([]);
     expect(toQuestion({ moduleId: "articoli", item: caffe }).options).toHaveLength(3);
   });
 
@@ -223,5 +228,47 @@ describe("building a question from a due unit", () => {
     const article = toQuestion({ moduleId: "articoli", item: caffe });
     expect(article.options.length).toBeGreaterThan(0);
     expect(article.alternatives).toEqual([]);
+  });
+});
+
+// A word met in a market scene. Its unit's `group` is the scene, which is
+// where the context line comes from — see the `scenes` branch in question.js.
+describe("a scene word", () => {
+  const unit = { moduleId: "scenes", item: sceneWord, group: verdura };
+
+  it("asks for the Italian off both glosses, with no cloze to hang it on", () => {
+    const q = toQuestion(unit);
+
+    expect(q.kind).toBe("scene");
+    expect(q.answer).toBe(sceneWord.it);
+    expect(q.gloss).toBe(sceneWord.en);
+    expect(q.glossPl).toBe(sceneWord.pl);
+    expect(q.cloze).toBeNull();
+    expect(q.prompt).toBeNull();
+  });
+
+  // The one place this shape parts company with La Riserva's. A lexicon entry
+  // is handed every other word in the list so that typing a real word aimed at
+  // the wrong entry is named as that; the sentence it produces says "another
+  // word from the base vocabulary", which is false of every scene word —
+  // scenes.test.js pins that none of them is in that list.
+  it("is given no neighbours, so it can never be called a wrong base-vocabulary entry", () => {
+    expect(toQuestion(unit).neighbours).toEqual([]);
+    expect(toQuestion(unit).alternatives).toEqual([]);
+    expect(toQuestion(unit).strictAccents).toBe(false);
+  });
+
+  // The Italian scene title goes in the `it` half of the context, because
+  // Verdict.jsx marks that half `lang="it"` and leaves `en` unmarked — an
+  // Italian title in the English half would be unmarked Italian (WCAG 3.1.2).
+  it("says which scene the word was met in, with the Italian on the Italian side", () => {
+    const { context } = toQuestion(unit);
+
+    expect(context.it).toBe(verdura.title);
+    expect(context.en).not.toMatch(/[àèéìòù]/);
+  });
+
+  it("recaps the word and its English for the end-of-round list", () => {
+    expect(toQuestion(unit).recap).toEqual({ primary: sceneWord.it, secondary: sceneWord.en });
   });
 });

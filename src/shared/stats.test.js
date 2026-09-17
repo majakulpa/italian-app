@@ -76,17 +76,19 @@ describe("MODULE_STATS", () => {
   });
 
   // Conversations have no wrong answer and a story is read rather than
-  // drilled, so neither belongs in a review queue. The four that do are the
+  // drilled, so neither belongs in a review queue. The five that do are the
   // ones whose unit is a lexical item or a sentence slot: words, grammar
   // drills, base-vocabulary entries — since La Riserva gained a typed drill —
-  // and article items, since La Piazza gained a second question shape that
-  // can ask a three-way choice. Each `scheduled: false` in stats.js states
-  // its own reason.
-  it("schedules vocabulary, grammar, the base vocabulary and the articles only", () => {
+  // article items, since La Piazza gained a second question shape that can ask
+  // a three-way choice, and now the words met in a market scene, which are
+  // lexical items typed like any other. Each `scheduled: false` in stats.js
+  // states its own reason.
+  it("schedules vocabulary, grammar, the base vocabulary, the articles and scene words only", () => {
     expect(MODULE_STATS.filter((m) => m.scheduled).map((m) => m.id)).toEqual([
       "vocab",
       "grammar",
       "riserva",
+      "scenes",
       "articoli",
     ]);
   });

@@ -7,7 +7,20 @@ import { TOKENS } from "./theme.js";
 // listening quiz). Used by conversation bubbles/options and by story
 // paragraphs. stopPropagation matters where this sits inside a larger
 // clickable element (an option card).
-export default function TranslationToggle({ en, align = "left" }) {
+//
+// ── Why `color` is a prop ───────────────────────────────────────────────
+// It used to be `TOKENS.inkSoft` unconditionally, which is a colour chosen to
+// sit on paper or on a card. Le Scene's model dialogue puts this toggle on a
+// *filled* city surface, and there it measured 3.92:1 against the pistachio
+// bubble in the browser — an SC 1.4.3 failure at 12px. The lemon bubble was
+// fine at 4.98:1, which is exactly why this had to be measured rather than
+// reasoned about.
+//
+// So a caller on a coloured surface passes `"inherit"` and gets that surface's
+// own ink, which is the pairing shared/theme.test.js already holds above 4.5:1
+// for every accent. The default is unchanged, so every existing caller renders
+// exactly as it did.
+export default function TranslationToggle({ en, align = "left", color = TOKENS.inkSoft }) {
   const [revealed, setRevealed] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: align === "right" ? "flex-end" : "flex-start" }}>
@@ -25,7 +38,7 @@ export default function TranslationToggle({ en, align = "left" }) {
           display: "flex",
           alignItems: "center",
           gap: 4,
-          color: TOKENS.inkSoft,
+          color,
           fontFamily: "'Inter', sans-serif",
           fontSize: 12,
         }}
@@ -34,7 +47,7 @@ export default function TranslationToggle({ en, align = "left" }) {
         {revealed ? "Hide translation" : "Show translation"}
       </button>
       {revealed && (
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: TOKENS.inkSoft, margin: "4px 0 0", textAlign: align }}>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color, margin: "4px 0 0", textAlign: align }}>
           {en}
         </p>
       )}

@@ -156,3 +156,27 @@ describe("the voice cache", () => {
     expect(window.speechSynthesis).toBeUndefined();
   });
 });
+
+// iOS Safari treats the first speak() of a page like audio playback: an
+// utterance started outside a user gesture is silently dropped, and so is
+// every later one. Le Scene is the first place in this app where that bites,
+// because the phases after the brief speak lines the learner did not press a
+// speaker for — so the "Comincia" tap spends itself on an empty utterance.
+describe("primeSpeech", () => {
+  it("speaks one empty utterance, so the queue is unlocked and nothing is heard", async () => {
+    setSpeechSynthesis([]);
+    const { primeSpeech } = await import("./speech.js");
+
+    primeSpeech();
+
+    expect(window.speechSynthesis.speak).toHaveBeenCalledTimes(1);
+    // Empty rather than a space: some engines read a space as a short breath,
+    // and the point of this utterance is to be inaudible.
+    expect(window.speechSynthesis.speak.mock.calls[0][0].text).toBe("");
+  });
+
+  it("does nothing at all where there is no speech synthesis", async () => {
+    const { primeSpeech } = await import("./speech.js");
+    expect(() => primeSpeech()).not.toThrow();
+  });
+});

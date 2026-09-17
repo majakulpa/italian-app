@@ -48,6 +48,7 @@
 import { Clapperboard, Hammer, RefreshCw, Store, Wrench } from "lucide-react";
 import { moduleStats } from "./stats.js";
 import { dueCount } from "./srs.js";
+import { STATIONS } from "./stations.js";
 
 // `x`/`y` are percentages of the map plate, used both for the button's
 // position and for the endpoints of the streets drawn under it — one set of
@@ -102,7 +103,14 @@ export const DISTRICTS = [
   {
     id: "mercato",
     name: "Il Mercato",
-    route: "conversations",
+    // A hub, like L'Officina, and for the same reason: the district holds Le
+    // Scene and the guided dialogues, so it has two front doors and cannot
+    // route straight at either. Its `module` stays `conversations` because
+    // that is what the tile counts — a district row can name only one module,
+    // and "N / M dialogues" is a fraction that finishes, where scene words are
+    // a running total. What the hub reaches is modules/mercato/stalls.js's job
+    // to say, exactly as benches.js says it for the workshop.
+    route: "mercato",
     module: "conversations",
     accent: "lemon",
     icon: Store,
@@ -143,19 +151,22 @@ export function districtById(id) {
   return byId.get(id);
 }
 
-// L'Officina's benches that are modules in their own right but are not the
-// one its tile counts. The tile names `vocab` because "N / M words" is what a
-// district shows, and a district row can only name one module — so a
-// scheduled module living inside the same walls needs saying here rather than
-// inventing a district of its own for a workbench.
-const BENCH_DISTRICT = { riserva: "officina", articoli: "officina" };
-
 // Which district an item belongs to, by the module it came from. La Piazza
 // uses it to colour and label a due item, so every scheduled module has to
 // resolve — ReviewModule.test.jsx pins that, which is why the screen carries
 // no "no district" branch.
+//
+// A district names at most one module, so a scheduled module living inside a
+// hub's walls resolves through the station list instead. This used to be a
+// hand-written `{ riserva: "officina", articoli: "officina" }` map, which had
+// to be remembered every time a hub gained a scheduled station — and was
+// about to need a third entry for Le Scene. Every station already declares
+// its `hub`, so the map was a second copy of a fact the data holds.
 export function districtForModule(moduleId) {
-  return DISTRICTS.find((district) => district.module === moduleId) ?? byId.get(BENCH_DISTRICT[moduleId]);
+  return (
+    DISTRICTS.find((district) => district.module === moduleId) ??
+    byId.get(STATIONS.find((station) => station.module === moduleId)?.hub)
+  );
 }
 
 function plural(n, word) {

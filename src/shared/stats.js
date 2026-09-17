@@ -14,6 +14,7 @@ import { MAPS } from "../data/mappe.js";
 import { STRANDS } from "../data/articoli.js";
 import { TRAP_SETS } from "../data/falsiAmici.js";
 import { FASCE, fasciaWords } from "../data/fondamentale.js";
+import { SCENES } from "../data/scenes.js";
 import {
   wordKey,
   drillKey,
@@ -23,7 +24,12 @@ import {
   articoliKey,
   trapKey,
   riservaKey,
+  sceneKey,
 } from "./storage.js";
+
+// Le Scene's one container. See the `scenes` entry below for why there is one
+// rather than one per scene, and why its label is in English.
+export const SCENE_WORDS = { id: "scene-words", label: "Met in a scene", scenes: SCENES };
 
 // One entry per module: how to enumerate a level's completable units, and
 // which stored status counts as finished. Ids must match the MODULES array in
@@ -121,6 +127,42 @@ export const MODULE_STATS = [
     // unit and cannot be counted, drilled or scheduled.
     units: (fascia) =>
       fasciaWords(fascia).map((entry) => ({ key: riservaKey(entry), item: entry, group: fascia })),
+    doneStatus: "known",
+  },
+  {
+    id: "scenes",
+    // One container for all three scenes, where the other modules put a CEFR
+    // ladder or a set of bands. A scene is not A1 or B2 — all three are stage
+    // 1, which is a grammatical ceiling rather than a rung — and *which* scene
+    // met a word is not a level either: it is the `group` on the unit below.
+    // levelStats() looks a container up by level id, finds none, and leaves Le
+    // Scene out of every rung, which is the right answer rather than a gap.
+    //
+    // Its `label` is English on purpose. La Piazza prints a container's label
+    // in a line of English prose that marks no spans, which is exactly why
+    // fondamentale.js's fasce are labelled "Ranks 1–200" rather than in
+    // Italian (see modules/riserva/DrillRound.jsx) — an Italian label here
+    // would be unmarked Italian in the review header, WCAG 3.1.2.
+    levels: [SCENE_WORDS],
+    // In the queue, and this is the entry the whole of plan S3 turns on. The
+    // design's brief promises "+N parole → Piazza" when a scene's words are
+    // met, and before this existed that figure would have been a drawing:
+    // srs.js's dueUnits() only ever serves keys some `scheduled` entry here
+    // enumerates, so a `scene:` key written without this would have been
+    // stored, counted by nothing and served to nobody.
+    //
+    // A scene word is a lexical item the learner is trying to remember, typed
+    // rather than picked, which is precisely what a Leitner box schedules and
+    // what La Piazza now asks for — the same argument that let La Riserva in.
+    scheduled: true,
+    units: (band) =>
+      band.scenes.flatMap((scene) =>
+        scene.newWords.map((word) => ({ key: sceneKey(scene, word), item: word, group: scene })),
+      ),
+    // Not "done": a word is known or it is still coming back, like every other
+    // lexical unit in the file. Meeting it in Ascolta writes `learning`, and
+    // producing it gets it to `known` — through reviewItem in La Piazza, the
+    // same write as anywhere else.
     doneStatus: "known",
   },
   {

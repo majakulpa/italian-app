@@ -19,6 +19,8 @@ import {
   trapCaughtKey,
   isTrapCaught,
   trapsCaughtCount,
+  sceneKey,
+  riservaKey,
   stageEvidenceKey,
   hasStageEvidence,
   markStageShown,
@@ -280,6 +282,28 @@ describe("mappeKey / mapKnownCount", () => {
     saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
     expect(mapKnownCount(loadProgress(), map)).toBe(0);
     // and the older progress survives the load untouched
+    expect(loadProgress().words["A1:greetings:ciao"]).toBe("known");
+  });
+});
+
+describe("sceneKey", () => {
+  const scene = { id: "verdura" };
+
+  it("namespaces a word under the scene that introduced it", () => {
+    expect(sceneKey(scene, { it: "mezzo" })).toBe("scene:verdura:mezzo");
+  });
+
+  // Not `riserva:`, and the difference is the finding scenes.test.js pins
+  // entry by entry: none of the nineteen scene words is in the base
+  // vocabulary, so a `riserva:` key would put a word into a count of a list
+  // that does not contain it, and feed it to coverage.js's rank bridge.
+  it("cannot collide with a base-vocabulary key for the same word", () => {
+    expect(sceneKey(scene, { it: "mezzo" })).not.toBe(riservaKey({ it: "mezzo" }));
+  });
+
+  it("reads a save written before Le Scene existed as nothing met", () => {
+    saveProgress({ version: 1, words: { "A1:greetings:ciao": "known" } });
+    expect(loadProgress().words[sceneKey(scene, { it: "mezzo" })]).toBeUndefined();
     expect(loadProgress().words["A1:greetings:ciao"]).toBe("known");
   });
 });

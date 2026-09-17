@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import { LEVELS } from "./data/vocab.js";
 import { wordKey } from "./shared/storage.js";
 import { DISTRICTS } from "./shared/districts.js";
+import { SCENES } from "./data/scenes.js";
 import { MODULES } from "./App.jsx";
 import { TABS } from "./shared/TabBar.jsx";
 
@@ -98,15 +99,50 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
   });
 
-  it("opens conversations from Il Mercato and returns to the city", async () => {
+  // Il Mercato became a hub, so this is now two doors deep, exactly like
+  // L'Officina: the district opens the market, and the market opens the
+  // dialogues. Coming back out passes through both — and the dialogues' back
+  // link says "Il Mercato" rather than "All modules", because that is where
+  // it now goes.
+  it("opens the market from Il Mercato, and the dialogues inside it", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
+    expect(screen.getByRole("heading", { name: "Il Mercato" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Dialoghi/ }));
     expect(screen.getByText("Due parole")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /All modules/ }));
+    await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
+    expect(screen.getByRole("heading", { name: "Il Mercato" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /La Città/ }));
     expect(screen.getByRole("heading", { name: "La Città" })).toBeInTheDocument();
+  });
+
+  // The one cross-place jump a screen is given rather than left to the tab
+  // bar. Le Scene's fourth phase is waiting on a scene-partner key that is
+  // entered in Casa, so Casa is the only thing a learner can do about that
+  // screen — and the walk is the whole chain, four doors deep, because that is
+  // the only way to prove the prop is wired all the way down.
+  it("reaches Casa from the scene phase that is waiting on a key", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
+    await user.click(screen.getByRole("button", { name: /Scene/ }));
+    await user.click(screen.getByRole("button", { name: new RegExp(SCENES[0].title) }));
+    await user.click(screen.getByRole("button", { name: /Comincia/ }));
+    await user.click(screen.getByRole("button", { name: /Ho capito/ }));
+    for (const item of SCENES[0].rehearsal) {
+      await user.type(screen.getByRole("textbox"), item.answer);
+      await user.click(screen.getByRole("button", { name: /Check/ }));
+      await user.click(screen.getByRole("button", { name: /Avanti|Sono pronta/ }));
+    }
+
+    await user.click(screen.getByRole("button", { name: /Open Casa/ }));
+    expect(screen.getByRole("heading", { name: "Casa" })).toBeInTheDocument();
   });
 
   // This used to assert the opposite: Il Cinema was shut on a fresh account
@@ -226,11 +262,19 @@ describe("every module is reachable without a menu", () => {
   const MAP = (district) => async (user) => {
     await user.click(screen.getByRole("button", { name: district }));
   };
+  // Il Mercato is the second hub, so its stalls are two doors in, the way
+  // L'Officina's benches are. It is reached off the map rather than off a tab,
+  // because the market has no tab of its own.
+  const MERCATO = (stall) => async (user) => {
+    await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
+    await user.click(screen.getByRole("button", { name: stall }));
+  };
 
   const ROUTES = {
     vocab: [OFFICINA(/Vocabulary/), () => screen.getByText("Parole in viaggio")],
     grammar: [MAP(/Il Cantiere/), () => screen.getByText("Regole in tasca")],
-    conversations: [MAP(/Il Mercato/), () => screen.getByText("Due parole")],
+    conversations: [MERCATO(/Dialoghi/), () => screen.getByText("Due parole")],
+    scenes: [MERCATO(/Scene/), () => screen.getByRole("heading", { name: "Le Scene" })],
     stories: [MAP(/Il Cinema/), () => screen.getByText("Quattro pagine")],
     mappe: [OFFICINA(/Mappatura delle parole/), () => screen.getByRole("heading", { name: "Mappatura delle parole" })],
     riserva: [OFFICINA(/La Riserva/), () => screen.getByRole("heading", { name: "La Riserva" })],

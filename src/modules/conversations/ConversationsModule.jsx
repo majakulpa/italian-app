@@ -10,7 +10,7 @@ import LevelPicker from "../../shared/LevelPicker.jsx";
 import TicketCard from "../../shared/TicketCard.jsx";
 import TranslationToggle from "../../shared/TranslationToggle.jsx";
 
-function ConversationsHome({ onPick, onExit, progress }) {
+function ConversationsHome({ onPick, onExit, exitLabel, progress }) {
   const [level, setLevel] = useState(CONVERSATION_LEVELS[0]);
 
   return (
@@ -20,7 +20,7 @@ function ConversationsHome({ onPick, onExit, progress }) {
           onClick={onExit}
           style={{ border: "none", background: "transparent", cursor: "pointer", color: TOKENS.inkSoft, display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: 13, padding: 0 }}
         >
-          <ArrowLeft size={16} /> All modules
+          <ArrowLeft size={16} /> {exitLabel}
         </button>
       </div>
 
@@ -373,8 +373,12 @@ function Dialogue({ level, dialogue, onBack, onMarkDone }) {
   );
 }
 
-// onExit returns to the app's module menu (see src/App.jsx)
-export default function ConversationsModule({ onExit }) {
+// onExit goes back to whatever opened this module, and `exitLabel` is how the
+// back link says so. Il Mercato became a hub and renders the dialogues inside
+// itself, so "All modules" stopped being where back went — the same prop, with
+// the same default, that VocabModule and MappeModule grew when L'Officina
+// started rendering them.
+export default function ConversationsModule({ onExit, exitLabel = "All modules" }) {
   const [session, setSession] = useState(null);
   const [progress, setProgress] = useState(loadProgress);
 
@@ -386,7 +390,7 @@ export default function ConversationsModule({ onExit }) {
   const onBack = () => setSession(null);
   const onMarkDone = (key, status) => setProgress((p) => markWord(p, key, status));
 
-  if (!session) return <ConversationsHome onPick={onPick} onExit={onExit} progress={progress} />;
+  if (!session) return <ConversationsHome onPick={onPick} onExit={onExit} exitLabel={exitLabel} progress={progress} />;
   return (
     <Dialogue
       level={session.level}

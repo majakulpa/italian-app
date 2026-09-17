@@ -106,6 +106,12 @@ function wordsKnown(progress) {
 // nothing the app ships has lost its front door. `waiting` is the sentence a
 // shut bench states instead of a count — never a bare padlock, per PLAN.md.
 //
+// `hub` says which district these sit inside, and it is not decoration: a
+// bench used to be the only kind of station in the city, so the reachability
+// checks could name this file. Il Mercato is the second hub, so the list they
+// read is shared/stations.js and every station declares where it lives. See
+// that file for the four fields it relies on.
+//
 // A bench may also be marked `view: true`, meaning it opens a screen that
 // *reads* progress the other benches wrote and keeps none of its own, exactly
 // as ReviewModule is "a route, not a MODULES entry". That flag was invented
@@ -118,6 +124,7 @@ function wordsKnown(progress) {
 export const BENCHES = [
   {
     id: "vocab",
+    hub: "officina",
     name: "Vocabulary",
     module: "vocab",
     route: "vocab",
@@ -129,6 +136,7 @@ export const BENCHES = [
   },
   {
     id: "mappe",
+    hub: "officina",
     name: "Mappatura delle parole",
     lang: "it",
     module: "mappe",
@@ -142,6 +150,7 @@ export const BENCHES = [
   },
   {
     id: "riserva",
+    hub: "officina",
     name: "La Riserva",
     lang: "it",
     // A module, where it used to be `module: null, view: true`. The comment
@@ -163,6 +172,7 @@ export const BENCHES = [
   },
   {
     id: "articoli",
+    hub: "officina",
     name: "Gli Articoli",
     lang: "it",
     module: "articoli",
@@ -175,6 +185,7 @@ export const BENCHES = [
   },
   {
     id: "falsi-amici",
+    hub: "officina",
     name: "Falsi Amici",
     lang: "it",
     module: "falsi-amici",

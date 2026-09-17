@@ -6,7 +6,10 @@ const ARTICLES = ["il", "lo", "la", "i", "gli", "le"];
 // Nouns whose ending contradicts their gender. They end in -o or -a and still
 // need the article, which is exactly why they are the interesting ones — and
 // why they have to be declared here rather than slipping in unnoticed.
-const GENDER_LIARS = ["la mano", "il problema"];
+//
+// Ranks 501–600 added `il cinema` — masculine despite the -a ending, clipped
+// from `cinematografo` the way `foto` and `moto` are clipped forms.
+const GENDER_LIARS = ["la mano", "il problema", "il cinema"];
 
 const articled = FONDAMENTALE.filter((w) => ARTICLES.includes(w.it.split(" ")[0]));
 
@@ -26,8 +29,8 @@ const legalArticle = (article, noun) => {
 };
 
 describe("FONDAMENTALE", () => {
-  it("ships the first 500 of a 2,000-word target", () => {
-    expect(FONDAMENTALE).toHaveLength(500);
+  it("ships the first 600 of a 2,000-word target", () => {
+    expect(FONDAMENTALE).toHaveLength(600);
     expect(FONDAMENTALE_TARGET).toBe(2000);
     expect(FONDAMENTALE.length).toBeLessThanOrEqual(FONDAMENTALE_TARGET);
   });
@@ -184,6 +187,14 @@ describe("FONDAMENTALE — the article convention", () => {
     "diciassette", "diciannove", "venti", "arancione",
     "chiamarsi", "alzarsi", "svegliarsi", "sedersi",
     "tardi", "insieme", "forse",
+    // Ranks 501–600: connectives and adverbs with an opaque ending
+    // (`grazie`, `però`, `quindi`...), two opaque-ending adjectives
+    // (`forte`, `debole`, `gentile`), and `per favore` — a fixed formula
+    // stored as its own two-word entry rather than an article + noun, so it
+    // reads as bare and opaque the same way the single-word ones do.
+    "grazie", "per favore", "quale", "però", "invece", "quindi", "mentre",
+    "infatti", "cioè", "fuori", "quasi", "magari", "veramente",
+    "forte", "debole", "gentile",
   ]);
 
   it("leaves no noun with an opaque ending standing bare", () => {

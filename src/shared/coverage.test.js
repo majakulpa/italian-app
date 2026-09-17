@@ -114,12 +114,12 @@ describe("coverage", () => {
 
   // ...and the link that makes the two-thirds figure above describe what the
   // file used to hold, plus the same check for where the file actually is
-  // now: the seeded entries are ranks 1–500, contiguous from 1, and not any
-  // 500 ranks. fondamentale.test.js owns contiguity as its own invariant;
+  // now: the seeded entries are ranks 1–600, contiguous from 1, and not any
+  // 600 ranks. fondamentale.test.js owns contiguity as its own invariant;
   // this is the version that ties it to the ceiling arithmetic.
   it("has seeded exactly the ranks the ceiling is computed over", () => {
     expect(FONDAMENTALE.map((e) => e.rank)).toEqual(
-      Array.from({ length: 500 }, (_, i) => i + 1),
+      Array.from({ length: 600 }, (_, i) => i + 1),
     );
   });
 });
@@ -167,7 +167,7 @@ describe("coverageBands", () => {
   });
 
   it("reports how much of each band the data file actually holds", () => {
-    expect(bands.map((b) => b.seeded)).toEqual([200, 200, 100, 0, 0, 0, 0, 0, 0, 0]);
+    expect(bands.map((b) => b.seeded)).toEqual([200, 200, 200, 0, 0, 0, 0, 0, 0, 0]);
   });
 
   it("puts a studied word in its own band and leaves the others alone", () => {
@@ -251,16 +251,21 @@ describe("lexiconUnits", () => {
 // reviewItem() as everything else, so the bridge in coverage.js has two
 // sources and every rank with a word written down is reachable. The ceiling
 // is therefore the coverage of the seeded ranks and nothing else — 1 to 300
-// moved it to 66.1%, ranks 301–400 moved it to 69.1%, and ranks 401–500,
-// added for their own sake as content rather than mechanism, moved it again:
+// moved it to 66.1%, ranks 301–400 moved it to 69.1%, ranks 401–500 moved it
+// to 71.4%, and ranks 501–600, the batch that finally seeded `quanto` and
+// `grazie` and gave the list its first twelve months, moved it again:
 //
-//   71.4%   Σ 1/r over ranks 1–500, normalised so the whole 2,000 comes to
-//           LEXICON_COVERAGE. Up from 69.1% at 400 entries — still roughly
-//           two thirds and a bit more, because ranks past 400 are worth less
+//   73.3%   Σ 1/r over ranks 1–600, normalised so the whole 2,000 comes to
+//           LEXICON_COVERAGE. Up from 71.4% at 500 entries — still roughly
+//           two thirds and a bit more, because ranks past 500 are worth less
 //           each but there are 100 more of them.
-//   500     of 2,000 solid. The denominator is a promise the *list* cannot
+//   600     of 2,000 solid. The denominator is a promise the *list* cannot
 //           keep yet, and that is now the only reason it cannot: the
-//           mechanism reaches every entry, and 1,500 ranks have no entry.
+//           mechanism reaches every entry, and 1,400 ranks have no entry.
+//           600 is also the door La Riserva's fascia comment names for the
+//           generated serial (design screens 13–17) — reachable now in the
+//           sense that the words exist to be studied, not in the sense that
+//           any account has studied them.
 //
 // So this stays the tripwire it was, with the failure it catches turned
 // around. Before, it caught the headline being a near-constant nothing could
@@ -322,22 +327,22 @@ describe("the ceiling a fully-mastered account reaches", () => {
     expect(scheduled.every((u) => mastered.schedule[u.key].box === MAX_BOX)).toBe(true);
   });
 
-  it("reaches 71.4% — the worth of every rank that has a word behind it", () => {
-    expect(coverage(mastered).pct).toBe(71.4);
+  it("reaches 73.3% — the worth of every rank that has a word behind it", () => {
+    expect(coverage(mastered).pct).toBe(73.3);
   });
 
   // The other half of the headline. Every seeded rank is drillable, so
-  // "x / 2000 solid" stops at however many entries the file holds — 500 —
+  // "x / 2000 solid" stops at however many entries the file holds — 600 —
   // and the denominator is now a promise only the *list* is short of.
-  it("reaches 500 of the 2,000 solid, which is the length of the list", () => {
+  it("reaches 600 of the 2,000 solid, which is the length of the list", () => {
     expect(coverage(mastered).counts.solid).toBe(FONDAMENTALE.length);
-    expect(coverage(mastered).counts.solid).toBe(500);
+    expect(coverage(mastered).counts.solid).toBe(600);
   });
 
   // Naming the cause, so a failure above is diagnosable. The ceiling is a
   // fact about the file, not about the bridge: the drill reaches every entry,
   // and the arithmetic agrees with a direct sum over the ranks that have one.
-  it("is exactly the coverage of ranks 1 to 500 and nothing else", () => {
+  it("is exactly the coverage of ranks 1 to 600 and nothing else", () => {
     const seeded = FONDAMENTALE.reduce((sum, entry) => sum + rankWeight(entry.rank), 0);
 
     expect(coverage(mastered).pct).toBe(Math.round(seeded * 1000) / 10);
@@ -349,15 +354,17 @@ describe("the ceiling a fully-mastered account reaches", () => {
   // onto no lemma at all. What changed with ranks 301–400 is that count going
   // from 20 to 22 (`governo`, `legge`); ranks 401–500 widened it again, to 26
   // — `aeroporto`, `cameriere`, `ristorante` and `zio` are all already deck
-  // words — and what stayed the same is that it is not the only way in, so
-  // it does not set the bound.
-  it("still bridges only 26 of the vocabulary module's 120 words onto a lemma", () => {
+  // words — and ranks 501–600 widened it again, to 34: `grazie`, `prego`,
+  // `per favore`, `biglietto`, `conto`, `orario`, `passaporto` and `valigia`
+  // are all already deck words too. What stayed the same is that it is not
+  // the only way in, so it does not set the bound.
+  it("still bridges only 34 of the vocabulary module's 120 words onto a lemma", () => {
     const vocab = MODULE_STATS.find((m) => m.id === "vocab");
     const words = vocab.levels.flatMap((l) => vocab.units(l));
     const deckOnly = masterOne("vocab");
 
     expect(words).toHaveLength(120);
-    expect(lexiconStates(deckOnly).size).toBe(26);
-    expect(coverage(deckOnly).pct).toBe(1.7);
+    expect(lexiconStates(deckOnly).size).toBe(34);
+    expect(coverage(deckOnly).pct).toBe(1.9);
   });
 });

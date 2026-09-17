@@ -6,7 +6,10 @@ const ARTICLES = ["il", "lo", "la", "i", "gli", "le"];
 // Nouns whose ending contradicts their gender. They end in -o or -a and still
 // need the article, which is exactly why they are the interesting ones — and
 // why they have to be declared here rather than slipping in unnoticed.
-const GENDER_LIARS = ["la mano", "il problema"];
+//
+// Ranks 501–600 added `il cinema` — masculine despite the -a ending, clipped
+// from `cinematografo` the way `foto` and `moto` are clipped forms.
+const GENDER_LIARS = ["la mano", "il problema", "il cinema"];
 
 const articled = FONDAMENTALE.filter((w) => ARTICLES.includes(w.it.split(" ")[0]));
 
@@ -26,8 +29,8 @@ const legalArticle = (article, noun) => {
 };
 
 describe("FONDAMENTALE", () => {
-  it("ships the first 500 of a 2,000-word target", () => {
-    expect(FONDAMENTALE).toHaveLength(500);
+  it("ships the first 600 of a 2,000-word target", () => {
+    expect(FONDAMENTALE).toHaveLength(600);
     expect(FONDAMENTALE_TARGET).toBe(2000);
     expect(FONDAMENTALE.length).toBeLessThanOrEqual(FONDAMENTALE_TARGET);
   });
@@ -184,17 +187,43 @@ describe("FONDAMENTALE — the article convention", () => {
     "diciassette", "diciannove", "venti", "arancione",
     "chiamarsi", "alzarsi", "svegliarsi", "sedersi",
     "tardi", "insieme", "forse",
+    // Ranks 501–600: connectives and adverbs with an opaque ending
+    // (`grazie`, `però`, `quindi`...), two opaque-ending adjectives
+    // (`forte`, `debole`, `gentile`), and `per favore` — a fixed formula
+    // stored as its own two-word entry rather than an article + noun, so it
+    // reads as bare and opaque the same way the single-word ones do.
+    "grazie", "per favore", "quale", "però", "invece", "quindi", "mentre",
+    "infatti", "cioè", "fuori", "quasi", "magari", "veramente",
+    "forte", "debole", "gentile",
   ]);
 
-  it("leaves no noun with an opaque ending standing bare", () => {
+  // The five months whose ending is opaque. They are nouns, so they are not
+  // in NON_NOUNS, and they are bare rather than articled because a month is
+  // not used with one — `ad aprile`, not `l'aprile`. Nothing is hidden by
+  // that: every month is masculine, which is one fact stated in the data
+  // file rather than twelve articles, five of them teaching a form nobody
+  // would say. Declared here so a *different* opaque noun cannot slip in
+  // bare behind them.
+  const MONTHS = new Set(["aprile", "settembre", "ottobre", "novembre", "dicembre"]);
+
+  it("leaves no noun with an opaque ending standing bare, months aside", () => {
     // A vowel-initial opaque noun elides to `l'` and is not "bare" in the
     // sense this test means — it carries an article, just not a spaced one —
     // so it is excluded here and checked on its own terms below.
     const bare = FONDAMENTALE.filter((w) => !ARTICLES.includes(w.it.split(" ")[0]) && !w.it.startsWith("l'"));
     const opaque = bare.filter(
-      (w) => !/[oa]$/.test(w.it) && !/(are|ere|ire)$/.test(w.it) && !NON_NOUNS.has(w.it),
+      (w) => !/[oa]$/.test(w.it) && !/(are|ere|ire)$/.test(w.it) && !NON_NOUNS.has(w.it) && !MONTHS.has(w.it),
     );
     expect(opaque.map((w) => w.it)).toEqual([]);
+  });
+
+  it("keeps every month bare, so none of them teaches an article it never takes", () => {
+    const months = FONDAMENTALE.filter((w) => w.rank >= 589 && w.rank <= 600);
+    expect(months).toHaveLength(12);
+    for (const month of months) {
+      expect(month.it, `rank ${month.rank}`).not.toMatch(/^(il|lo|la|l')/);
+      expect(month.gender, `rank ${month.rank}`).toBeUndefined();
+    }
   });
 
   it("uses the article form Italian phonology actually requires", () => {

@@ -80,6 +80,16 @@ const RANK_WORDS = {
   303: "tre",
   307: "sette",
   310: "dieci",
+  // Ranks 501–600 seeded the market words scenes.js had to define on its
+  // own — the same move `formaggio` made at rank 235.
+  501: "quanto",
+  517: "certo",
+  583: "mezzo",
+  584: "chilo",
+  585: "pomodoro",
+  586: "carta",
+  587: "resto",
+  588: "euro",
 };
 
 const byRank = new Map(FONDAMENTALE.map((entry) => [entry.rank, entry]));

@@ -109,7 +109,8 @@ export const SCENES = [
   {
     // knownRanks: 1 essere · 2 di · 8 un · 11 per · 18 questo · 21 volere ·
     // 26 tutto · 28 più · 29 no · 51 bene · 65 così · 70 altro · 85 bello ·
-    // 136 mangiare · 148 comprare · 212 sera · 303 tre
+    // 136 mangiare · 148 comprare · 212 sera · 303 tre · 583 mezzo ·
+    // 584 chilo · 585 pomodoro
     id: "verdura",
     title: "Al banco della verdura",
     district: "mercato",
@@ -120,24 +121,12 @@ export const SCENES = [
       it: "Posso comprare cibo a peso e dire quanto lo voglio maturo.",
       en: "I can buy food by weight and say how ripe I want it.",
     },
-    knownRanks: [1, 2, 8, 11, 18, 21, 26, 28, 29, 51, 65, 70, 85, 136, 148, 212, 303],
+    // `mezzo`, `chilo` and `pomodoro` moved here from newWords once
+    // fondamentale.js ranks 501–600 seeded them (583, 584, 585) — the same
+    // move `formaggio` made at rank 235. Guessing they were scene-only was
+    // wrong a second time.
+    knownRanks: [1, 2, 8, 11, 18, 21, 26, 28, 29, 51, 65, 70, 85, 136, 148, 212, 303, 583, 584, 585],
     newWords: [
-      {
-        it: "mezzo",
-        pos: "adj",
-        en: "half",
-        pl: "pół",
-        fondamentaleRank: null,
-        note: "Si accorda con la cosa: mezzo chilo, mezza bottiglia. In polacco pół davanti a una misura non cambia (pół kilo); è połowa, il sostantivo, che si declina.",
-      },
-      {
-        it: "chilo",
-        pos: "noun",
-        en: "kilo",
-        pl: "kilogram · kilo",
-        fondamentaleRank: null,
-        note: "Al mercato si dice sempre chilo, non chilogrammo. Plurale chili: due chili di pane.",
-      },
       {
         it: "etto",
         pos: "noun",
@@ -160,14 +149,6 @@ export const SCENES = [
         // inflected dojrzałe because it was glossing maturi; the lemma here
         // is the dictionary form.
         note: "Plurale maturi perché pomodori è plurale. In italiano l'aggettivo si accorda — come in polacco.",
-      },
-      {
-        it: "pomodoro",
-        pos: "noun",
-        en: "tomato",
-        pl: "pomidor",
-        fondamentaleRank: null,
-        note: "Plurale pomodori, maschile.",
       },
       {
         it: "stasera",
@@ -302,7 +283,8 @@ export const SCENES = [
   {
     // knownRanks: 1 essere · 2 di · 8 un · 11 per · 18 questo · 22 potere ·
     // 44 sì · 45 cosa · 50 molto · 67 tanto · 80 buono · 103 dare ·
-    // 104 prendere · 150 costare · 235 formaggio · 302 due · 303 tre
+    // 104 prendere · 150 costare · 235 formaggio · 302 due · 303 tre ·
+    // 517 certo
     id: "salumiere",
     title: "Dal salumiere",
     district: "mercato",
@@ -311,7 +293,9 @@ export const SCENES = [
       it: "Posso ordinare salumi e formaggio a peso, e chiedere di assaggiare.",
       en: "I can order cold cuts and cheese by weight, and ask for a taste.",
     },
-    knownRanks: [1, 2, 8, 11, 18, 22, 44, 45, 50, 67, 80, 103, 104, 150, 235, 302, 303],
+    // `certo` moved here from newWords once fondamentale.js rank 501–600
+    // seeded it (517) — the same move `formaggio` made at rank 235.
+    knownRanks: [1, 2, 8, 11, 18, 22, 44, 45, 50, 67, 80, 103, 104, 150, 235, 302, 303, 517],
     newWords: [
       {
         it: "il salumiere",
@@ -374,17 +358,6 @@ export const SCENES = [
         // Earns its note: three different words hide behind this spelling and
         // two of them have different genders.
         note: "Attenzione: fine qui vuol dire sottile, e vale anche come avverbio (taglio fine). Non è la fine (il finale) né il fine (lo scopo).",
-      },
-      {
-        it: "certo",
-        pos: "adv",
-        // Glossed in the sense the scene uses. The adjective `certo` = sicuro
-        // is a different part of speech, so it belongs in the note rather
-        // than crammed into a gloss the `pos` field then contradicts.
-        en: "of course",
-        pl: "oczywiście",
-        fondamentaleRank: null,
-        note: "Certo! da solo vuol dire ma sì, volentieri. Come aggettivo vuol dire sicuro.",
       },
     ],
     grammar: {
@@ -501,7 +474,8 @@ export const SCENES = [
   {
     // knownRanks: 2 di · 6 avere · 8 un · 11 per · 18 questo · 21 volere ·
     // 22 potere · 26 tutto · 51 bene · 66 solo · 149 pagare · 150 costare ·
-    // 303 tre · 307 sette · 310 dieci
+    // 303 tre · 307 sette · 310 dieci · 501 quanto · 586 carta · 587 resto ·
+    // 588 euro
     id: "quanto-costa",
     title: "Quanto costa?",
     district: "mercato",
@@ -510,38 +484,11 @@ export const SCENES = [
       it: "Posso chiedere quanto costa, pagare e controllare il resto.",
       en: "I can ask what something costs, pay for it, and check my change.",
     },
-    knownRanks: [2, 6, 8, 11, 18, 21, 22, 26, 51, 66, 149, 150, 303, 307, 310],
+    // `quanto`, `carta`, `resto` and `euro` moved here from newWords once
+    // fondamentale.js ranks 501–600 seeded them — the same move `formaggio`
+    // made at rank 235.
+    knownRanks: [2, 6, 8, 11, 18, 21, 22, 26, 51, 66, 149, 150, 303, 307, 310, 501, 586, 587, 588],
     newWords: [
-      {
-        it: "quanto",
-        pos: "interrog",
-        en: "how much, how many",
-        pl: "ile",
-        fondamentaleRank: null,
-        note: "Si accorda con la cosa: quanto pane, quanta acqua, quanti pomodori, quante mele. Il polacco ile non ha genere.",
-      },
-      {
-        // Bare, not `l'euro`. The -o ending gives the gender away on its own,
-        // which is fondamentale.js's condition for storing a noun without its
-        // article; the elision-plus-`gender` case is for nouns whose ending is
-        // *opaque* as well as vowel-initial (`l'amore`, `l'arte`). Written as
-        // `l'euro` with `gender: "m"` first, and scenes.test.js's article
-        // check caught it.
-        it: "euro",
-        pos: "noun",
-        en: "euro",
-        pl: "euro",
-        fondamentaleRank: null,
-        note: "Invariabile al plurale: dieci euro, mai euri. Come in polacco, dove euro non si declina.",
-      },
-      {
-        it: "resto",
-        pos: "noun",
-        en: "change (money back); the rest",
-        pl: "reszta",
-        fondamentaleRank: null,
-        note: "Alla cassa il resto sono i soldi che ti tornano. Il polacco usa la stessa parola per i due sensi, reszta, dove l'inglese ne usa due (change e rest). Vuole l'articolo: ecco il resto.",
-      },
       {
         it: "i contanti",
         // Plural-only, like `i soldi` at rank 297, so it is stored with its
@@ -551,14 +498,6 @@ export const SCENES = [
         pl: "gotówka",
         fondamentaleRank: null,
         note: "Solo plurale in italiano, e la frase fissa è in contanti. Il polacco gotówka è singolare.",
-      },
-      {
-        it: "carta",
-        pos: "noun",
-        en: "card; paper",
-        pl: "karta · papier",
-        fondamentaleRank: null,
-        note: "Con la carta vuole l'articolo; in contanti non lo vuole. È anche la carta su cui scrivi.",
       },
       {
         it: "in tutto",

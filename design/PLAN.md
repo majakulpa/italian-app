@@ -51,7 +51,7 @@ layer](#polish-is-a-first-class-layer).
 
 ### What exists on `main` today
 
-- `src/data/fondamentale.js` — **500 of a target 2,000** entries, rank order, EN + PL glosses, articles on opaque nouns.
+- `src/data/fondamentale.js` — **600 of a target 2,000** entries, rank order, EN + PL glosses, articles on opaque nouns.
 - `src/shared/wordState.js` — `unseen → learning → known → solid`, derived from the Leitner box, never stored.
 - `src/shared/coverage.js` — `coverage()`, `coverageBands()`, `rankWeight()`, and the
   vocabulary bridge: `lemmaKey()`, `lexiconUnits()`, `lexiconStates()`, `lexiconEvidence()`.
@@ -75,9 +75,9 @@ layer](#polish-is-a-first-class-layer).
   glosses, and the fascia drill (`drill.js`, `DrillRound.jsx`) — typed
   production over the base vocabulary, graded through `reviewItem` under
   `riserva:` keys. **This is what raised the coverage ceiling from 1.6% to
-  66.1%, ranks 301–400 raised it again on their own to 69.1%, and ranks
-  401–500 raised it again to 71.4%**; see open
-  question 2.
+  66.1%, ranks 301–400 raised it again on their own to 69.1%, ranks
+  401–500 raised it again to 71.4%, and ranks 501–600 raised it again to
+  73.3%**; see open question 2.
 - `src/shared/typedAnswer.js` — accent-tolerant matching for typed answers, and the
   shared-prefix arithmetic the located feedback is built on. Three modules judge
   against it now: `modules/mappe/feedback.js`, `modules/falsiAmici/feedback.js`
@@ -121,12 +121,17 @@ reading. At 600 it is 97.2%. See
 
 **What changed is what it gates, not the number.** It used to gate Il Cinema's
 *district tile*, and that was wrong: the tile routes to the ten hand-written
-graded readers that ship, and solid words come from a lexicon holding 500 of
-its 2,000 target — so the gate asked for more words than the app contains and
-could never open. Worse, it was drifting further out of reach rather than
-closer, since every entry added raises the ceiling and 600 needs 100 more than
-exist. The readers open now; the 600 waits for the serial it was measured for,
-which will live *inside* Il Cinema the way L'Officina holds benches. See
+graded readers that ship, and solid words come from a lexicon that, at the
+time, held 500 of its 2,000 target — so the gate asked for more words than the
+app contained and could never open. Worse, it was drifting further out of
+reach rather than closer, since every entry added raises the ceiling and 600
+needed 100 more than existed. Ranks 501–600 closed that gap: the lexicon now
+holds exactly 600 entries, so the 600-word threshold is no longer
+unreachable in principle — a fully mastered account can reach it. That is not
+the same as the gate being satisfied by anyone's actual progress, which is
+why the readers stay open unlocked rather than relocking behind a number
+nobody has earned yet. The 600 still waits for the serial it was measured
+for, which will live *inside* Il Cinema the way L'Officina holds benches. See
 `src/shared/districts.js`.
 
 This is also a worked example of "only gate on numbers you have measured"
@@ -198,7 +203,7 @@ correctly *while in* box 5, which the scheduler can't distinguish. The wording i
 fixed. Whether 7 days is the right bar for "solid" is not — coverage and the
 Cinema gate both lean on it. A real 21-day bar needs a sixth box in `srs.js`.
 
-**2. The lexicon is 500 of 2,000 — and that is now the only thing capping
+**2. The lexicon is 600 of 2,000 — and that is now the only thing capping
 coverage.** This entry used to say the lexicon was the real bottleneck while
 the arithmetic said otherwise: the ceiling was ~1.6%, and it was 1.6% because
 the *bridge* was one module wide, not because the list was short. Seeding
@@ -206,10 +211,12 @@ the *bridge* was one module wide, not because the list was short. Seeding
 
 La Riserva's drill widened the bridge — every entry is a schedulable unit
 under a `riserva:` key — so the ceiling is now exactly the worth of the ranks
-that have a word behind them: **71.4%, and 500 / 2,000 solid**, pinned in
-`coverage.test.js`. The mechanism reaches everything the file holds.
+that have a word behind them: **73.3%, and 600 / 2,000 solid**, pinned in
+`coverage.test.js`. The mechanism reaches everything the file holds, and
+ranks 501–600 are also the batch that made the Il Cinema serial threshold
+reachable in principle for the first time — see the settled decision above.
 
-So the sentence is true for the first time: hand-authoring 1,500 more accurate
+So the sentence is true for the first time: hand-authoring 1,400 more accurate
 entries with Polish glosses is the real bottleneck in this whole plan, it is a
 content problem rather than an engineering one, and every entry added now
 raises the headline. Decide whether to grind through it or source De Mauro's
@@ -324,7 +331,7 @@ La Riserva is built: the 2,000 as a grid in frequency order, coloured by state,
 with the ten *fasce* underneath saying what each is worth. No percentage on it,
 per the settled decision. It draws a rank with no word behind it differently
 from one the learner has not met — the first is a fact about the file, the
-second about her, and the lexicon being 500 of 2,000 is visible rather than
+second about her, and the lexicon being 600 of 2,000 is visible rather than
 implied. The drill keeps that distinction rather than losing it: a band with
 no word written down offers no round, and a band already met says so.
 

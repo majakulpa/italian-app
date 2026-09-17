@@ -19,7 +19,7 @@
 // distribution, not a specific word's place in it — but don't cite a number
 // from here as if it were De Mauro's own.
 //
-// TARGET is 2,000. The first 300 are seeded here, accurately, in rank order;
+// TARGET is 2,000. The first 600 are seeded here, accurately, in rank order;
 // appending the rest is mechanical — add entries to the end of the array and
 // the ranks stay contiguous, which fondamentale.test.js checks.
 //
@@ -601,10 +601,150 @@ export const FONDAMENTALE = [
   { rank: 498, it: "tardi", en: "late", pl: "późno" },
   { rank: 499, it: "insieme", en: "together", pl: "razem" },
   { rank: 500, it: "forse", en: "maybe, perhaps", pl: "może" },
+
+  // ── Ranks 501–600 ─────────────────────────────────────────────────────
+  // Authoring the market scenes (data/scenes.js) turned up common words
+  // missing from the first 500 — `quanto` and `grazie` chief among them, a
+  // top-2000 list without them was never defensible — so this batch opens
+  // with those, then the connectives and quantity/quality adjectives a
+  // learner needs to build a sentence with what's already here, then a
+  // block of everyday nouns (rooms, documents, technology, gifts) and the
+  // market words scenes.js had to define on its own, and closes with the
+  // twelve months, which the list had none of at all.
+  { rank: 501, it: "quanto", en: "how much, how many", pl: "ile" },
+  { rank: 502, it: "grazie", en: "thank you, thanks", pl: "dziękuję" },
+  { rank: 503, it: "prego", en: "you're welcome; please, go ahead", pl: "proszę" },
+  // A fixed formula, not a noun phrase — a deliberate exception to "a space
+  // means an article", parallel to `grazie` and `prego` either side of it
+  // rather than to `la chiave`. See NON_NOUNS below.
+  { rank: 504, it: "per favore", en: "please", pl: "proszę" },
+  { rank: 505, it: "quale", en: "which, what", pl: "który · jaki" },
+  { rank: 506, it: "però", en: "however, though", pl: "jednak · ale" },
+  { rank: 507, it: "senza", en: "without", pl: "bez" },
+  { rank: 508, it: "tra", en: "between, among; in (a time)", pl: "między · za" },
+  { rank: 509, it: "quindi", en: "therefore, so", pl: "więc · zatem" },
+  { rank: 510, it: "allora", en: "then, in that case; well", pl: "wtedy · no to" },
+  { rank: 511, it: "invece", en: "instead, on the other hand", pl: "natomiast · zamiast tego" },
+  { rank: 512, it: "mentre", en: "while, whereas", pl: "podczas gdy · natomiast" },
+  { rank: 513, it: "spesso", en: "often", pl: "często" },
+  { rank: 514, it: "quasi", en: "almost, nearly", pl: "prawie" },
+  { rank: 515, it: "circa", en: "about, approximately", pl: "około" },
+  { rank: 516, it: "davvero", en: "really, indeed", pl: "naprawdę · rzeczywiście" },
+  { rank: 517, it: "certo", en: "certain, sure · of course", pl: "pewny · pewnie" },
+  { rank: 518, it: "sicuro", en: "sure, certain; safe", pl: "pewny · bezpieczny" },
+  { rank: 519, it: "pronto", en: "ready", pl: "gotowy" },
+  { rank: 520, it: "libero", en: "free, available", pl: "wolny" },
+  { rank: 521, it: "occupato", en: "busy, occupied", pl: "zajęty" },
+  { rank: 522, it: "forte", en: "strong; loud", pl: "silny · mocny" },
+  { rank: 523, it: "debole", en: "weak", pl: "słaby" },
+  { rank: 524, it: "corto", en: "short (length)", pl: "krótki" },
+  { rank: 525, it: "largo", en: "wide, broad", pl: "szeroki" },
+  { rank: 526, it: "stretto", en: "narrow; tight", pl: "wąski · ciasny" },
+  { rank: 527, it: "gentile", en: "kind, polite", pl: "uprzejmy · miły" },
+  { rank: 528, it: "simpatico", en: "nice, likeable", pl: "sympatyczny · miły" },
+  { rank: 529, it: "necessario", en: "necessary", pl: "konieczny · niezbędny" },
+  { rank: 530, it: "giusto", en: "right, fair, correct", pl: "słuszny · sprawiedliwy" },
+  { rank: 531, it: "caro", en: "dear; expensive", pl: "drogi" },
+  { rank: 532, it: "meno", en: "less, minus", pl: "mniej · minus" },
+  { rank: 533, it: "vicino", en: "near, nearby", pl: "blisko · niedaleko" },
+  { rank: 534, it: "lontano", en: "far, distant", pl: "daleko" },
+  { rank: 535, it: "dentro", en: "inside, within", pl: "wewnątrz · w środku" },
+  { rank: 536, it: "fuori", en: "outside, out", pl: "na zewnątrz" },
+  { rank: 537, it: "sopra", en: "above, on top of", pl: "nad · na" },
+  { rank: 538, it: "sotto", en: "under, below", pl: "pod" },
+  { rank: 539, it: "abbastanza", en: "enough; quite, rather", pl: "wystarczająco · dość" },
+  { rank: 540, it: "veramente", en: "actually, to tell the truth", pl: "właściwie · tak naprawdę" },
+  { rank: 541, it: "purtroppo", en: "unfortunately", pl: "niestety" },
+  { rank: 542, it: "magari", en: "maybe, perhaps · if only", pl: "może · oby" },
+  { rank: 543, it: "infatti", en: "in fact, indeed", pl: "rzeczywiście · faktycznie" },
+  { rank: 544, it: "cioè", en: "that is, i.e.", pl: "czyli · to znaczy" },
+
+  { rank: 545, it: "preferire", en: "to prefer", pl: "woleć" },
+  { rank: 546, it: "abitare", en: "to live, to reside", pl: "mieszkać" },
+  { rank: 547, it: "ricevere", en: "to receive, to get", pl: "otrzymywać · otrzymać" },
+  { rank: 548, it: "offrire", en: "to offer", pl: "oferować · zaoferować" },
+  { rank: 549, it: "permettere", en: "to allow, to permit", pl: "pozwalać · pozwolić" },
+  { rank: 550, it: "mandare", en: "to send", pl: "wysyłać · wysłać" },
+  { rank: 551, it: "girare", en: "to turn; to go around", pl: "skręcać · skręcić" },
+  { rank: 552, it: "domandare", en: "to ask (a question)", pl: "pytać · zapytać" },
+  { rank: 553, it: "smettere", en: "to stop, to quit", pl: "przestawać · przestać" },
+  { rank: 554, it: "incontrare", en: "to meet", pl: "spotykać · spotkać" },
+  { rank: 555, it: "raccontare", en: "to tell, to narrate", pl: "opowiadać · opowiedzieć" },
+  { rank: 556, it: "sognare", en: "to dream", pl: "śnić · marzyć" },
+
+  { rank: 557, it: "domanda", en: "question; application", pl: "pytanie · podanie" },
+  { rank: 558, it: "risposta", en: "answer, reply", pl: "odpowiedź" },
+  { rank: 559, it: "lingua", en: "language; tongue", pl: "język" },
+  { rank: 560, it: "parola", en: "word", pl: "słowo" },
+  { rank: 561, it: "esempio", en: "example", pl: "przykład" },
+
+  { rank: 562, it: "museo", en: "museum", pl: "muzeum" },
+  // Masculine despite the -a ending — clipped from `cinematografo`, the same
+  // way `foto` and `moto` are clipped forms. A real gender liar, so it joins
+  // `la mano` and `il problema` in GENDER_LIARS.
+  { rank: 563, it: "il cinema", en: "cinema, the movies", pl: "kino" },
+  { rank: 564, it: "teatro", en: "theatre", pl: "teatr" },
+  { rank: 565, it: "parco", en: "park", pl: "park" },
+  { rank: 566, it: "camera", en: "bedroom, hotel room", pl: "pokój" },
+  { rank: 567, it: "biglietto", en: "ticket", pl: "bilet" },
+  { rank: 568, it: "conto", en: "bill, check; account", pl: "rachunek · konto" },
+  { rank: 569, it: "valigia", en: "suitcase", pl: "walizka" },
+  { rank: 570, it: "passaporto", en: "passport", pl: "paszport" },
+  { rank: 571, it: "orario", en: "schedule, timetable; hours", pl: "rozkład · godziny" },
+  { rank: 572, it: "festa", en: "party; holiday", pl: "impreza · święto" },
+  { rank: 573, it: "regalo", en: "gift, present", pl: "prezent" },
+  { rank: 574, it: "prezzo", en: "price", pl: "cena" },
+  { rank: 575, it: "portafoglio", en: "wallet", pl: "portfel" },
+  { rank: 576, it: "il film", en: "film, movie", pl: "film" },
+  { rank: 577, it: "il cellulare", en: "mobile phone, cellphone", pl: "telefon komórkowy · komórka" },
+  { rank: 578, it: "il computer", en: "computer", pl: "komputer" },
+  { rank: 579, it: "messaggio", en: "message", pl: "wiadomość" },
+  { rank: 580, it: "aiuto", en: "help", pl: "pomoc" },
+  { rank: 581, it: "sogno", en: "dream", pl: "sen · marzenie" },
+  { rank: 582, it: "vacanza", en: "vacation, holiday", pl: "wakacje" },
+
+  // The market words the Il Mercato scenes had to define for themselves —
+  // scenes.js records `fondamentaleRank: null` for each. They belong here
+  // for their own sake, and doing so moves them from that file's own
+  // newWords into its knownRanks (scenes.test.js checks the claim).
+  { rank: 583, it: "mezzo", en: "half", pl: "pół" },
+  { rank: 584, it: "chilo", en: "kilo, kilogram", pl: "kilogram · kilo" },
+  { rank: 585, it: "pomodoro", en: "tomato", pl: "pomidor" },
+  { rank: 586, it: "carta", en: "paper; card", pl: "papier · karta" },
+  { rank: 587, it: "resto", en: "change (money); rest, remainder", pl: "reszta" },
+  { rank: 588, it: "euro", en: "euro (currency)", pl: "euro" },
+
+  // The twelve months — none were in the list at all, and all twelve are
+  // stored bare, including the five with an opaque `-e` ending.
+  //
+  // This is the one place the article convention is the wrong tool. The
+  // convention exists to carry a gender the ending hides, and `il lunedì`
+  // sets a precedent for it — but a day genuinely takes that article
+  // (`il lunedì` is *on Mondays*), where a month does not: it is `ad
+  // aprile`, `in settembre`, and `l'aprile` is a form to teach only if you
+  // want it produced. The gender is not lost by leaving it off, because it
+  // is one fact rather than twelve: every month is masculine. It is stated
+  // here, and `fondamentale.test.js` declares the five bare opaque ones as
+  // months rather than pretending they are not nouns.
+  //
+  // Polish month names are their own Slavic set, not Latinate cognates the
+  // way the English months are, so there is no cognate route here.
+  { rank: 589, it: "gennaio", en: "January", pl: "styczeń" },
+  { rank: 590, it: "febbraio", en: "February", pl: "luty" },
+  { rank: 591, it: "marzo", en: "March", pl: "marzec" },
+  { rank: 592, it: "aprile", en: "April", pl: "kwiecień" },
+  { rank: 593, it: "maggio", en: "May", pl: "maj" },
+  { rank: 594, it: "giugno", en: "June", pl: "czerwiec" },
+  { rank: 595, it: "luglio", en: "July", pl: "lipiec" },
+  { rank: 596, it: "agosto", en: "August", pl: "sierpień" },
+  { rank: 597, it: "settembre", en: "September", pl: "wrzesień" },
+  { rank: 598, it: "ottobre", en: "October", pl: "październik" },
+  { rank: 599, it: "novembre", en: "November", pl: "listopad" },
+  { rank: 600, it: "dicembre", en: "December", pl: "grudzień" },
 ];
 
 // The entries actually written down inside one band, in rank order. Usually
-// none: the list is 500 of 2,000, and a rank with no word behind it is a fact
+// none: the list is 600 of 2,000, and a rank with no word behind it is a fact
 // about the file rather than about the learner, so a band of empty ranks has
 // nothing to study and must not present as one.
 export function fasciaWords(fascia) {

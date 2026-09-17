@@ -14,6 +14,10 @@ import { FONDAMENTALE } from "./data/fondamentale.js";
 import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
+import MercatoModule from "./modules/mercato/MercatoModule.jsx";
+import { STALLS } from "./modules/mercato/stalls.js";
+import ScenesModule from "./modules/scene/ScenesModule.jsx";
+import { SCENES } from "./data/scenes.js";
 import { expectNoViolations } from "./test/a11y.js";
 import { LEVELS } from "./data/vocab.js";
 import { GRAMMAR_LEVELS } from "./data/grammar.js";
@@ -60,9 +64,20 @@ beforeEach(() => {
   // being audited — pretend it's there, as it is in every browser this ships to.
   vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
   vi.spyOn(speech, "speakItalian").mockImplementation(() => {});
+  vi.spyOn(speech, "primeSpeech").mockImplementation(() => {});
+  // Same argument for recognition: jsdom has none, and Le Scene's microphone
+  // is one of the controls being audited. Without this the control renders its
+  // "this browser cannot listen" sentence instead, and the button — which is
+  // the thing with a name, a pressed state and a hold gesture to get wrong —
+  // would never be scanned.
+  window.SpeechRecognition = class {
+    start() {}
+    stop() {}
+  };
 });
 
 afterEach(() => {
+  delete window.SpeechRecognition;
   vi.restoreAllMocks();
 });
 
@@ -357,6 +372,109 @@ describe("L'Officina", () => {
       const card = screen.getByRole("button", { name: new RegExp(bench.name) });
       card.focus();
       expect(document.activeElement, bench.id).toBe(card);
+    }
+  });
+});
+
+describe("Il Mercato", () => {
+  it("has an accessible market", async () => {
+    const { container } = render(<MercatoModule onExit={() => {}} onCasa={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("leaves no stall out of the tab order", () => {
+    render(<MercatoModule onExit={() => {}} onCasa={() => {}} />);
+
+    for (const stall of STALLS) {
+      const card = screen.getByRole("button", { name: new RegExp(stall.name) });
+      card.focus();
+      expect(document.activeElement, stall.id).toBe(card);
+    }
+  });
+});
+
+// One scan per phase, because each is a different screen: the brief is a
+// list, Ascolta is speaker bubbles plus a row of expanding buttons, Prova is
+// a form with a live region and a microphone, and the stand-in is prose with
+// two exits. A regression in any one of them would not show in the others.
+describe("Le Scene", () => {
+  const verdura = SCENES[0];
+
+  const openScene = async (user) => user.click(screen.getByRole("button", { name: new RegExp(verdura.title) }));
+
+  const toPhase = async (user, phase) => {
+    await openScene(user);
+    if (phase === "brief") return;
+    await user.click(screen.getByRole("button", { name: /Comincia/ }));
+    if (phase === "listen") return;
+    await user.click(screen.getByRole("button", { name: /Ho capito/ }));
+    if (phase === "rehearse") return;
+    for (const item of verdura.rehearsal) {
+      await userEventType(user, item.answer);
+      await user.click(screen.getByRole("button", { name: /Check/ }));
+      await user.click(screen.getByRole("button", { name: /Avanti|Sono pronta/ }));
+    }
+  };
+
+  const userEventType = (user, text) => user.type(screen.getByRole("textbox"), text);
+
+  const scenes = () => render(<ScenesModule onExit={() => {}} exitLabel="Il Mercato" onCasa={() => {}} />);
+
+  it("has an accessible list of scenes", async () => {
+    const { container } = scenes();
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible brief", async () => {
+    const user = userEvent.setup();
+    const { container } = scenes();
+    await toPhase(user, "brief");
+    await expectNoViolations(container);
+  });
+
+  // Scanned with a gloss open as well as closed: the open state is a
+  // different bit of markup (aria-expanded true, an extra card) and is the
+  // one a learner spends time in.
+  it("has an accessible Ascolta, with a gloss open", async () => {
+    const user = userEvent.setup();
+    const { container } = scenes();
+    await toPhase(user, "listen");
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: verdura.newWords[0].it }));
+    await expectNoViolations(container);
+  });
+
+  // And with a verdict showing, which is when the form carries aria-invalid
+  // and an aria-describedby pointing at the card.
+  it("has an accessible Prova, before and after a wrong answer", async () => {
+    const user = userEvent.setup();
+    const { container } = scenes();
+    await toPhase(user, "rehearse");
+    await expectNoViolations(container);
+
+    await userEventType(user, "mezzo chilo di pomodor");
+    await user.click(screen.getByRole("button", { name: /Check/ }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible stand-in for the phase that needs a partner", async () => {
+    const user = userEvent.setup();
+    const { container } = scenes();
+    await toPhase(user, "task");
+    await expectNoViolations(container);
+  });
+
+  it("leaves no control in a phase out of the tab order", async () => {
+    const user = userEvent.setup();
+    scenes();
+    await toPhase(user, "rehearse");
+
+    for (const control of screen.getAllByRole("button")) {
+      control.focus();
+      if (document.activeElement !== control) {
+        throw new Error(`Control is not focusable: ${control.textContent || control.getAttribute("aria-label")}`);
+      }
     }
   });
 });
@@ -870,6 +988,54 @@ describe("Italian text is marked as Italian", () => {
       expect(name.closest("[lang]")?.getAttribute("lang") ?? null, bench.id).toBe(bench.lang ?? null);
     }
     expect(italianAncestor(screen.getByText("Qui si smontano le parole."))).not.toBeNull();
+  });
+
+  it("marks the Italian stall names in Il Mercato, and its Italian subtitle", () => {
+    render(<MercatoModule onExit={() => {}} onCasa={() => {}} />);
+
+    for (const stall of STALLS) {
+      const name = screen.getByText(stall.name);
+      expect(name.closest("[lang]")?.getAttribute("lang") ?? null, stall.id).toBe(stall.lang ?? null);
+    }
+    expect(italianAncestor(screen.getByText("Qui si parla con qualcuno."))).not.toBeNull();
+  });
+
+  // Le Scene is the densest mix in the app: Italian titles, Italian settings,
+  // English abilities, Italian notes and a Polish gloss on the same screen.
+  // axe cannot tell what language a string is in, so every layer is asserted.
+  it("marks the Italian and the Polish through a whole scene", async () => {
+    const user = userEvent.setup();
+    const verdura = SCENES[0];
+    render(<ScenesModule onExit={() => {}} exitLabel="Il Mercato" onCasa={() => {}} />);
+
+    // The list: an Italian title and an English ability side by side.
+    expect(italianAncestor(screen.getByText(verdura.title))).not.toBeNull();
+    expect(screen.getByText(verdura.ability.en).closest("[lang]")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: new RegExp(verdura.title) }));
+    expect(italianAncestor(screen.getByText(verdura.task.setting.it))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(verdura.ability.it))).not.toBeNull();
+    expect(screen.getByText(verdura.task.setting.en).closest("[lang]")).toBeNull();
+
+    // Ascolta: the model lines, and a gloss whose note is Italian and whose
+    // Polish half is Polish.
+    await user.click(screen.getByRole("button", { name: /Comincia/ }));
+    expect(italianAncestor(screen.getByText(verdura.model[0].it))).not.toBeNull();
+
+    const word = verdura.newWords[0];
+    await user.click(screen.getByRole("button", { name: word.it }));
+    expect(italianAncestor(screen.getByText(word.note))).not.toBeNull();
+    expect(screen.getByText(word.pl).getAttribute("lang")).toBe("pl");
+
+    // Prova: the grammar note is Italian, and so is the Polish card's own
+    // Italian prose — its Polish example is the only `lang="pl"` on it.
+    await user.click(screen.getByRole("button", { name: /Ho capito/ }));
+    expect(italianAncestor(screen.getByText(verdura.grammar.note))).not.toBeNull();
+    expect(italianAncestor(screen.getByText(verdura.grammar.polish.it))).not.toBeNull();
+    expect(screen.getByText(verdura.grammar.polish.pl).getAttribute("lang")).toBe("pl");
+    // The English prompt is the label on the answer box and takes the
+    // document's own language.
+    expect(screen.getByText(`“${verdura.rehearsal[0].en}”`).closest("[lang]")).toBeNull();
   });
 
   // The first screen in the app that puts a whole Polish *sentence* on it

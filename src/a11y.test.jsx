@@ -33,6 +33,7 @@ import { STAGES, formStage } from "./shared/stage.js";
 import * as speech from "./shared/speech.js";
 import { save as saveSceneKey, forget as forgetSceneKey } from "./shared/partnerKey.js";
 import { FAKE_KEY } from "./test/fakeKey.js";
+import { RateLimitError } from "@anthropic-ai/sdk";
 
 // Accessibility is the one property that isn't any single component's — a
 // screen is only usable if the shell, the module and the shared pieces all
@@ -417,6 +418,48 @@ describe("Il Mercato", () => {
 // list, Ascolta is speaker bubbles plus a row of expanding buttons, Prova is
 // a form with a live region and a microphone, and the stand-in is prose with
 // two exits. A regression in any one of them would not show in the others.
+// A scene partner that never opens a socket: one canned streamed reply, then
+// a rate limit so the alert state can be scanned, and a canned debrief. The
+// client is injected the same way the app injects the real one.
+function scenePartnerStub() {
+  let first = true;
+
+  return {
+    beta: {
+      messages: {
+        stream: () => {
+          if (!first) throw new RateLimitError(429, {}, "slow down", new Headers());
+          first = false;
+          return {
+            async *[Symbol.asyncIterator]() {
+              yield { type: "content_block_delta", delta: { type: "text_delta", text: "Questi o quelli?" } };
+            },
+            finalMessage: async () => ({
+              content: [{ type: "text", text: "Questi o quelli?" }],
+              stop_reason: "end_turn",
+              usage: { input_tokens: 100, output_tokens: 20 },
+            }),
+          };
+        },
+        create: async () => ({
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                saidWell: [{ phrase: "mezzo chilo di pomodori", why: "quantita" }],
+                correction: { correctableId: SCENES[0].correctables[0].id },
+                goalMet: true,
+              }),
+            },
+          ],
+          stop_reason: "end_turn",
+          usage: { input_tokens: 200, output_tokens: 60 },
+        }),
+      },
+    },
+  };
+}
+
 describe("Le Scene", () => {
   const verdura = SCENES[0];
 
@@ -482,6 +525,53 @@ describe("Le Scene", () => {
     const user = userEvent.setup();
     const { container } = scenes();
     await toPhase(user, "task");
+    await expectNoViolations(container);
+  });
+
+  // Phase 4 with a key is four more screen states, and each is a different
+  // shape: the PIN form, the transcript with its microphone and its live
+  // region, the same transcript carrying an alert, and the debrief.
+  it("has an accessible PIN gate", async () => {
+    await saveSceneKey(FAKE_KEY, "4821");
+    forgetSceneKey();
+
+    const user = userEvent.setup();
+    const { container } = scenes();
+    await toPhase(user, "task");
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible conversation, mid-scene and with an error showing", async () => {
+    await saveSceneKey(FAKE_KEY, "4821");
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ScenesModule onExit={() => {}} exitLabel="Il Mercato" onCasa={() => {}} createClient={() => scenePartnerStub()} />,
+    );
+    await toPhase(user, "task");
+    await expectNoViolations(container);
+
+    await user.type(screen.getByRole("textbox"), "Mezzo chilo di pomodori.");
+    await user.click(screen.getByRole("button", { name: /^Send/ }));
+    await screen.findByText("Questi o quelli?");
+    await expectNoViolations(container);
+
+    await user.type(screen.getByRole("textbox"), "Questi.");
+    await user.click(screen.getByRole("button", { name: /^Send/ }));
+    await screen.findByRole("alert");
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible debrief", async () => {
+    await saveSceneKey(FAKE_KEY, "4821");
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ScenesModule onExit={() => {}} exitLabel="Il Mercato" onCasa={() => {}} createClient={() => scenePartnerStub()} />,
+    );
+    await toPhase(user, "task");
+    await user.click(screen.getByRole("button", { name: "Ho finito" }));
+    await screen.findByText(verdura.ability.it);
     await expectNoViolations(container);
   });
 

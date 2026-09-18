@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
+import Anthropic, {
   AuthenticationError,
   APIConnectionError,
   BadRequestError,
@@ -15,12 +15,14 @@ import {
   debriefSchema,
   filterDebrief,
   openScene,
+  partnerClient,
   systemPrompt,
 } from "./scenePartner.js";
 import { SCENES } from "../data/scenes.js";
 import { markStageProduced, drillKey } from "./storage.js";
 import { GRAMMAR_LEVELS } from "../data/grammar.js";
 import { formStage } from "./stage.js";
+import { FAKE_KEY } from "../test/fakeKey.js";
 
 // The partner module, against an injected fake client. Nothing here opens a
 // socket: `openScene` takes the client, and every test below hands it an
@@ -403,5 +405,19 @@ describe("the debrief filters (plan S4)", () => {
 describe("the ceiling", () => {
   it("is ten turns", () => {
     expect(TURN_CEILING).toBe(10);
+  });
+});
+
+// The one line in the app that builds a real client. It opens no socket —
+// constructing one sends nothing — and the assertion is that browser mode is
+// actually on: this test file runs in jsdom, which is exactly the environment
+// the SDK refuses to run in without the flag, so a `partnerClient` that
+// dropped `dangerouslyAllowBrowser` would throw here rather than at a
+// learner's market stall.
+describe("the real client", () => {
+  it("is built in browser mode, which jsdom is the check for", () => {
+    expect(() => partnerClient(FAKE_KEY)).not.toThrow();
+    // And the flag is what makes the difference, not a coincidence:
+    expect(() => new Anthropic({ apiKey: FAKE_KEY })).toThrow(/browser/i);
   });
 });

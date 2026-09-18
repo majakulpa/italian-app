@@ -426,6 +426,13 @@ describe("La Città palette contrast (WCAG 2.1 AA)", () => {
     // mode switch: both a 2px control line on a card (held above), with their
     // label in full ink rather than ink-soft.
     ["scene button label on a card", "--color-ink", "--color-card", AA_TEXT],
+    // Casa's scene-key row and the PIN prompt both put a lemon primary button
+    // and a lemon-inked label *inside* a neutral card, which the pistachio row
+    // above only covers for pistachio. Same two halves: in light mode the
+    // fixed city ink outlines the button, in dark mode the lemon fill is what
+    // separates it from the card.
+    ["lemon action on a card", ["--color-city-ink", "--color-lemon"], "--color-card", AA_NON_TEXT],
+    ["lemon action label", "--color-lemon-ink", "--color-lemon", AA_TEXT],
   ];
 
   it.each(MODES)("%s: every pairing the module interiors paint clears its threshold", (_mode, vars) => {

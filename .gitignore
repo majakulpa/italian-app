@@ -9,3 +9,11 @@ coverage
 # Agent worktrees. Ephemeral checkouts, never committed — and ignoring them
 # keeps a search from the repo root out of stale copies of src/.
 .claude/worktrees/
+
+# Env files, defensively. There is deliberately no env-var path for the
+# scene-partner API key — Vite inlines env vars into the bundle, so a key in
+# .env would be published with the site, and local development uses the same
+# Casa screen a phone does. Nothing here should exist; if one ever does, it
+# must not be committable. (scripts/check-no-secrets.mjs is the other half:
+# it fails the build on a key shape in dist/ or in a tracked file.)
+.env*

@@ -271,6 +271,39 @@ export function sceneKey(scene, word) {
   return `scene:${scene.id}:${word.it}`;
 }
 
+// A scene's can-do statement, once it has been demonstrated — design 06's
+// "Nuovo Posso" and design 19's shelf of them. Its own namespace again, and
+// `done` rather than `known`, for the reason conversations and stories use
+// `done`: the unit is not a word you can be more or less sure of, it is a
+// thing that either happened or did not.
+//
+// ── Why this is not a `scene:` key ──────────────────────────────────────
+// `scene:` keys are the words a scene taught, and MODULE_STATS enumerates
+// them: every one is a unit the scheduler brings back. An ability is not
+// scheduled and never comes back — nothing asks you to re-prove that you can
+// buy tomatoes — so a `scene:` key for it would put a unit into La Piazza's
+// queue with nothing to ask, and into the "met in a scene" count with nothing
+// met. It sits in `words` beside `falsi-caught:` and `stage-evidence:`: a
+// second fact, under its own prefix, enumerated by nothing.
+//
+// Written only on `goalMet`, which is why it is worth anything. A can-do you
+// get for opening a screen is a checklist; this one costs a conversation.
+export function abilityKey(scene) {
+  return `ability:${scene.id}`;
+}
+
+export function isAbilityDemonstrated(progress, scene) {
+  return progress.words[abilityKey(scene)] === "done";
+}
+
+// The scenes whose ability has been demonstrated, in the order the scenes are
+// authored in — which is the order they are met, and stable. Nothing records
+// *when* one was demonstrated, deliberately: a date here would be the raw
+// material for "3 days ago", and PLAN forbids the app counting days.
+export function demonstratedAbilities(progress, scenes) {
+  return scenes.filter((scene) => isAbilityDemonstrated(progress, scene));
+}
+
 // ── Coverage history ────────────────────────────────────────────────────
 // Casa draws coverage as a curve, and a curve needs past values that nothing
 // else in storage can give back: coverage is derived from the boxes as they

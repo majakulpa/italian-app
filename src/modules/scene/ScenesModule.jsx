@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { TOKENS, citySurface } from "../../shared/theme.js";
 import { SCENES } from "../../data/scenes.js";
-import { loadProgress, saveProgress } from "../../shared/storage.js";
+import { abilityKey, loadProgress, markWord, saveProgress } from "../../shared/storage.js";
 import { primeSpeech } from "../../shared/speech.js";
 import { PHASES, bankSceneWords, knownCount } from "./scene.js";
 import { BackLink, Eyebrow, SANS, SERIF } from "./chrome.jsx";
@@ -19,13 +19,20 @@ import ScenePartner from "./ScenePartner.jsx";
 // scenes themselves are data (src/data/scenes.js) and the arithmetic is
 // scene.js.
 //
-// ── Where the write happens ─────────────────────────────────────────────
-// One place: finishing Ascolta. Plan S3 puts it there rather than on the task
-// being completed, because that is the moment the words have been met, and
-// because a learner with no scene partner would otherwise bank nothing from a
-// scene she has read, heard and rehearsed. The write goes through
-// bankSceneWords and is saved here, where the progress this screen holds
-// lives — the phase screens themselves never touch storage.
+// ── Where the writes happen ─────────────────────────────────────────────
+// Two places, both here, because this is where the progress blob lives — the
+// phase screens themselves never touch storage.
+//
+//   finishing Ascolta   the scene's new words, through bankSceneWords. Plan
+//                       S3 puts it there rather than on the task being
+//                       completed, because that is the moment the words have
+//                       been met, and because a learner with no scene partner
+//                       would otherwise bank nothing from a scene she has
+//                       read, heard and rehearsed.
+//   the debrief saying  the scene's can-do statement. Only on goalMet, which
+//   the goal was met    is the whole difference between a Posso and a
+//                       checkbox; the debrief calls onDemonstrated and the
+//                       write is made here.
 //
 // ── Focus, on every phase change ────────────────────────────────────────
 // Every phase replaces the whole screen, which unmounts the button that was
@@ -36,7 +43,7 @@ import ScenePartner from "./ScenePartner.jsx";
 // the brief's heading too; the list's own button has just unmounted there for
 // exactly the same reason.
 
-export default function ScenesModule({ onExit, exitLabel, onCasa }) {
+export default function ScenesModule({ onExit, exitLabel, onCasa, createClient }) {
   const [progress, setProgress] = useState(loadProgress);
   const [scene, setScene] = useState(null);
   const [phase, setPhase] = useState(PHASES[0]);
@@ -72,6 +79,16 @@ export default function ScenesModule({ onExit, exitLabel, onCasa }) {
     saveProgress(next);
     setBanked(written);
     setPhase(PHASES[2]);
+  };
+
+  // The one write the task makes. `done` rather than a status with degrees to
+  // it: the ability was demonstrated or it was not, and doing the scene again
+  // writes the same value over the same key rather than counting a second
+  // time — a Posso is a thing you can do, not a tally of the times you did.
+  const demonstrated = (which) => {
+    const next = markWord(progress, abilityKey(which), "done");
+    setProgress(next);
+    saveProgress(next);
   };
 
   if (!scene) {
@@ -147,7 +164,15 @@ export default function ScenesModule({ onExit, exitLabel, onCasa }) {
         <SceneRehearse scene={scene} banked={banked} headingRef={headingRef} onDone={() => setPhase(PHASES[3])} />
       )}
       {phase === PHASES[3] && (
-        <ScenePartner scene={scene} headingRef={headingRef} onCasa={onCasa} onLeave={leave} />
+        <ScenePartner
+          scene={scene}
+          progress={progress}
+          headingRef={headingRef}
+          onCasa={onCasa}
+          onLeave={leave}
+          onDemonstrated={demonstrated}
+          createClient={createClient}
+        />
       )}
     </div>
   );

@@ -48,7 +48,8 @@ src/
     locatedFeedback.js           Judges a typed answer against the one that was wanted and says *where* it went wrong
     Verdict.jsx                  The card that renders one of those verdicts, shared by the two screens that produce them
     useThemeMode.js, ThemeToggle.jsx  Light/dark preference, stored and applied as `data-theme`
-    NavMenu.jsx                  The module switcher, rendered from the MODULES registry
+    TabBar.jsx                   The design's bottom tab bar — Città · Officina · Piazza · Casa — which replaced the hamburger switcher
+    stations.jsx                 Which hub a station lives in, so a district's front doors are declared rather than listed in a test
     shuffle.js, Postmark.jsx, PerforatedDivider.jsx, TopBar.jsx, SessionSummary.jsx,
     LevelPicker.jsx, TicketCard.jsx, TranslationToggle.jsx, LiveStatus.jsx, AnswerMark.jsx, AnswerStatus.jsx
                                   Small presentational/utility pieces shared across modules
@@ -404,7 +405,7 @@ categories/dialogues/stories each, and four grammar topics.
   1 whatever box it was in. Every vocabulary, grammar and Riserva answer goes
   through `reviewItem` in `src/shared/srs.js`, so ordinary study feeds the
   queue without any extra step. When something is due the dashboard shows a
-  Review band, and starting it opens one mixed session (capped at 20 items,
+  La Piazza tile with a count on it, and opening it starts one mixed session (capped at 20 items,
   most overdue first) drawing from all three. Conversations and stories are
   deliberately out of it: a dialogue has no wrong answer by design, and a story
   is read rather than drilled. Each of L'Officina's other benches states its
@@ -445,14 +446,27 @@ categories/dialogues/stories each, and four grammar topics.
    La Piazza and La Riserva all type now, and `src/shared/typedAnswer.js` and
    `src/shared/locatedFeedback.js` are the reusable halves of it. The
    vocabulary and grammar sessions themselves are still recognition.
-5. **Bringing the rest of the benches into the queue** — La Riserva is in it
-   now: a base-vocabulary entry is a lexical item, which is exactly what a
-   Leitner box schedules, and its drill types. What is left is a question
-   shape for Gli Articoli — a choice between three authored forms where the
-   queue asks for typing — and, for Mappatura delle parole and Falsi Amici, an
-   argument rather than work: a suffix rule is not a lexical item, and a trap
-   is a collision rather than a word you are trying to remember. Each
-   `scheduled: false` in `src/shared/stats.js` says which it is.
+5. **Bringing the rest of the benches into the queue** — La Riserva went in
+   first (a base-vocabulary entry is a lexical item, which is what a Leitner
+   box schedules), then Gli Articoli, once the queue learned a second question
+   shape: three authored buttons beside the typed box. Words met in a scene are
+   in too, under `scene:` keys. What is left is not work but an argument, and
+   it is the same one for Mappatura delle parole and Falsi Amici: a suffix rule
+   is not a lexical item, and a trap is a collision rather than a word you are
+   trying to remember. Each `scheduled: false` in `src/shared/stats.js` says
+   which it is.
+6. **Il Cinema — the generated serial.** The last unbuilt chunk of the design
+   (screens 13–17). `research/gen-experiment/` already measured the mechanism:
+   Italian written against a fixed 600-lemma lexicon reads at 97.2% known
+   words with no forms above stage 3, where unconstrained Italian manages
+   82.1% and breaks stage about once every 73 words. The lexicon reached 600
+   entries, so the threshold the serial opens at is reachable for the first
+   time.
+7. **More scenes, and the districts behind them** — Il Mercato has three and
+   all four phases work. Another scene is one object in `src/data/scenes.js`
+   plus a language review; another district is a row in `districts.js` and a
+   hub. Neither needs engineering. What they must not get is a padlock with a
+   number nobody measured.
 
 ## Accessibility
 

@@ -45,9 +45,9 @@ layer](#polish-is-a-first-class-layer).
 | 2 | **La Città** — city map home screen, five districts, locks that state their condition | ✅ merged ([#8](https://github.com/majakulpa/italian-app/pull/8)) |
 | 3 | **L'Officina** — mapping cards, word detail, La Riserva grid + drill, the articles strand | ✅ complete |
 | 4 | **La Piazza** — the review district: typed production, located feedback, a landing screen | ✅ complete |
-| 5 | **The stage model** — infer stage from production; gate grading, never content | later, needs a schema change first |
+| 5 | **The stage model** — infer stage from production; gate grading, never content | ✅ complete ([#36](https://github.com/majakulpa/italian-app/pull/36), screen 20 in [#38](https://github.com/majakulpa/italian-app/pull/38)) |
 | 6 | **Il Cinema** — the generated serial | later, gated at 600 solid words. The *district* is open: it routes to the graded readers, which ship |
-| 7 | **Scenes with voice** — the four-phase task loop | last, biggest build |
+| 7 | **Scenes with voice** — the four-phase task loop | ✅ three scenes at Il Mercato, all four phases ([#39](https://github.com/majakulpa/italian-app/pull/39)–[#43](https://github.com/majakulpa/italian-app/pull/43)). More scenes and more districts are content, not engineering |
 
 ### What exists on `main` today
 
@@ -93,10 +93,41 @@ layer](#polish-is-a-first-class-layer).
   `shared/Verdict.jsx`, because La Riserva's drill produces the same verdicts;
   the article ones stay in `modules/articoli/feedback.js` and are drawn by
   `modules/articoli/cards.jsx`, which the bench and the queue share.
-- Four module screens (vocab, grammar, conversations, stories) still in the **old postcard styling**.
-  Everything in L'Officina — the hub, Mappatura delle parole, La Riserva, word detail,
-  Gli Articoli and Falsi Amici — and La Piazza are in the new one, per the rule in
-  the visual-seam open question below.
+- **The whole app is in the La Città design system.** The seam closed in two
+  waves rather than one blanket diff: the chrome those four screens share
+  (`TopBar`, `LevelPicker`, `TicketCard`, `SessionSummary`, `Postmark`) in
+  [#32](https://github.com/majakulpa/italian-app/pull/32), then each module's
+  own surfaces — flashcard, quiz, chat bubbles, gloss bar, question options —
+  in [#35](https://github.com/majakulpa/italian-app/pull/35), with the grammar
+  drill's answers folded into [#36](https://github.com/majakulpa/italian-app/pull/36)
+  because the stage gate was rewriting those exact lines.
+  `PerforatedDivider` stayed as it was: it is decorative, already flat, and the
+  city has nothing to replace it with. The story **reader** also stayed plain,
+  because screen 14 calls it "the one screen that drops the design system".
+- `src/modules/casa/` — Casa (design 19) and Lo Stadio (design 20), reached
+  from the design's bottom tab bar (`shared/TabBar.jsx`), which replaced the
+  hamburger switcher the design never had. Casa holds coverage, the dated
+  coverage curve (`shared/coverageHistory.js` — a new store, because past
+  coverage is the one thing in this app that is *not* derivable), the stage
+  door, settings, and the `Posso…` shelf the scenes fill.
+- `src/shared/stage.js` + `src/data/grammar.js` tags — the stage model. Every
+  one of the 160 drills carries two stages: the stage of the *choice* being
+  tested, which grades it, and the stage of the *form typed*, which is what
+  counts as evidence. Without that split, four stage-6 items containing no
+  congiuntivo were enough to establish stage 6.
+- `src/modules/mercato/` and `src/modules/scene/` — Il Mercato as a hub
+  (Scene + the existing Dialoghi) and the four-phase scene loop: the brief,
+  Ascolta, Prova, and the unscripted task with its debrief. `shared/stations.js`
+  is what made the hub general: a station declares its hub, and the district
+  tests derive routes and reachability from that rather than a literal list.
+- `src/shared/partnerKey.js` + `scripts/check-no-secrets.mjs` — the scene
+  partner's API key, encrypted at rest under a PIN (AES-GCM over PBKDF2),
+  decrypted only into memory, in its own storage slot and never in the
+  progress blob. The guard fails the build if a whole key shape reaches
+  `dist/` **or** a tracked file, as its own step in the Pages workflow.
+- `.github/workflows/deploy.yml` — the app is published. Every merge to `main`
+  runs the suite and deploys to
+  <https://majakulpa.github.io/italian-app/>, installable from a phone.
 
 ---
 
@@ -222,10 +253,21 @@ content problem rather than an engineering one, and every entry added now
 raises the headline. Decide whether to grind through it or source De Mauro's
 list directly.
 
-**3. There is a visual seam.** The city uses the new design system; the four
-module interiors still use the old postcard styling. It closes as each district
-is built out. Nobody should "fix" it with a blanket restyle — that would be a
-large, untestable diff for no behaviour change.
+**3. ~~There is a visual seam.~~ Closed.** The city used the new design system
+while the four module interiors kept the old postcard styling, and the entry
+warned against fixing it with "a blanket restyle — a large, untestable diff for
+no behaviour change". That warning was right about the method and the method is
+what changed, not the rule: the seam closed in two reviewable waves, the shared
+chrome first and each module's own surfaces second, every colour pairing pinned
+in `theme.test.js` and every screen measured in a browser in both themes.
+
+Worth keeping from it: the browser pass earned its place four separate times.
+It found the session summary's scores painted in fill accents (2.50:1 in dark),
+the story gloss bar's edge (1.82–2.71:1), a translation toggle that passed on
+one bubble and failed on another (3.92:1), and an idle microphone outlined in a
+colour that does not flip between themes (1.39:1). Every one of those passed the
+arithmetic checks and the axe sweep, because the pairing being checked was not
+the pairing being drawn.
 
 ---
 
@@ -399,6 +441,107 @@ Piazza, and both are written beside their own `scheduled: false` flag in
 `src/shared/stats.js`: a Leitner box schedules a lexical item and a suffix rule
 is not one, and a false friend is a collision you are trying not to walk into
 rather than a word you are trying to remember.
+
+---
+
+## Chunk 5 — the stage model
+
+Design screen 20, *Lo Stadio*, and the cross-chunk rule nothing enforced until
+now: **never grade a structure above the learner's stage.**
+
+The ladder is the design's own — presente, passato prossimo, imperfetto,
+futuro, condizionale, congiuntivo — plus passato remoto as 7. It is the same
+operationalisation `research/gen-experiment/check_text.py` already uses, which
+matters: the grading gate and the serial's generator read one definition of
+"stage", not two that drift.
+
+**Two stages per item, because one is not enough.** An item's *grading* stage
+is the stage of the choice being tested: `ho visto` inside the imperfetto drill
+is an aspect contrast, so it is stage 3, not 2. Its *form* stage is the stage of
+what the learner actually types, and that is what counts as evidence. Without
+the split, four stage-6 items that contain no congiuntivo at all were enough to
+"establish" stage 6.
+
+**A stage is established** by `EMERGENCE_ITEMS = 4` distinct items typed right
+first time in La Piazza, with a clean answer after any time the app showed the
+form. That number is a judgement, not a measurement, and the code says so.
+
+**Above your stage, a wrong answer is not a wrong answer.** No red, no cross,
+no "Not quite", no second attempt, not counted or listed as missed. The card
+names both stages and gives the form. The item defers to tomorrow without
+demotion and is never pulled forward. A right answer still promotes, because
+refusing it would hide progress the learner actually made.
+
+**What the upgrade did, recorded because it is not nothing.** A save from before
+this has no evidence, so everyone started at stage 1. Nothing was lost — boxes
+and statuses survive — but correction above stage 1 pauses until four stage-2
+items have been typed clean.
+
+**A rule for chunk 6.** `EMERGENCE_ITEMS` gates *correction* only. Nothing may
+gate **content** on the stage — not the serial's season, not a district — until
+the number has been measured. The design opens Season 2 "allo stadio 5"; that
+is a content gate on an unmeasured number, and it waits.
+
+---
+
+## Chunk 7 — scenes with voice
+
+Design screens 02–06. Three scenes at Il Mercato, all four phases, which is
+what "start with three scenes in Il Mercato to prove the four-phase shape"
+asked for. More scenes and more districts are now content, not engineering.
+
+Il Mercato is a hub: **Scene** and the existing **Dialoghi**, which stay
+because they work offline and need no key.
+
+- **02 Brief** — the ability first, then the cost: a real known-word count, the
+  new words, the grammar slice. *Refused:* "circa 12 minuti" — nothing has ever
+  timed a scene, and PLAN forbids counting minutes.
+- **03 Ascolta** — the model dialogue, per-line pronounce, English behind a tap,
+  new words opening EN + PL + note. *Refused:* "▶ 0:14" — there is no
+  recording. **Finishing this phase is the write**: the scene's words enter La
+  Piazza as `learning`, due tomorrow, under `scene:` keys. Not `deferItem`,
+  which would stamp a stage-evidence marker onto a word key; and not called
+  `met`, a state this plan deleted.
+- **04 Prova** — the grammar card, the Polish card only where Polish is the
+  shorter road, then "Dillo tu": speak or type, with the recognised text shown
+  and **editable before it is judged**, so a misheard word never becomes the
+  learner's mistake.
+- **05 The task** — unscripted, on the learner's own key. Ten turns, labelled as
+  a **cost** ceiling rather than dressed as a rule, and reaching it goes to the
+  debrief with no failure wording.
+- **06 Debrief** — up to three things said well, **at most one** correction, no
+  score. *Refused:* "La Stazione aperta" — no district exists behind that door.
+
+**The debrief is constrained by data, not by trust**, and that is the part worth
+keeping. A correction must name a `correctableId` authored in `scenes.js`; its
+stage comes from that data and is checked with `isGraded`. Praise must quote the
+learner's own words after folding accents and case, or it is dropped as a
+recast. The *reason* is an enum the app writes the sentence for, so the model
+cannot smuggle a correction into a compliment — it never writes the compliment.
+
+One trap found while wiring it: `itemStage` is `item.stage ?? topic.stage`, and
+`??` treats `null` as absent. A clitic correctable carries `stage: null`
+deliberately, so a naive `isGraded` call would fall through to the topic's
+number and check the clitic against a rung it does not sit on.
+
+**The key, and why it is encrypted.** Fourteen of the owner's repositories
+publish to `majakulpa.github.io`, and browser storage is scoped to the origin,
+not the path — so a key in plain `localStorage` is a key handed to thirteen
+other sites and any script they load. It is stored as ciphertext under a PIN,
+decrypted only into memory, in its own slot, never in the progress blob. There
+is **no env-var path**, not even for development: Vite inlines env vars into the
+bundle, so a key in `.env` is one mistake from publication. `check-no-secrets`
+fails the build on a whole key shape in `dist/` *or* in a tracked file, because
+for a public repo the likelier leak is a commit.
+
+**Cost is shown, measured.** The debrief reports what that scene actually cost
+on the learner's key, summed from `usage`, against a published rate in one
+constant beside the model id.
+
+**Still refused, pending a reason to build them:** the mid-scene coaching hint
+(a second structured call per turn — later, on demand, and never a correction)
+and "🎙 chiaro ✓" (the app must not grade pronunciation from a confidence score
+that is unreliable and often absent).
 
 ---
 

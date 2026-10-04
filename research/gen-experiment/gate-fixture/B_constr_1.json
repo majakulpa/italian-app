@@ -1,0 +1,71 @@
+{
+  "contentWords": 282,
+  "episodeId": "B_constr_1",
+  "lexicon": {
+    "sha256": "061a50aad04e07284465bf767875ef4c46673f4cd4b1a62c70d69d3926dd275d",
+    "size": 600,
+    "source": "lexicon_fondamentale.json"
+  },
+  "lexiconOnlyCoverage": 92.9,
+  "measuredAt": "2026-10-04T06:11:03Z",
+  "offLexiconForms": {
+    "aria": [
+      "aria"
+    ],
+    "attimo": [
+      "attimo"
+    ],
+    "luce": [
+      "luce"
+    ],
+    "lì": [
+      "lì"
+    ],
+    "me": [
+      "me"
+    ],
+    "mio": [
+      "mia"
+    ],
+    "piano": [
+      "piano"
+    ],
+    "strano": [
+      "strano"
+    ],
+    "suo": [
+      "sua",
+      "suo"
+    ],
+    "tipo": [
+      "tipo"
+    ],
+    "tranquillo": [
+      "tranquilla"
+    ],
+    "tuo": [
+      "tua"
+    ]
+  },
+  "offLexiconLemmas": [
+    "aria",
+    "attimo",
+    "luce",
+    "lì",
+    "me",
+    "mio",
+    "piano",
+    "strano",
+    "suo",
+    "tipo",
+    "tranquillo",
+    "tuo"
+  ],
+  "stageFlags": [],
+  "textBytes": 1611,
+  "textSha256": "09d526f9853ec0c9f5c0778e6c155f4a9e03810f938051277bdfb289e8a456a4",
+  "tooling": {
+    "checker": "research/gen-experiment/check_text.py",
+    "detectors": "union(spaCy morphology, Italian suffix rules)"
+  }
+}

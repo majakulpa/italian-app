@@ -1,0 +1,43 @@
+{
+  "contentWords": 22,
+  "episodeId": "stage_violations",
+  "lexicon": {
+    "sha256": "061a50aad04e07284465bf767875ef4c46673f4cd4b1a62c70d69d3926dd275d",
+    "size": 600,
+    "source": "lexicon_fondamentale.json"
+  },
+  "lexiconOnlyCoverage": 95.5,
+  "measuredAt": "2026-10-04T06:11:14Z",
+  "offLexiconForms": {
+    "mio": [
+      "mia"
+    ]
+  },
+  "offLexiconLemmas": [
+    "mio"
+  ],
+  "stageFlags": [
+    {
+      "kind": "futuro",
+      "word": "andrò"
+    },
+    {
+      "kind": "congiuntivo",
+      "word": "potessi"
+    },
+    {
+      "kind": "condizionale",
+      "word": "verrei"
+    },
+    {
+      "kind": "congiuntivo",
+      "word": "sia"
+    }
+  ],
+  "textBytes": 127,
+  "textSha256": "ea9979c1b7d757ec8d0aacb71e5e3f48cb757aac7218ef4df3beab9ae456c0b1",
+  "tooling": {
+    "checker": "research/gen-experiment/check_text.py",
+    "detectors": "union(spaCy morphology, Italian suffix rules)"
+  }
+}

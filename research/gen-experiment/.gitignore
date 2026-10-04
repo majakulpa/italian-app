@@ -1,4 +1,11 @@
+# .venv is ~500MB of spacy, simplemma and it_core_news_sm wheels, reproducible
+# from the README's commands. .build is what the serial's release-gate pipeline
+# generates on each run: fondamentale.js exported to the checker's lexicon
+# shape, and each episode's canonical text. The committed artefact is the
+# *report* — under src/data/serial-reports/, because that is the measurement
+# npm test holds the shipped prose to.
 .venv/
+.build/
 it_freq_raw.txt
 lexicon_*.json
 results.json

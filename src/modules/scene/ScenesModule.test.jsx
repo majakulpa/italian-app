@@ -200,12 +200,18 @@ describe("the word write on finishing Ascolta", () => {
   });
 });
 
+// The phase exists now; what a save without a key is missing is the key, not
+// the phase. So the sentence this asserts changed — "there isn't one yet"
+// became "this device has no key for one" — and the claim behind it did not:
+// it says what is missing and refuses to fake it. The rest of the block is
+// untouched, including the assertion that there is no text box to talk into,
+// which is the one that would catch a scripted stand-in creeping back in.
 describe("phase 4, with no scene partner", () => {
   it("says plainly what is missing, and offers no scripted stand-in", async () => {
     const user = open();
     await walkTo(user, "task");
 
-    expect(screen.getByText(/needs a scene partner, and there isn’t one yet/)).toBeInTheDocument();
+    expect(screen.getByText(/needs a scene partner, and this device has no key for one/)).toBeInTheDocument();
     expect(screen.getByText(/no practice version standing in for it/)).toBeInTheDocument();
     // Nothing to talk to: no text box, no microphone, no send.
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();

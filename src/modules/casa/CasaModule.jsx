@@ -1,8 +1,9 @@
 import React, { useId, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { TOKENS, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
-import { loadProgress, loadCoverageHistory, todayISO } from "../../shared/storage.js";
+import { loadProgress, loadCoverageHistory, todayISO, demonstratedAbilities } from "../../shared/storage.js";
 import { coverage } from "../../shared/coverage.js";
+import { SCENES } from "../../data/scenes.js";
 import { FONDAMENTALE_TARGET } from "../../data/fondamentale.js";
 import { stageState, STAGES } from "../../shared/stage.js";
 import ThemeToggle from "../../shared/ThemeToggle.jsx";
@@ -27,9 +28,13 @@ import StadioScreen from "./StadioScreen.jsx";
 // - "feb 49,6%" as the curve's start. A curve here starts on the day the app
 //   first wrote coverage down, which for any save older than this screen is
 //   the upgrade, not the day the learner began. The label is that real date.
-// - "23 Posso…" and "Le ultime cose che sai fare". Can-do statements are
-//   things demonstrated in a scene, and scenes are PLAN.md chunk 7. They come
-//   with it; until then there is nothing to have demonstrated.
+//
+// The design's "23 Posso…" and "Le ultime cose che sai fare" are drawn, and
+// this is chunk 7, which is what they were waiting for: a can-do is a thing
+// demonstrated in a scene, so it can only exist once scenes can be finished.
+// The figure is a count of scenes whose debrief said the goal was met — 0 for
+// most saves — rather than the design's drawn 23, and PossoShelf says what it
+// is when there are none.
 export default function CasaModule() {
   const [progress] = useState(loadProgress);
   const [points] = useState(loadCoverageHistory);
@@ -50,6 +55,7 @@ export default function CasaModule() {
       </div>
 
       <CoverageCard progress={progress} points={points} />
+      <PossoShelf progress={progress} />
       <StadioDoor progress={progress} onOpen={() => setStadio(true)} />
       <FsiCard />
       <Settings />
@@ -173,6 +179,59 @@ function Curve({ points }) {
         Recorded from {formatDate(first.date)}, the first day this app wrote it down. Nothing earlier is drawn.
       </p>
     </figure>
+  );
+}
+
+// Design 19's second tile and the list under it: the things demonstrated in a
+// scene, in the learner's own first person.
+//
+// ── Why the empty state is a sentence and not a zero ────────────────────
+// A "0 Posso…" tile beside "487 solide" reads as a score of nought, which is
+// the one thing this screen is built not to do. What is true instead is that
+// a can-do is earned in one specific way — you finish a scene's task and the
+// debrief says you did the thing — and saying so is both honest and the only
+// useful instruction on the screen.
+//
+// The list is every one, not the design's "le ultime" three. There are three
+// scenes in the app; slicing a list of at most three to the last three is a
+// rule with nothing to do, and it would quietly hide the earliest thing she
+// learned to do the moment a fourth district lands. When there are enough for
+// that to matter, that is the change to make and this comment is the note.
+function PossoShelf({ progress }) {
+  const headingId = useId();
+  const abilities = demonstratedAbilities(progress, SCENES);
+
+  return (
+    <section aria-labelledby={headingId} style={{ ...citySurface("azzurro"), padding: "14px 16px 16px", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <h2 id={headingId} lang="it" style={{ ...EYEBROW, margin: 0 }}>
+          Posso&hellip;
+        </h2>
+        {abilities.length > 0 && (
+          <span style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 600, lineHeight: 1 }}>{abilities.length}</span>
+        )}
+      </div>
+
+      {abilities.length === 0 ? (
+        <p style={{ fontFamily: SANS, fontSize: 13, margin: "8px 0 0", lineHeight: 1.55 }}>
+          Nothing here yet. A <span lang="it">Posso</span> is a thing you have done, not a thing you have read: finish a
+          scene&rsquo;s task in <span lang="it">Il Mercato</span> and, if the debrief says you got there, the scene puts
+          its sentence on this shelf.
+        </p>
+      ) : (
+        <ul style={{ listStyle: "none", margin: "10px 0 0", padding: 0, display: "grid", gap: 10 }}>
+          {abilities.map((scene) => (
+            <li key={scene.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <Check size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }} />
+              <span style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.5 }}>
+                <b lang="it">{scene.ability.it}</b>
+                <span style={{ display: "block", opacity: 0.92 }}>{scene.ability.en}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

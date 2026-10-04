@@ -18,6 +18,7 @@
 //                  reaching for, so Prova judges against that one.
 
 import { lexiconStates } from "../../shared/coverage.js";
+import { FONDAMENTALE } from "../../data/fondamentale.js";
 import { markWord, sceneKey, todayISO, addDaysISO } from "../../shared/storage.js";
 import { foldTyped } from "../../shared/typedAnswer.js";
 
@@ -47,9 +48,20 @@ export const PLAYABLE_PHASES = PHASES.filter((phase) => !phase.partner);
 // one the brief may promise the learner walks in with.
 const KNOWN_ENOUGH = new Set(["known", "solid"]);
 
-export function knownCount(progress, scene) {
+// Which of them, by name. The scene partner's system prompt needs the words
+// themselves — "she also already knows: …" — and it has to be the same set the
+// brief counted, or the brief and the partner would disagree about what the
+// learner walks in with. scenes.test.js pins that every knownRank resolves to
+// an entry, so there is no missing-word branch to defend here.
+const BY_RANK = new Map(FONDAMENTALE.map((entry) => [entry.rank, entry.it]));
+
+export function knownWords(progress, scene) {
   const states = lexiconStates(progress);
-  return scene.knownRanks.filter((rank) => KNOWN_ENOUGH.has(states.get(rank))).length;
+  return scene.knownRanks.filter((rank) => KNOWN_ENOUGH.has(states.get(rank))).map((rank) => BY_RANK.get(rank));
+}
+
+export function knownCount(progress, scene) {
+  return knownWords(progress, scene).length;
 }
 
 // The scene's new words, written into the scheduler when Ascolta is finished.

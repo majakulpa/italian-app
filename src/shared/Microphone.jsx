@@ -210,7 +210,11 @@ export default function Microphone({ onTranscript, disabled = false }) {
       </div>
 
       <p style={{ fontFamily: SANS, fontSize: 12.5, color: TOKENS.inkSoft, margin: "8px 0 0", lineHeight: 1.5 }}>
-        {mode.hint} Whatever it hears goes in the box above, where you can fix it before you check.
+        {/* "before it goes anywhere", not "before you check": this control is
+            now on two screens with two different buttons under it — Prova's
+            Check and the task's Send — and naming one of them made the hint
+            wrong on the other. The browser pass caught it on screen 05. */}
+        {mode.hint} Whatever it hears goes in the box above, where you can fix it before it goes anywhere.
       </p>
 
       {/* Mounted for the life of the control and empty until there is

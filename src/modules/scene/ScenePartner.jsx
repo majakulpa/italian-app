@@ -1,123 +1,92 @@
-import React from "react";
-import { Home, MessageSquareOff } from "lucide-react";
-import { TOKENS, CITY_RULES, citySurface } from "../../shared/theme.js";
-import { PHASES } from "./scene.js";
-import { Card, PhaseHeading, PhaseMeter, PrimaryButton, SANS, SERIF } from "./chrome.jsx";
+import React, { useState } from "react";
+import ScenePinPrompt from "../../shared/ScenePinPrompt.jsx";
+import { hasStoredKey, isUnlocked, lockedKey } from "../../shared/partnerKey.js";
+import { openScene, partnerClient } from "../../shared/scenePartner.js";
+import { STAGES, stageState } from "../../shared/stage.js";
+import { PHASES, knownWords } from "./scene.js";
+import { PhaseHeading, PhaseMeter } from "./chrome.jsx";
+import SceneNoPartner from "./SceneNoPartner.jsx";
+import SceneTask from "./SceneTask.jsx";
+import SceneDebrief from "./SceneDebrief.jsx";
 
-// Phase 4 — Al mercato, and what stands in its place today
-// (design/02-la-citta.html, screen 05).
+// Phase 4's front door: which of three screens the task is, and where the
+// scene is opened.
 //
-// The phase is the unscripted task: a stallholder who answers what the learner
-// actually said, at speed, without a script. That needs a scene partner — a
-// language model, called with the learner's own API key — and neither the key
-// storage nor the partner is built in this slice.
+//   no key stored     SceneNoPartner — what the phase is and why this device
+//                     cannot run it, with the way to Casa.
+//   key stored,       ScenePinPrompt — the PIN, asked for once per app run
+//   still locked      (plan S1). Nothing else in the app asks for it.
+//   unlocked          SceneTask, then SceneDebrief.
 //
-// ── Why there is no stand-in ────────────────────────────────────────────
-// The obvious thing to put here is a scripted conversation: a few authored
-// vendor turns, chosen by keyword, labelled "practice mode". It is refused,
-// and this is the whole argument.
+// ── The scene is opened once, here ──────────────────────────────────────
+// `openScene` freezes the system prompt — the learner's stage name and the
+// words she walks in with, snapshotted — so it must happen once per scene and
+// not once per render. A lazy `useState` initialiser is that: it runs on the
+// first render that reaches it, which is the first render after the key is
+// unlocked, and never again. Rebuilding it per render would rewrite the
+// cached prefix on every keystroke.
 //
-// A scripted partner is a *worse* version of the dialogues one door away in
-// this same district. Il Mercato already ships ten of them, they are better
-// written than anything improvised here would be, and they say what they are.
-// Putting a thin one behind phase 4 would take the one thing this phase is for
-// — that nobody slows down for you and nothing is predictable — and replace it
-// with the one thing it is explicitly not. The learner would practise against
-// a script, conclude that the scene phase is the dialogues again, and be
-// wrong about what she can do at a real market stall.
-//
-// The honest version is a screen that says what is missing and what it needs.
-// It costs the learner nothing: the brief said "the first three work now", the
-// words are already in La Piazza, and the goal is printed here so she knows
-// what the phase will ask of her when it arrives.
-//
-// ── Why Casa ────────────────────────────────────────────────────────────
-// Casa is where the scene-partner key will be entered (plan S1: a PIN-locked
-// key, stored encrypted, never in the progress blob). So Casa is the one place
-// a learner can do anything at all about this screen, which is why it gets a
-// real button rather than a sentence pointing at the tab bar.
+// ── Why the client is a prop ────────────────────────────────────────────
+// `createClient` defaults to the real one. It is a seam rather than a stub:
+// the module underneath takes an injected client by design (see
+// shared/scenePartner.js), so something has to hand one in, and a prop with a
+// working default is the smallest thing that can. The tests pass a fake; the
+// browser pass stubs `window.fetch` instead and drives the real SDK through
+// this same default.
 
-export default function ScenePartner({ scene, headingRef, onCasa, onLeave }) {
+export default function ScenePartner({ scene, progress, headingRef, onCasa, onLeave, onDemonstrated, createClient = partnerClient }) {
   const phase = PHASES[3];
+  const [unlocked, setUnlocked] = useState(isUnlocked);
+  const [outcome, setOutcome] = useState(null);
 
   return (
     <>
       <PhaseMeter phase={phase} />
-      <PhaseHeading
-        headingRef={headingRef}
-        it={phase.label}
-        en="The scene itself — and the one phase that is not set up yet."
-      />
+      <PhaseHeading headingRef={headingRef} it={phase.label} en="No script. It answers what you actually say." />
 
-      <div style={{ ...citySurface(), padding: "16px", display: "flex", gap: 10 }}>
-        <MessageSquareOff size={20} aria-hidden="true" color={TOKENS.ink} style={{ flexShrink: 0, marginTop: 2 }} />
-        <div>
-          <p style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 600, color: TOKENS.ink, margin: 0, lineHeight: 1.35 }}>
-            This phase needs a scene partner, and there isn&rsquo;t one yet.
-          </p>
-          <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.ink, margin: "10px 0 0", lineHeight: 1.6 }}>
-            The other three phases are a script: the same dialogue, the same prompts, the same accepted answers every
-            time. This one cannot be. It is a stallholder who answers what you actually said, and that takes a language
-            model and a key of your own &mdash; which is set up in <span lang="it">Casa</span>, and is the next thing
-            being built.
-          </p>
-          <p style={{ fontFamily: SANS, fontSize: 14, color: TOKENS.inkSoft, margin: "10px 0 0", lineHeight: 1.6 }}>
-            There is no practice version standing in for it. A scripted stallholder would be a worse copy of the{" "}
-            <span lang="it">Dialoghi</span> next door, and it would teach you that this phase is predictable when the
-            entire point is that it is not.
-          </p>
-        </div>
-      </div>
-
-      {/* The goal, printed rather than withheld. It is the thing the phase will
-          ask for, it is already written down in the data, and reading it now is
-          how the rest of the scene stays worth doing. */}
-      <Card eyebrow="Quando ci sarà, ti chiederà questo" eyebrowLang="it" accent="lemon" style={{ marginTop: 14 }}>
-        <p lang="it" style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 600, margin: "8px 0 0", lineHeight: 1.4 }}>
-          {scene.task.goal.it}
-        </p>
-        <p style={{ fontFamily: SANS, fontSize: 13.5, margin: "8px 0 0", lineHeight: 1.55, opacity: 0.92 }}>
-          {scene.task.goal.en}
-        </p>
-        <p style={{ fontFamily: SANS, fontSize: 13, margin: "10px 0 0", lineHeight: 1.55, opacity: 0.92 }}>
-          Your partner would be <span lang="it">{scene.task.partner.it}</span> &mdash; {scene.task.partner.en}.
-        </p>
-      </Card>
-
-      <PrimaryButton accent="lemon" onClick={onCasa} style={{ marginTop: 18 }}>
-        <Home size={16} aria-hidden="true" />
-        <span>
-          Open <span lang="it">Casa</span>
-        </span>
-      </PrimaryButton>
-
-      {/* A boundary in controlLine rather than no boundary at all. This
-          shipped borderless first, and the browser pass caught it: every other
-          back route in the app is a left-arrow link, and this one is a
-          centred line of small grey text under a filled primary button, which
-          reads as a caption rather than as something to press. controlLine is
-          the token for a clickable boundary (3.65:1 on paper, 4.05:1 on card,
-          so it clears SC 1.4.11 in both themes) — `line` would not. */}
-      <button
-        type="button"
-        onClick={onLeave}
-        style={{
-          border: `2px solid ${TOKENS.controlLine}`,
-          borderRadius: CITY_RULES.radius,
-          background: "transparent",
-          color: TOKENS.ink,
-          fontFamily: SANS,
-          fontWeight: 600,
-          fontSize: 14,
-          cursor: "pointer",
-          display: "block",
-          width: "100%",
-          padding: "12px 18px",
-          marginTop: 12,
-        }}
-      >
-        Back to the scenes
-      </button>
+      {!hasStoredKey() ? (
+        <SceneNoPartner scene={scene} onCasa={onCasa} onLeave={onLeave} />
+      ) : !unlocked ? (
+        <ScenePinPrompt onUnlocked={() => setUnlocked(true)} onCancel={onLeave} />
+      ) : (
+        <Talking
+          scene={scene}
+          progress={progress}
+          outcome={outcome}
+          onFinish={setOutcome}
+          onDemonstrated={onDemonstrated}
+          onLeave={onLeave}
+          createClient={createClient}
+        />
+      )}
     </>
+  );
+}
+
+// The two screens that share one session. Split out so the session's lazy
+// initialiser only runs once the key is actually in hand — `lockedKey()` is
+// null until then, and a client built round null would be a client built for
+// a scene that cannot run.
+function Talking({ scene, progress, outcome, onFinish, onDemonstrated, onLeave, createClient }) {
+  const [session] = useState(() =>
+    openScene({
+      client: createClient(lockedKey()),
+      scene,
+      progress,
+      stageName: STAGES[stageState(progress).current - 1].name,
+      knownWords: knownWords(progress, scene),
+    }),
+  );
+
+  if (outcome === null) return <SceneTask scene={scene} session={session} onDone={onFinish} />;
+
+  return (
+    <SceneDebrief
+      scene={scene}
+      session={session}
+      outcome={outcome}
+      onDemonstrated={onDemonstrated}
+      onLeave={onLeave}
+    />
   );
 }

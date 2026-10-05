@@ -8,13 +8,13 @@ import { reviewItem } from "../../shared/srs.js";
 // object, because La Riserva builds it once and asks all ten bands off it.
 // The tests go in through the same door.
 import { lexiconStates as states } from "../../shared/coverage.js";
-import { judge, ATTEMPTS } from "../../shared/locatedFeedback.js";
+import { judge, ATTEMPTS, editDistance } from "../../shared/locatedFeedback.js";
 import { foldTyped } from "../../shared/typedAnswer.js";
 
 const EMPTY = { version: 2, words: {}, schedule: {} };
 
 const BAND_1 = FASCE[0];
-// Ranks 601–800 — well past the 400 that are written down, so this band has
+// Ranks 601–800 — just past the 600 that are written down, so this band has
 // no words in it at all and must not offer a round.
 const EMPTY_BAND = FASCE[3];
 
@@ -175,8 +175,8 @@ describe("lexiconQuestion", () => {
   });
 
   // The guard on that verdict, against the real list rather than a fixture.
-  // A one-character slip that lands on another entry is a slip: 71 pairs of
-  // the 300 are within one fold-edit of each other, and reporting a missed
+  // A one-character slip that lands on another entry is a slip: 126 pairs of
+  // the 600 are within one fold-edit of each other, and reporting a missed
   // gender as "you reached for a different entry" is the app being confidently
   // wrong about the commonest mistake it can receive.
   it("locates a one-character slip rather than calling it a different entry", () => {
@@ -190,6 +190,30 @@ describe("lexiconQuestion", () => {
     expect(judge(lexiconQuestion(entryFor("alto")), "altro", 1).kind).toBe("ending");
     expect(judge(lexiconQuestion(entryFor("mondo")), "modo", 1).kind).toBe("partial");
     expect(judge(lexiconQuestion(entryFor("no")), "noi", 1).kind).toBe("partial");
+  });
+
+  // The figure in that comment, and the ones in locatedFeedback.js's header and
+  // drill.js's, measured rather than remembered. It counts every pair of the
+  // list within one edit — folded, so `si` and `sì` are the one pair at
+  // distance 0 and the rest are at distance 1 — using the judge's own
+  // editDistance, so it is the same "within one edit" the guard acts on.
+  //
+  // It goes red when a batch of entries changes it, which is the point: those
+  // comments say the number and want updating in the same change, and
+  // NEIGHBOUR_EDITS wants a second look if the pairs have changed character.
+  it("counts the pairs within one edit that the guard exists for", () => {
+    const written = FONDAMENTALE.map((entry) => entry.it);
+    const atDistance = [0, 0];
+
+    for (let i = 0; i < written.length; i += 1) {
+      for (let j = i + 1; j < written.length; j += 1) {
+        const distance = editDistance(written[i], written[j]);
+        if (distance <= 1) atDistance[distance] += 1;
+      }
+    }
+
+    expect(atDistance).toEqual([1, 125]);
+    expect(atDistance[0] + atDistance[1]).toBe(126);
   });
 
   // And the neighbour verdict keeps every pair it was added for. `di` and `da`
@@ -231,8 +255,8 @@ describe("lexiconQuestion", () => {
   // from one branch of judge() and that branch is behind sameTyped, which
   // compares folded strings and nothing else. So the pairs to walk are the
   // fold groups, found in the data rather than named here — and walking those
-  // rather than all 300 × 299 is also what keeps this test finishing when the
-  // list grows from 300 entries to 2,000.
+  // rather than all 600 × 599 is also what keeps this test finishing when the
+  // list grows from 600 entries to 2,000.
   it("accepts no other entry of the list for the one being asked", () => {
     const byFold = new Map();
     for (const entry of FONDAMENTALE) {

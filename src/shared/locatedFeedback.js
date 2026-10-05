@@ -100,14 +100,14 @@ const ENDING = 2;
 // Two, because one is a slip. One edit is a gender ending (`ragazzo` for
 // `ragazza`, `figlio` for `figlia`, `nonno` for `nonna`), an agreement
 // (`primo` for `prima`), a dropped letter (`modo` for `mondo`) or a thumb on
-// the wrong key — and 71 pairs of the 300 written down are within one edit of
+// the wrong key — and 126 pairs of the 600 written down are within one edit of
 // each other, overwhelmingly the short function words a phone typo lands on.
 // Told "it belongs to a different entry, read the English gloss again", a
 // learner who simply missed the gender is sent to re-read a gloss she had
 // right, and the one verdict that would have named her actual error is the one
 // she does not get.
 //
-// Two edits is not a slip in a 300-word list. `parola` for `parlare` is three
+// Two edits is not a slip in a 600-word list. `parola` for `parlare` is three
 // and is the case this verdict exists for: it shares `par` at the front and
 // none of the mistake, so "it starts right and then goes somewhere else" is
 // confident and wrong about the kind of error. Those two bracket the
@@ -120,7 +120,11 @@ const NEIGHBOUR_EDITS = 2;
 // not: nothing else wants it. Mappatura delle parole and Falsi Amici measure a
 // typed answer against a rule and a pair, and neither has a list of other
 // words to be near.
-function editDistance(input, answer) {
+//
+// Exported for one reader: drill.test.js counts, with this very function, how
+// many pairs of the written-down list sit within one edit, because that figure
+// is quoted in comments and nothing else would notice it moving.
+export function editDistance(input, answer) {
   const a = foldTyped(input);
   const b = foldTyped(answer);
   let row = Array.from({ length: b.length + 1 }, (_, j) => j);

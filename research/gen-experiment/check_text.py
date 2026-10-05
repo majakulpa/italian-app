@@ -9,8 +9,22 @@ import sys, json, re, unicodedata
 import spacy
 import simplemma
 
-LEX = set(json.load(open("lexicon_600.json")))
+# The lexicon was hardcoded to build_lexicon.py's OpenSubtitles proxy. The app's
+# release gate measures against src/data/fondamentale.js instead (exported by
+# scripts/export-lexicon.mjs), so the path is a parameter now. Nothing else
+# about the measurement changed: both detectors, both candidate expansions and
+# every exception list below are the ones the experiment ran.
+DEFAULT_LEXICON = "lexicon_600.json"
+LEX = set()
 nlp = spacy.load("it_core_news_sm")
+
+
+def load_lexicon(path=DEFAULT_LEXICON):
+    """Replace the lexicon in place; returns the lemma list as read."""
+    lemmas = json.load(open(path, encoding="utf-8"))
+    LEX.clear()
+    LEX.update(lemmas)
+    return lemmas
 
 # ---- rule-based detection of forms above stage 3 -------------------------
 FUT = re.compile(r"(rò|rai|rà|remo|rete|ranno)$")
@@ -142,7 +156,14 @@ def analyse(text, label=""):
 
 if __name__ == "__main__":
     import glob
+    args = sys.argv[1:]
+    lexicon = DEFAULT_LEXICON
+    if "--lexicon" in args:
+        i = args.index("--lexicon")
+        lexicon = args[i + 1]
+        del args[i:i + 2]
+    load_lexicon(lexicon)
     res = []
-    for path in sorted(glob.glob(sys.argv[1] if len(sys.argv) > 1 else "texts/*.txt")):
+    for path in sorted(glob.glob(args[0] if args else "texts/*.txt")):
         res.append(analyse(open(path, encoding="utf-8").read(), path.split("/")[-1]))
     json.dump(res, open("results.json", "w"), ensure_ascii=False, indent=1)

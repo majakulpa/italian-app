@@ -11,6 +11,7 @@ import { TURN_CEILING } from "../../shared/scenePartner.js";
 import { abilityKey, loadProgress } from "../../shared/storage.js";
 import { save as saveSceneKey, forget as forgetSceneKey } from "../../shared/partnerKey.js";
 import { FAKE_KEY } from "../../test/fakeKey.js";
+import { useFastKdf } from "../../test/fastKdf.js";
 import { WRONG_PIN } from "../../shared/ScenePinPrompt.jsx";
 import * as speech from "../../shared/speech.js";
 import * as recognition from "../../shared/recognition.js";
@@ -23,12 +24,15 @@ import * as recognition from "../../shared/recognition.js";
 // that unlocks pays for one — which is why the ones that do not need it start
 // from an already-unlocked key, and why PIN is a short constant.
 
-// Same reason ScenePinPrompt.test.jsx raises its own: a PBKDF2 derivation at
-// 600,000 iterations is ~400 ms alone and several seconds when every other
-// vitest worker is busy, and the tests below pay for up to three of them.
-// The whole test, not just the async helpers, because the derivations happen
-// inside `saveSceneKey` as well as inside the click.
-configure({ asyncUtilTimeout: 15000 });
+// The derivations these tests pay for are no longer the real ones — see
+// test/fastKdf.js. The work factor is what cost seconds per derivation, this
+// file does not assert it, and nothing here looks at the "Unlocking…" state
+// that the two files named in fastKdf.js do.
+//
+// The raises that remain are for the conversation itself, which is the slowest
+// thing here with or without a key: a scene is walked phase by phase, every
+// rehearsal line typed, and a streamed reply awaited.
+configure({ asyncUtilTimeout: 5000 });
 vi.setConfig({ testTimeout: 30000 });
 
 const verdura = SCENES[0];
@@ -104,6 +108,7 @@ const say = async (user, text) => {
 
 beforeEach(() => {
   localStorage.clear();
+  useFastKdf();
   forgetSceneKey();
   vi.spyOn(speech, "isSpeechSupported").mockReturnValue(true);
   vi.spyOn(speech, "speakItalian").mockImplementation(() => {});

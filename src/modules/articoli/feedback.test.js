@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { judge, announce, ATTEMPTS } from "./feedback.js";
-import { STRANDS, ZERO } from "../../data/articoli.js";
+import { STRANDS, ZERO, ZERO_NAME } from "../../data/articoli.js";
 
 // The five located verdicts are this module's whole argument with the
 // standard wrong → red cross → answer pattern, so each is pinned here against
@@ -14,6 +14,7 @@ const caffe = item("determinativo", "caffe"); // il, against un and the zero art
 const studente = item("determinativo", "studente"); // lo, against il and l'
 const medico = item("indeterminativo", "medico"); // the zero article, against un and il
 const chiave = item("indeterminativo", "chiave"); // un', against un and una
+const fame = item("indeterminativo", "fame"); // the zero article again — the only other one
 const cassetto = item("preposizioni", "cassetto"); // nel, against "in il" and in
 const centro = item("preposizioni", "centro"); // in, against nel and "in il"
 
@@ -62,6 +63,27 @@ describe("a wrong answer gets located, not solved", () => {
       sentence: null,
     });
     expect(announce(verdict)).toContain("Try once more.");
+  });
+
+  // The zero article is a drawing, not a word, and the live region is nothing
+  // but words. Announcing it raw said "The answer is —." — and the em dash is
+  // also the separator the very same sentence puts between the Italian and its
+  // English, so a screen reader got one character twice meaning two things
+  // where a sighted learner gets a hidden name and a rendered dash.
+  //
+  // Both items whose answer is the zero article are checked, not one: this is
+  // the only pair in the file, and a fix that happened to cover `Sono medico`
+  // and not `Ho fame` would be a fix to an example rather than to the rule.
+  it("speaks the zero article as a word, on both items whose answer it is", () => {
+    for (const zeroItem of [medico, fame]) {
+      const verdict = judge(zeroItem, "un", ATTEMPTS);
+
+      expect(verdict.answer, zeroItem.id).toBe(ZERO);
+      expect(announce(verdict), zeroItem.id).toContain(`The answer is ${ZERO_NAME}.`);
+      // And the glyph never reaches the spoken string as the answer. It is
+      // still in there as the separator, which is what it is.
+      expect(announce(verdict), zeroItem.id).not.toContain(`The answer is ${ZERO}`);
+    }
   });
 
   it("reveals all of it only once the attempts are spent", () => {

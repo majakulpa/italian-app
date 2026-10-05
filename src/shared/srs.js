@@ -127,12 +127,41 @@ function collapsedKeys(progress, key) {
 //
 // It also has to run before the limit is applied, or a session of twenty
 // would quietly be a session of eighteen and two duplicates.
+//
+// ── A missing date is "never scheduled", not "infinitely overdue" ────────
+// An item with no schedule entry is due (see isDue), but it is not *overdue*
+// by any amount — there is no date to measure from. This used to sort those
+// items on `|| ""`, and an empty string sorts before every ISO date, so they
+// took the whole front of the queue.
+//
+// That was harmless while every scheduled key had a schedule entry, which was
+// true for as long as every scheduled module wrote through reviewItem. It
+// stopped being true the moment a module was scheduled *after* learners had
+// already practised it: Gli Articoli's bench used to write progress.words
+// without a date, so an account that had worked the strand arrived with 16
+// undated keys and they took 16 of a 20-item round ahead of genuinely overdue
+// vocabulary. Measured before this change, on exactly that account:
+// `{ articoli: 16, vocab: 4 }`.
+//
+// So undated items sort last and fill what is left of the round. That is the
+// honest reading of the data, and it fixes the class rather than the instance
+// — the next module to be scheduled after the fact needs no migration, and
+// neither does anyone's existing save. Among themselves they stay tied, so
+// the stable sort leaves them in MODULE_STATS order, which is the same rule
+// the paragraph above states for two items sharing a date.
 function dueUnits(progress, today) {
   const due = scheduledUnits().filter(
     (unit) => progress.words[unit.key] && isDue(progress.schedule[unit.key], today),
   );
 
-  due.sort((a, b) => (progress.schedule[a.key]?.due || "").localeCompare(progress.schedule[b.key]?.due || ""));
+  due.sort((a, b) => {
+    const left = progress.schedule[a.key]?.due;
+    const right = progress.schedule[b.key]?.due;
+    if (left && right) return left.localeCompare(right); // ISO dates sort as strings
+    if (left) return -1;
+    if (right) return 1;
+    return 0;
+  });
 
   const seen = new Set();
   return due.filter((unit) => {

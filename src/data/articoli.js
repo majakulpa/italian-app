@@ -77,9 +77,18 @@
 // teaching the article twice from two lists.
 
 // The zero article, drawn the way screen 12 draws it. A glyph rather than a
-// word: the module gives it a visually-hidden name, because an em dash on its
-// own is silence to a screen reader.
+// word, because an em dash on its own is silence to a screen reader — so it
+// travels with the name it is read out as, and the two live together here
+// because they are two halves of one fact about the data.
+//
+// Anywhere the glyph would reach a person as *language* rather than as a
+// drawing, ZERO_NAME goes instead: the visually-hidden twin on the button
+// (modules/articoli/cards.jsx) and the spoken verdict (feedback.js). One
+// constant rather than two copies, for the same reason LOCATED is one copy —
+// a screen reader hearing the button called one thing and the answer another
+// is being told they are different things.
 export const ZERO = "—";
+export const ZERO_NAME = "no article";
 
 // Every form the drill can put on a button, and what each one *is*. The
 // feedback is built on these classifications rather than on the spelling —

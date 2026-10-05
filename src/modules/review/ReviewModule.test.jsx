@@ -22,7 +22,7 @@ import { MODULE_STATS } from "../../shared/stats.js";
 import { MAX_BOX, SESSION_LIMIT } from "../../shared/srs.js";
 import { DISTRICTS, districtForModule } from "../../shared/districts.js";
 import * as speech from "../../shared/speech.js";
-import { STRANDS, RULES, filled } from "../../data/articoli.js";
+import { STRANDS, RULES, ZERO, ZERO_NAME, filled } from "../../data/articoli.js";
 import { LOCATED as ARTICLE_LOCATED, announce as announceArticle, ATTEMPTS as ARTICLE_ATTEMPTS } from "../articoli/feedback.js";
 import { ATTEMPTS } from "../../shared/locatedFeedback.js";
 
@@ -49,7 +49,12 @@ const caffe = determinativo.items.find((i) => i.id === "caffe");
 // "Ieri ___ studente è arrivato tardi." — il / lo / l', a second article item
 // for the tests that need a round of two.
 const studente = determinativo.items.find((i) => i.id === "studente");
+const indeterminativo = STRANDS.find((s) => s.id === "indeterminativo");
+// "Sono ___ medico." — one of only two items in the file whose *answer* is the
+// zero article, which is the case that tells a rendered dash from a spoken one.
+const medico = indeterminativo.items.find((i) => i.id === "medico");
 const CAFFE_KEY = articoliKey(determinativo, caffe);
+const MEDICO_KEY = articoliKey(indeterminativo, medico);
 const STUDENTE_KEY = articoliKey(determinativo, studente);
 
 // Seeds items as studied-but-unscheduled, which srs.js treats as due now.
@@ -872,6 +877,35 @@ describe("an article item in the queue", () => {
     // The spoken twin is the strand's own announce(), not the typed one — a
     // typed verdict would have no sentence for `definiteness` at all.
     expect(spoken()).toBe(announceArticle({ correct: false, kind: "definiteness", answer: null, rule: null }));
+  });
+
+  // Parity on the item that can actually break it. `caffe`'s answer is `il`,
+  // a word, so it reads back the same however the answer is rendered; the
+  // only answer in the file that is a *drawing* is the zero article, and it
+  // used to reach the live region as a bare em dash — the same character the
+  // sentence four words later uses as its separator.
+  //
+  // So the screen and the spoken twin are checked to name it the same way,
+  // and the name is one constant rather than two strings that agree today.
+  it("speaks the zero article by name where the button hides that same name", async () => {
+    const user = userEvent.setup();
+    seedDue({ [MEDICO_KEY]: "learning" });
+    renderReview();
+    await startRound(user);
+
+    // The button the learner presses hides the name; the glyph beside it is
+    // aria-hidden, so the name is the whole of its accessible name.
+    expect(screen.getByRole("button", { name: ZERO_NAME })).toBeInTheDocument();
+
+    await pick(user, "un");
+    await pick(user, "il");
+
+    expect(spoken()).toContain(`The answer is ${ZERO_NAME}.`);
+    expect(spoken()).not.toContain(`The answer is ${ZERO}`);
+    // And the card says it in the same words, rather than showing a dash the
+    // spoken version calls something else.
+    const card = screen.getByRole("button", { name: `${ZERO_NAME} correct answer` });
+    expect(card).toBeInTheDocument();
   });
 
   // The cost of keeping a ruled-out option in the tab order: it is still a

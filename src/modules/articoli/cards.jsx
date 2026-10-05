@@ -1,6 +1,6 @@
 import React from "react";
 import { TOKENS, SR_ONLY, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
-import { ZERO } from "../../data/articoli.js";
+import { ZERO, ZERO_NAME } from "../../data/articoli.js";
 import AnswerMark from "../../shared/AnswerMark.jsx";
 import { LOCATED } from "./feedback.js";
 
@@ -49,13 +49,15 @@ function Eyebrow({ children, style, ...rest }) {
 
 // One article form as it appears in running text. The zero article is drawn
 // as the design draws it — an em dash — which is silence to a screen reader,
-// so it carries a name instead. Everything else is Italian and says so.
+// so it carries its name instead. That name is ZERO_NAME rather than a string
+// written here, because feedback.js speaks the same name in the verdict and
+// the two must not drift. Everything else is Italian and says so.
 export function Form({ form }) {
   if (form === ZERO) {
     return (
       <>
         <span aria-hidden="true">{ZERO}</span>
-        <span style={SR_ONLY}>no article</span>
+        <span style={SR_ONLY}>{ZERO_NAME}</span>
       </>
     );
   }

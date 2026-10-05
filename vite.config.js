@@ -57,6 +57,28 @@ export default defineConfig({
     // The suite's own tests take ~10s in total — this ceiling only exists to
     // stop a slow machine reporting a timeout as a failure.
     testTimeout: 20000,
+    // Six, because this suite is judged on per-test latency and vitest's
+    // default is tuned for throughput.
+    //
+    // Left alone, vitest runs one worker per *logical* CPU — twelve on a
+    // six-core machine with SMT. Twelve coverage-instrumented jsdom workers on
+    // six cores do not run twelve times faster, they run twelve times slower
+    // each, and `testTimeout` measures wall-clock. Measured on the suite as it
+    // stands: the median test took 2.71x longer inside the full run than the
+    // same test run alone, the worst 3.8x. A test that costs 9s alone is then
+    // a coin flip against a 20s ceiling, which is exactly the intermittent
+    // failure this setting exists to stop — four different tests, every one a
+    // timeout, never an assertion.
+    //
+    // Capping to the physical core count took the median multiplier to 1.49x
+    // and, counter-intuitively, made the whole run *faster* — 419s to 315s —
+    // because twelve workers were past the point where more parallelism buys
+    // throughput and into thrashing each other's caches.
+    //
+    // It is a ceiling, not a floor, so it binds only where there is something
+    // to cap: the CI runner has four vCPUs and is already below it, which is
+    // why `npm run test:coverage` there is unchanged at ~100s.
+    maxWorkers: 6,
     coverage: {
       // Everything the app actually ships. main.jsx is the two-line React
       // mount and src/test/ is the harness itself — neither is app behaviour,

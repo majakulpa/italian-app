@@ -22,9 +22,26 @@ permissions:
   pages: write
   id-token: write
 
+# Why this is not the usual `group: pages` + `cancel-in-progress: true`.
+#
+# That is one group for every run in the repository, pull requests included,
+# with cancellation on — so the newest run kills whatever is in flight. Merge
+# two pull requests a minute apart and the first merge's deploy is cancelled
+# by the second, and because nothing re-runs it, that commit never reaches the
+# site. It had happened four times by October: #35, #36, #40 and #45 all show
+# as `cancelled` on main, each killed by the merge that followed it.
+#
+# Worse, a push to any pull request could cancel a main deploy, and the pull
+# request's own run skips the deploy job — so the site would just stop at
+# whatever shipped last, with a green tick on every check.
+#
+# So: one group per ref, which keeps pull requests out of main's way, and no
+# cancellation on main. Deploys of main queue and each one publishes. Builds of
+# a pull request still cancel their own superseded runs, because there the only
+# thing lost is CI minutes.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:

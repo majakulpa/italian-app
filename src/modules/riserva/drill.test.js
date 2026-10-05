@@ -121,7 +121,7 @@ describe("lexiconQuestion", () => {
   });
 
   // The multi-sense decision, held in a test so it cannot be quietly
-  // "tidied" into a first-sense-only prompt. 87 of the first 300 entries
+  // "tidied" into a first-sense-only prompt. 152 of the 600 entries
   // split in Polish and the file cannot say whether a split is two meanings
   // or two aspects, so the prompt shows both and lets the English pick.
   //

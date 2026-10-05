@@ -236,14 +236,36 @@ describe("word detail", () => {
 
   // And says nothing where there is nothing to say — the pill must not fire
   // for every word, only the ones the data actually marks.
+  //
+  // This asserts the *row*, not the absence of two strings. The first version
+  // only checked that "maschile" and "femminile" were not on the page, and
+  // that cannot fail for the defect it names: without the `entry.gender &&`
+  // guard a word with no gender renders `GENDER_LABEL[undefined]`, which is an
+  // empty <Pill> — an empty pill-shaped chip, containing neither string. So
+  // what is pinned is what the row holds: the rank, the state, and nothing
+  // else, and no pill in it without text.
+  //
+  // Two entries, because the bare-ending case (`essere`) and the opaque noun
+  // that carries its gender in its article (`la mano`) are the two ways a word
+  // can have no `gender` field, and the second is the one a pill is most
+  // plausibly mistaken for.
   it("shows no gender pill for a word that doesn't carry one", async () => {
     const user = userEvent.setup();
-    const plain = FONDAMENTALE.find((e) => !e.it.startsWith("l'"));
-    render(<RiservaModule onExit={() => {}} />);
-    await openWord(user, plain);
 
-    expect(screen.queryByText("maschile")).not.toBeInTheDocument();
-    expect(screen.queryByText("femminile")).not.toBeInTheDocument();
+    for (const word of ["essere", "la mano"]) {
+      const plain = FONDAMENTALE.find((e) => e.it === word);
+      expect(plain.gender, `${word} must be an entry with no gender field`).toBeUndefined();
+
+      const { unmount } = render(<RiservaModule onExit={() => {}} />);
+      await openWord(user, plain);
+
+      const row = screen.getByText(`posto ${plain.rank}`).parentElement;
+      const pills = [...row.children].map((pill) => pill.textContent);
+
+      expect(pills, word).toEqual([`posto ${plain.rank}`, "not started"]);
+      expect(pills.every((text) => text.trim() !== ""), word).toBe(true);
+      unmount();
+    }
   });
 
   it("goes back to the grid", async () => {

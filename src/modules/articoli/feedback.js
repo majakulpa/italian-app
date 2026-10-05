@@ -43,7 +43,7 @@
 // these messages mix Italian forms, Polish sentences and English prose in one
 // paragraph and a string can only claim one language (WCAG 3.1.2).
 
-import { ARTICLE_FORMS, RULES, filled } from "../../data/articoli.js";
+import { ARTICLE_FORMS, RULES, ZERO, ZERO_NAME, filled } from "../../data/articoli.js";
 
 export const ATTEMPTS = 2;
 
@@ -108,6 +108,21 @@ export const LOCATED = {
 // so the lead only belongs in the spoken twin.
 const LEAD = "Not quite.";
 
+// An article form as a *spoken* word. Every form is one already, except the
+// one that is a drawing: the zero article is an em dash, and announcing it raw
+// put "The answer is —." into the live region on the two items whose answer is
+// the zero article — `Sono medico` and `Ho fame`. The em dash is also the
+// separator this very sentence uses between the Italian and its English, so a
+// screen reader got one character twice, meaning two different things, where
+// the card draws a visually-hidden name and a rendered dash.
+//
+// The name is data/articoli.js's ZERO_NAME, the same constant the button's
+// hidden twin renders, so the thing the learner presses and the thing she is
+// told the answer was cannot come out as two different words.
+function spoken(form) {
+  return form === ZERO ? ZERO_NAME : form;
+}
+
 // The same verdict as plain sentences, for the live region. A screen reader
 // gets no colour and no cards, so everything the sighted learner reads off
 // the feedback has to be in here — the located "where", the rule, and the
@@ -119,7 +134,9 @@ export function announce(verdict) {
     parts.push(`Correct. Italian writes it: ${verdict.sentence} — ${verdict.en}.`);
   } else {
     parts.push(`${LEAD} ${LOCATED[verdict.kind]}`);
-    parts.push(verdict.answer ? `The answer is ${verdict.answer}. ${verdict.sentence} — ${verdict.en}.` : "Try once more.");
+    parts.push(
+      verdict.answer ? `The answer is ${spoken(verdict.answer)}. ${verdict.sentence} — ${verdict.en}.` : "Try once more.",
+    );
   }
 
   if (verdict.rule) {

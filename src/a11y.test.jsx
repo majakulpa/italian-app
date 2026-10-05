@@ -33,6 +33,7 @@ import { STAGES, formStage } from "./shared/stage.js";
 import * as speech from "./shared/speech.js";
 import { save as saveSceneKey, forget as forgetSceneKey } from "./shared/partnerKey.js";
 import { FAKE_KEY } from "./test/fakeKey.js";
+import { useFastKdf } from "./test/fastKdf.js";
 import { RateLimitError } from "@anthropic-ai/sdk";
 
 // Accessibility is the one property that isn't any single component's — a
@@ -62,6 +63,11 @@ const mapSet = TRAP_SETS.find((s) => s.id === "mappe");
 
 beforeEach(() => {
   localStorage.clear();
+  // Four of the Le Scene scans put a scene-partner key in storage, and each
+  // derivation at the shipped work factor is seconds of CPU under coverage.
+  // What is being audited here is markup, not the key-stretching parameter —
+  // see test/fastKdf.js for why that is safe and where the real cost is kept.
+  useFastKdf();
   vi.spyOn(Math, "random").mockReturnValue(0.99);
   // jsdom has no SpeechSynthesis, and the speaker buttons are part of what's
   // being audited — pretend it's there, as it is in every browser this ships to.
@@ -657,6 +663,31 @@ describe("La Riserva", () => {
   // so what this checks is that hiding it did not also hide the ten fasce
   // that are the screen's real controls, and that an expanded band is
   // announced rather than silently appearing.
+  // The grid is scanned whole here, and this is the only scan that does it.
+  //
+  // Two thousand aria-hidden cells are nodes axe checks none of — it reports
+  // the same fifteen checked nodes with them and without them — but still
+  // walks, and walking them is ~6.5s of an ~11.9s scan under coverage. Paying
+  // that on every La Riserva state bought nothing on every La Riserva state.
+  //
+  // What the whole scan is for is content arriving in the grid later. Checked
+  // by breaking it: giving each cell `role="button"` with no name fails this
+  // test and only this test — `aria-command-name (serious)` on
+  // `span[data-rank="1"]` — while the scans that exclude the grid stay green.
+  // So the design 11 cell that becomes a real control, or a cell that gains
+  // text, is caught here, and is caught nowhere else.
+  //
+  // Note what it does *not* guard, because the comment used to claim it did:
+  // removing `aria-hidden` from the grid on its own changes nothing axe can
+  // see. Two thousand empty spans are not a violation whether they are in the
+  // accessibility tree or out of it, and every La Riserva scan passes with the
+  // attribute deleted. RiservaModule.test.jsx is what holds that property, by
+  // asserting the attribute directly rather than asking axe about it.
+  //
+  // `theGrid` is the cell container, defined as the parent of the ranked cells
+  // so it cannot drift from what the module actually renders.
+  const theGrid = (container) => [container.querySelector("[data-rank]").parentElement];
+
   it("has an accessible grid and band list", async () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
     await expectNoViolations(container);
@@ -667,7 +698,7 @@ describe("La Riserva", () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
 
     await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
-    await expectNoViolations(container);
+    await expectNoViolations(container, { without: theGrid(container) });
   });
 
   // The band list after a press of "Drill the next N words" that opened
@@ -685,9 +716,14 @@ describe("La Riserva", () => {
       words: Object.fromEntries(FONDAMENTALE.filter((e) => e.rank <= 200).map((e) => [riservaKey(e), "known"])),
       schedule: {},
     });
-    await user.click(screen.getByRole("button", { name: /Drill the next/ }));
+    // Found by text rather than by role, which is PR #22's point: a named role
+    // query runs the accessibility filter over all 212 buttons an open band
+    // puts on screen, and that measures 3.3s under coverage. This is the press
+    // that gets to the screen state, not the assertion about it — the scan
+    // below is the assertion, and it still goes through the real tree.
+    await user.click(screen.getByText(/Drill the next/, { selector: "button" }));
 
-    await expectNoViolations(container);
+    await expectNoViolations(container, { without: theGrid(container) });
   });
 
   // Word detail's way in is the fascia, so the axe pass has to reach it the

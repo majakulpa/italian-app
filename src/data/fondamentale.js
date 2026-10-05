@@ -484,7 +484,7 @@ export const FONDAMENTALE = [
   { rank: 397, it: "crescere", en: "to grow", pl: "rosnąć" },
   { rank: 398, it: "toccare", en: "to touch", pl: "dotykać" },
   { rank: 399, it: "sorridere", en: "to smile", pl: "uśmiechać się" },
-  { rank: 400, it: "sposare", en: "to marry", pl: "poślubić · brać ślub" },
+  { rank: 400, it: "sposare", en: "to marry", pl: "poślubić" },
 ];
 
 // The entries actually written down inside one band, in rank order. Usually

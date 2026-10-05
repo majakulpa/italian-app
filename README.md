@@ -247,7 +247,7 @@ categories/dialogues/stories each, and four grammar topics.
   A wrong answer is **located, not solved**, judged by the very code La Piazza
   judges with (`src/shared/locatedFeedback.js`, which moved out of
   `modules/review/` when this became its second caller). Both glosses are
-  shown, every sense, exactly as `fondamentale.js` writes them: 92 of the
+  shown, every sense, exactly as `fondamentale.js` writes them: 91 of the
   first 400 entries split in Polish, the file cannot say whether a split is
   two senses or two aspects, and going gloss → Italian a split is extra
   evidence for one answer rather than ambiguity between two.

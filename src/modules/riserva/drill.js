@@ -116,7 +116,7 @@ export function unmetCount(states, fascia) {
 // One entry as something to produce.
 //
 // ── Both glosses, verbatim, and why the multi-sense ones are not trimmed ─
-// 92 of the first 400 entries carry more than one Polish sense, separated by
+// 91 of the first 400 entries carry more than one Polish sense, separated by
 // " · ". The obvious move is to pick one and ask on that; it is wrong here,
 // for two reasons.
 //

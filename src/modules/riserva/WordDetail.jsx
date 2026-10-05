@@ -42,7 +42,7 @@ import { wordTraces } from "./traces.js";
 // ── The Polish card, which the data already knew ────────────────────────
 // The design's pink card has `chiedere` covering both *pytać* and *prosić o*,
 // and that is not new content: fondamentale.js already separates multiple
-// Polish senses with " · ", and 92 of the first 400 entries carry one. So the
+// Polish senses with " · ", and 91 of the first 400 entries carry one. So the
 // card fires off the data that is there.
 //
 // What it must not say is that the split only bites in one direction. It read

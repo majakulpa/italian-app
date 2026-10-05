@@ -62,7 +62,7 @@ describe("opening a round", () => {
     expect(screen.getByText("być")).toHaveAttribute("lang", "pl");
   });
 
-  // 92 of the first 400 entries split in Polish and the file cannot say
+  // 91 of the first 400 entries split in Polish and the file cannot say
   // whether that is two senses or two aspects, so the prompt shows both.
   //
   // What the note may claim is bounded by the data. It used to say the Polish

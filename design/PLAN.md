@@ -284,7 +284,7 @@ same reason — nothing behind them:
   (`porta` the door against `porta` from *portare*); the trace carries the
   story's own gloss verbatim so the mismatch is visible rather than asserted.
 - **Why Polish splits a word.** The pink card fires off data the lexicon
-  already had: 92 of the first 400 entries carry more than one Polish sense.
+  already had: 91 of the first 400 entries carry more than one Polish sense.
   What it will not do is say *which* reason, because `pytać · prosić o` is two
   meanings and `mówić · powiedzieć` is one meaning in two aspects, and nothing
   in the file tells them apart.

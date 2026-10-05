@@ -101,7 +101,10 @@ const ENDING = 2;
 // `ragazza`, `figlio` for `figlia`, `nonno` for `nonna`), an agreement
 // (`primo` for `prima`), a dropped letter (`modo` for `mondo`) or a thumb on
 // the wrong key — and 126 pairs of the 600 written down are within one edit of
-// each other, overwhelmingly the short function words a phone typo lands on.
+// each other. Mostly, but not overwhelmingly, the short words a phone typo
+// lands on: 38 of the 126 are content words a learner can genuinely confuse
+// (`vedere`/`vendere`, `volere`/`volare`, `quando`/`quanto`), and those are
+// the pairs this threshold is really protecting.
 // Told "it belongs to a different entry, read the English gloss again", a
 // learner who simply missed the gender is sent to re-read a gloss she had
 // right, and the one verdict that would have named her actual error is the one

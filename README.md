@@ -244,14 +244,15 @@ categories/dialogues/stories each, and four grammar topics.
   and in the coverage figure at the same time. A word is offered here once:
   this bench meets it, and La Piazza is what brings it back.
 
-  That is what raised the coverage ceiling from **1.6% to 66.1%** — see
+  That is what first raised the coverage ceiling from **1.6%** — to 66.1% on
+  the 300 entries it shipped with, and **73.3%** on the 600 there are now. See
   Coverage below.
 
   A wrong answer is **located, not solved**, judged by the very code La Piazza
   judges with (`src/shared/locatedFeedback.js`, which moved out of
   `modules/review/` when this became its second caller). Both glosses are
-  shown, every sense, exactly as `fondamentale.js` writes them: 87 of the
-  first 300 entries split in Polish, the file cannot say whether a split is
+  shown, every sense, exactly as `fondamentale.js` writes them: 152 of the
+  600 entries split in Polish, the file cannot say whether a split is
   two senses or two aspects, and going gloss → Italian a split is extra
   evidence for one answer rather than ambiguity between two.
 
@@ -313,15 +314,17 @@ categories/dialogues/stories each, and four grammar topics.
   The figure is capped by the content that ships, and where the cap sits is
   worth knowing before reading anything into it. It used to be very low:
   coverage learned that a word was known from one place, the vocabulary
-  module's 120 words, and just 20 of those are in the base 2,000 — so
-  mastering every word, drill, dialogue and story in the app read **1.6%** and
-  **20 / 2000 solid**, and nothing could move it.
+  module's 120 words, and just 20 of those were in the base 2,000 when the
+  list was 300 long (34 are now) — so mastering every word, drill, dialogue
+  and story in the app read **1.6%** and **20 / 2000 solid**, and nothing
+  could move it.
 
   La Riserva's drill widened the bridge. Every entry in `fondamentale.js` is a
   unit of its own now, so the ceiling is the worth of the ranks that have a
-  word behind them — **73.3%** and **600 / 2000 solid**, which is the same
-  "top 300 words are worth about two thirds of running text" the weighting
-  predicts, arriving from the other side. `coverage.test.js` pins it so it
+  word behind them — **73.3%** and **600 / 2000 solid**, which is what the
+  weighting predicts, arriving from the other side: the top 300 words are
+  worth about two thirds of running text (66.1%), and the second 300 add about
+  seven points more. `coverage.test.js` pins it so it
   cannot move, or fail to move, unnoticed. 600 is also the word count Il
   Cinema's unbuilt generated serial is gated on (`src/shared/districts.js`) —
   the ceiling and that threshold now meet for the first time, which makes the

@@ -25,7 +25,7 @@
 //            and no example sentence — the same shape as a Riserva entry and
 //            for the same reason, so it is built the same way. What it does
 //            *not* share is the neighbour set: a base-vocabulary word sits in
-//            a closed list of 400 the learner is working through, and a scene
+//            a closed list of 600 the learner is working through, and a scene
 //            word sits in a scene. See below.
 //   articoli the one shape that is not typed, and the reason `options` exists
 //            below. Everything above has an answer space the learner writes
@@ -78,7 +78,7 @@ export function clozeExample(word) {
 // `neighbours` is the sibling field: other whole *items* the learner might
 // have been reaching for instead. Empty on both shapes built here and filled
 // only by La Riserva, and that is a fact about the content rather than an
-// omission. A base-vocabulary entry sits in a closed list of 400 words the
+// omission. A base-vocabulary entry sits in a closed list of 600 words the
 // learner is working through, so "that is another word from this list" is a
 // true and useful thing to say; a deck word's siblings are its category, and
 // a grammar drill's are sentences, and neither would make that sentence true.

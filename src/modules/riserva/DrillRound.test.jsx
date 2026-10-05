@@ -62,11 +62,11 @@ describe("opening a round", () => {
     expect(screen.getByText("być")).toHaveAttribute("lang", "pl");
   });
 
-  // 87 of the first 300 entries split in Polish and the file cannot say
+  // 152 of the 600 entries split in Polish and the file cannot say
   // whether that is two senses or two aspects, so the prompt shows both.
   //
   // What the note may claim is bounded by the data. It used to say the Polish
-  // senses "all point at the same Italian one", and 24 of them point at two —
+  // senses "all point at the same Italian one", and 42 of them point at two —
   // `strada` and `via` share their whole Polish set one rank apart. So this
   // asserts the note the learner actually reads, and that it does not make
   // that promise.

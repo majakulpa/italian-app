@@ -331,20 +331,32 @@ function Round({ queue, onGrade, onDone, onBack }) {
   // put the same two fields on a verdict, so this reads either.
   const settled = verdict !== null && (verdict.correct || verdict.last);
 
-  // Focus follows the item. Everything else on this screen keeps its element
-  // across a state change — the typed shape's one button is mounted whatever
-  // the item is doing, and a spent option button is aria-disabled rather than
-  // removed — but advancing replaces the whole item, and the article shape's
-  // "Next" is the control being pressed *and* the one that unmounts. Without
-  // this, that press drops focus to the body and a keyboard learner starts the
-  // next item nowhere.
+  // Focus follows the item *between* items, and only between them. Everything
+  // else on this screen keeps its element across a state change — the typed
+  // shape's one button is mounted whatever the item is doing, and a spent
+  // option button is aria-disabled rather than removed — but advancing
+  // replaces the whole item, and the article shape's "Next" is the control
+  // being pressed *and* the one that unmounts. Without this, that press drops
+  // focus to the body and a keyboard learner starts the next item nowhere.
   //
   // The target is whatever the new item is answered with: the box for a typed
-  // item, the first of the three for an article one. It runs on mount too,
-  // which is right — the button that opened the round has just unmounted, so
-  // focus was on the body there as well.
+  // item, the first of the three for an article one.
+  //
+  // `index > 0` keeps it off the first render, deliberately. Taking focus when
+  // a round opens would be this screen alone among the app's drills — La
+  // Riserva, Mappatura delle parole and Falsi Amici all move focus only after
+  // a wrong answer — and landing in the box means a screen reader is put past
+  // the prompt and the gapped example on the way in, which is the question
+  // itself. There is nothing to rescue on mount either: nothing has unmounted
+  // under the learner, she has just pressed "Start the round".
+  //
+  // What this does *not* catch is the last item of a round: "See how it went"
+  // unmounts the whole Round, so no effect here runs and focus lands on the
+  // body. That is exactly what a typed round has always done on its last
+  // item, it is not new here, and putting it right means giving the summary a
+  // focus target — a change to a screen this PR otherwise does not touch.
   useEffect(() => {
-    (inputRef.current ?? firstOptionRef.current)?.focus();
+    if (index > 0) (inputRef.current ?? firstOptionRef.current)?.focus();
   }, [index]);
 
   // The single grading point, and the reason the item can't be graded twice:
@@ -537,11 +549,14 @@ function Round({ queue, onGrade, onDone, onBack }) {
           {verdict?.anchor && <PolishAnchor anchor={verdict.anchor} />}
 
           {/* Mounted only once the item settles, because until then there is
-              nothing to carry forward — and the focus effect above is what
-              catches the press that unmounts it. It describes itself with the
-              verdict card, so a keyboard learner who lands here is told where
-              the answer went rather than only that it went, which is the same
-              thing the typed shape does with its input. */}
+              nothing to carry forward. Pressing it unmounts it, so focus has
+              to be put somewhere: the effect above catches that on every item
+              but the last, where this button ends the round instead and the
+              whole Round goes with it — see the effect for what that leaves.
+              It describes itself with the verdict card, so a keyboard learner
+              who lands here is told where the answer went rather than only
+              that it went, which is the same thing the typed shape does with
+              its input. */}
           {settled && (
             <PrimaryButton onClick={advance} aria-describedby={verdictId} style={{ marginTop: 14 }}>
               {buttonLabel()} <ArrowRight size={16} aria-hidden="true" />

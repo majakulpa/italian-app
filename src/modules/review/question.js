@@ -126,7 +126,14 @@ export function toQuestion(unit) {
       neighbours: [],
       strictAccents: false,
       options: unit.item.options,
-      context: { it: filled(unit.item), en: unit.item.en },
+      // Null, and that is not an omission. `context` is the sentence
+      // shared/Verdict.jsx prints under a settled typed answer, and this shape
+      // never reaches that card: it renders ArticleVerdict, which gets the
+      // closed sentence from the judge (`verdict.sentence`) because the judge
+      // is what decides whether the item is open enough to show one. Filling
+      // this in would be shipping a second copy of that sentence for nothing
+      // to read.
+      context: null,
       // The sentence with its gap closed, which is what Gli Articoli's own
       // summary lists. A bare `il` in the "worth another look" list would be
       // the one thing about the item that is useless on its own: the article

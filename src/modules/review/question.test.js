@@ -163,7 +163,10 @@ describe("building a question from a due unit", () => {
     });
     expect(question.options).toEqual(caffe.options);
     expect(question.options).toContain(ZERO);
-    expect(question.context).toEqual({ it: "Bevo il caffè ogni mattina.", en: caffe.en });
+    // `context` is the typed card's sentence and this shape never reaches
+    // that card — ArticleVerdict takes the closed sentence from the judge. A
+    // filled-in context here would be data nothing reads.
+    expect(question.context).toBeNull();
   });
 
   // The recap is what the end-of-round list prints, and a bare `il` there
@@ -191,13 +194,11 @@ describe("building a question from a due unit", () => {
   });
 
   // Closing the gap has exactly one implementation — data/articoli.js's
-  // filled() — so the sentence La Piazza reveals and the sentence the bench
-  // reveals cannot come out different.
+  // filled() — so the sentence La Piazza recaps and the sentence the bench
+  // recaps cannot come out different.
   it("closes an article gap the way the bench closes it", () => {
     for (const item of everyArticle) {
-      const question = toQuestion({ moduleId: "articoli", item });
-      expect(question.context.it, item.id).toBe(filled(item));
-      expect(question.recap.primary, item.id).toBe(filled(item));
+      expect(toQuestion({ moduleId: "articoli", item }).recap.primary, item.id).toBe(filled(item));
     }
   });
 

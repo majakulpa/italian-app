@@ -33,7 +33,7 @@ describe("La Riserva", () => {
   it("draws one cell per word of the target, not per word written down", () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
 
-    // 2,000 cells even though the list holds 400 — the grid is the shape of
+    // 2,000 cells even though the list holds 600 — the grid is the shape of
     // the target, and the gap is the point rather than an omission.
     expect(cells(container)).toHaveLength(FONDAMENTALE_TARGET);
     expect(FONDAMENTALE.length).toBeLessThan(FONDAMENTALE_TARGET);
@@ -41,7 +41,7 @@ describe("La Riserva", () => {
 
   // PLAN.md: "a rank nobody has written down cannot be unseen". The two are
   // different claims — one about the file, one about the learner — and the
-  // grid has to tell them apart or it implies 1,700 words she failed to learn.
+  // grid has to tell them apart or it implies 1,400 words she failed to learn.
   it("tells a rank with no word behind it from one the learner has not met", () => {
     const { container } = render(<RiservaModule onExit={() => {}} />);
     const all = cells(container);

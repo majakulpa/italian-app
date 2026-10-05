@@ -293,7 +293,7 @@ Four workbenches, per screen 07:
   way in to a typed production round over the entries it holds — gloss in
   English and Polish, you write the Italian, graded through `reviewItem` under
   `riserva:` keys — which is what made the base vocabulary studiable at all and
-  moved the ceiling from 1.6% to 66.1%. It is in the Leitner queue, because a
+  moved the ceiling from 1.6% to 66.1% (73.3% at the 600 entries now written). It is in the Leitner queue, because a
   base-vocabulary entry is a lexical item and that is what a Leitner box
   schedules.
 - **Gli Articoli** — ✅ built. The permanent strand: Polish has no articles and
@@ -364,7 +364,7 @@ same reason — nothing behind them:
   (`porta` the door against `porta` from *portare*); the trace carries the
   story's own gloss verbatim so the mismatch is visible rather than asserted.
 - **Why Polish splits a word.** The pink card fires off data the lexicon
-  already had: 87 of the first 300 entries carry more than one Polish sense.
+  already had: 152 of the 600 entries carry more than one Polish sense.
   What it will not do is say *which* reason, because `pytać · prosić o` is two
   meanings and `mówić · powiedzieć` is one meaning in two aspects, and nothing
   in the file tells them apart.

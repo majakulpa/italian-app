@@ -75,11 +75,19 @@ describe("FONDAMENTALE", () => {
   // The other half of that, and the half the drill screen got wrong: the
   // Polish gloss is *not* a key, and nothing in this file makes it one.
   //
-  // Twenty-four Polish senses in the first 300 entries are carried by two
-  // entries or more — `mówić` by dire and parlare, `uczyć się` by studiare and
-  // imparare, `głowa` by testa and capo — and three entries share their whole
-  // Polish set with another: `non`/`no`, `a`/`in`, and `strada`/`via`, which
-  // sit at adjacent ranks and so land in the same drill round.
+  // Forty-two Polish senses in the 600 entries are carried by two entries or
+  // more — `mówić` by dire and parlare, `uczyć się` by studiare and imparare,
+  // `głowa` by testa and capo — and six groups of entries share their whole
+  // Polish set: `non`/`no`, `a`/`in`, `breve`/`corto`, `strada`/`via`,
+  // `prego`/`per favore`, and a triple, `stanza`/`la pace`/`camera`, all of
+  // which are `pokój`. `strada` and `via` sit at adjacent ranks and so land in
+  // the same drill round.
+  //
+  // The figures are pinned below, not just quoted, and the six groups are
+  // pinned *exactly* — an earlier version of this named three pairs and
+  // asserted with `toMatchObject`, which is satisfied by a superset, so it
+  // stayed green while the real answer grew to six groups and a triple. A
+  // seventh group turns the test red until somebody adds it on purpose.
   //
   // This is asserted rather than merely known because a screen was telling the
   // learner the opposite. DrillRound's note on a split entry claimed the Polish
@@ -98,20 +106,60 @@ describe("FONDAMENTALE", () => {
     }
     const shared = [...bySense].filter(([, words]) => words.length > 1);
 
-    expect(shared.length).toBeGreaterThan(0);
-    expect(Object.fromEntries(shared)).toMatchObject({
+    // The figure drill.js, DrillRound.jsx, WordDetail.jsx, the README and
+    // PLAN.md quote. It is derivable from the data, so it is asserted here
+    // rather than left to be remembered; when a batch moves it this goes red
+    // and those comments want updating in the same change.
+    expect(shared).toHaveLength(42);
+
+    // Spot checks, exact: these are the examples the screens' comments name.
+    const sharedBy = Object.fromEntries(shared);
+    for (const [sense, words] of Object.entries({
       "mówić": ["dire", "parlare"],
       "droga": ["strada", "via"],
       "ulica": ["strada", "via"],
-    });
+    })) {
+      expect(sharedBy[sense], sense).toEqual(words);
+    }
+  });
 
-    // And an entry whose whole Polish set is another entry's, so the Polish
-    // alone cannot pick between them at all.
-    const strada = FONDAMENTALE.find((w) => w.it === "strada");
-    const via = FONDAMENTALE.find((w) => w.it === "via");
-    const set = (word) => word.pl.split(" · ").map((s) => s.trim()).sort().join("|");
-    expect(set(strada)).toBe(set(via));
-    expect(strada.en).not.toBe(via.en);
+  // An entry whose whole Polish set is another's, so the Polish alone cannot
+  // pick between them at all. Grouped by the *set* of senses — order inside a
+  // gloss does not matter, `strada` is `droga · ulica` and `via` is
+  // `ulica · droga` — and pinned as the exact list of groups. A group is not
+  // always a pair, which is why this is not shaped like one.
+  it("pins every group of entries that share their whole Polish set", () => {
+    const bySet = new Map();
+    for (const word of FONDAMENTALE) {
+      const key = [...new Set(glossSenses(word.pl))].sort().join(" | ");
+      bySet.set(key, [...(bySet.get(key) ?? []), word.it]);
+    }
+    const groups = [...bySet.values()].filter((words) => words.length > 1);
+
+    // Groups in the rank order of their first member, members in rank order.
+    // Not keyed by the Polish itself: the point is who is in a group, and a
+    // seventh is added to this list deliberately or not at all.
+    expect(groups).toEqual([
+      ["non", "no"],
+      ["a", "in"],
+      ["breve", "corto"],
+      ["stanza", "la pace", "camera"],
+      ["strada", "via"],
+      ["prego", "per favore"],
+    ]);
+
+    // And the English still tells each member of a group apart, which is the
+    // whole reason the drill can get away with this.
+    for (const words of groups) {
+      const english = words.map((it) => FONDAMENTALE.find((w) => w.it === it).en);
+      expect(new Set(english).size, words.join("/")).toBe(words.length);
+    }
+  });
+
+  // How many entries split in Polish at all — the "N of the 600" in the same
+  // comments. A split is one gloss with a " · " in it.
+  it("pins how many entries carry more than one Polish sense", () => {
+    expect(FONDAMENTALE.filter((w) => glossSenses(w.pl).length > 1)).toHaveLength(152);
   });
 
   it("stores every entry lower-case and untrimmed of nothing", () => {

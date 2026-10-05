@@ -42,12 +42,12 @@ import { wordTraces } from "./traces.js";
 // ── The Polish card, which the data already knew ────────────────────────
 // The design's pink card has `chiedere` covering both *pytać* and *prosić o*,
 // and that is not new content: fondamentale.js already separates multiple
-// Polish senses with " · ", and 87 of the first 300 entries carry one. So the
+// Polish senses with " · ", and 152 of the 600 entries carry one. So the
 // card fires off the data that is there.
 //
 // What it must not say is that the split only bites in one direction. It read
 // "going this way you choose, and coming back you do not", and coming back you
-// often do: 24 Polish senses in the first 300 entries are carried by more than
+// often do: 42 Polish senses in the 600 entries are carried by more than
 // one entry — `mówić` by both `dire` and `parlare`, which is a card this very
 // screen draws — and `strada` and `via` share their whole Polish set.
 // fondamentale.test.js pins that, and La Riserva's drill screen makes the same

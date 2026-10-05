@@ -38,8 +38,8 @@ const SANS = "'Inter', sans-serif";
 // do not read as two questions.
 //
 // The sentence that shipped here was "Polish uses more than one word here.
-// They all point at the same Italian one", and the second half is false. 24
-// Polish senses in the first 300 entries are carried by more than one entry —
+// They all point at the same Italian one", and the second half is false. 42
+// Polish senses in the 600 entries are carried by more than one entry —
 // `mówić` by dire and parlare, `głowa` by testa and capo — and `strada`
 // (`droga · ulica`) and `via` (`ulica · droga`) share their whole Polish set
 // one rank apart, so the drill puts them in the same round. fondamentale.test.js

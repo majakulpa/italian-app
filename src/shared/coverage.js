@@ -133,8 +133,9 @@ const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]
 // their evidence is folded. Two, where there used to be one:
 //
 //   vocab    the deck. It teaches 120 Italian words with example sentences,
-//            and 20 of them normalise onto a base-vocabulary lemma. Narrow,
-//            and it was the whole bridge.
+//            and 34 of them normalise onto a base-vocabulary lemma — 20 when
+//            the list was 300 long, and coverage.test.js pins the live count.
+//            Narrow, and it was the whole bridge.
 //   riserva  the reservoir itself. Every entry in fondamentale.js is a unit
 //            under a `riserva:` key, so a word can be studied *as* a lexicon
 //            word rather than only by turning up in a deck category.
@@ -197,8 +198,10 @@ export function lexiconUnits(rank) {
 // same reason stats.js does — the key builders have to be the ones the
 // modules wrote with, or the number drifts.
 //
-// The seam is deliberately this one function. Widening it was what raised the
-// ceiling from 1.6% to 66.1%; a third source widens it here and nowhere else.
+// The seam is deliberately this one function. Widening it was what first
+// raised the ceiling from 1.6% — to 66.1% on the 300 entries then written, and
+// to 73.3% on the 600 there are now; a third source widens it here and nowhere
+// else.
 export function lexiconEvidence(progress) {
   const found = new Map();
 

@@ -43,7 +43,7 @@
 // coverage.js folds the two units with.
 //
 // ── Ranks with no word behind them are not drillable ────────────────────
-// The list is 400 of 2,000. A rank nobody has written down is a claim about
+// The list is 600 of 2,000. A rank nobody has written down is a claim about
 // the file, not about the learner — La Riserva's grid has drawn that
 // distinction since it shipped — so an empty band yields an empty round and
 // the screen says so rather than opening a drill of nothing.
@@ -53,7 +53,7 @@ import { SESSION_LIMIT } from "../../shared/srs.js";
 import { foldTyped } from "../../shared/typedAnswer.js";
 
 // Every word written down in the list, for the `neighbour` verdict below.
-// Built once: it is the same 400 strings whichever entry is being asked.
+// Built once: it is the same 600 strings whichever entry is being asked.
 const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
 
 // The entries that another entry folds onto — where the accent is the only
@@ -68,8 +68,8 @@ const LEXICON_WORDS = FONDAMENTALE.map((entry) => entry.it);
 // "Correct. Italian writes it si" while a Leitner box climbs on the wrong word.
 //
 // Derived rather than named, because the pair that needs this is a property of
-// the list and the list is 400 of 2,000. `si`/`sì` is the only one today and
-// drill.test.js pins that; the next 1,600 entries will bring more, and they
+// the list and the list is 600 of 2,000. `si`/`sì` is the only one today and
+// drill.test.js pins that; the next 1,400 entries will bring more, and they
 // will be covered the day they are written down rather than the day somebody
 // notices. Folded with the judge's own foldTyped, so the set can only ever
 // contain exactly the pairs the judge would confuse.
@@ -116,7 +116,7 @@ export function unmetCount(states, fascia) {
 // One entry as something to produce.
 //
 // ── Both glosses, verbatim, and why the multi-sense ones are not trimmed ─
-// 87 of the first 300 entries carry more than one Polish sense, separated by
+// 152 of the 600 entries carry more than one Polish sense, separated by
 // " · ". The obvious move is to pick one and ask on that; it is wrong here,
 // for two reasons.
 //
@@ -131,7 +131,7 @@ export function unmetCount(states, fascia) {
 // would — but it is not free, and the version of this argument that shipped
 // said it was. It claimed the Polish senses "all point at the same Italian
 // one", so a split was "more evidence for the answer than either alone". The
-// file says otherwise. 24 Polish senses in the first 300 entries are carried
+// file says otherwise. 42 Polish senses in the 600 entries are carried
 // by two entries or more — `mówić` by dire and parlare, `uczyć się` by
 // studiare and imparare, `głowa` by testa and capo — and `strada` (280,
 // `droga · ulica`) and `via` (281, `ulica · droga`) have identical Polish sets
@@ -168,7 +168,7 @@ export function unmetCount(states, fascia) {
 // Which cuts both ways, and the first version of this only saw one side of it.
 // The neighbour verdict ran ahead of the spelling analysis with no guard, so a
 // one-character slip that happened to land on another entry — `ragazzo` for
-// `ragazza`, and 71 such pairs in the 300 — was reported as reaching for the
+// `ragazza`, and 126 such pairs in the 600 — was reported as reaching for the
 // wrong word when the learner had the word and missed the gender. The verdict
 // now has to beat what the spelling analysis found before it is said; see
 // NEIGHBOUR_EDITS in locatedFeedback.js for where the line sits and why

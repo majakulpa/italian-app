@@ -104,7 +104,22 @@ describe("drillRound", () => {
   it("drills only the written-down half of a partly seeded band", () => {
     const straddling = { id: "test-straddle", from: 351, to: 450 };
     expect(unmetCount(states(EMPTY), straddling)).toBe(50);
-    expect(drillRound(states(EMPTY), straddling).every((e) => e.rank <= FONDAMENTALE.length)).toBe(true);
+
+    // The ranks themselves, not a bound on them. `rank <= FONDAMENTALE.length`
+    // was asserted here and is true under any implementation, because ranks are
+    // contiguous and the array is the only place an entry can come from. What
+    // can go wrong is the edges: starting before `from`, or stopping short of
+    // the last written-down rank.
+    const first = drillRound(states(EMPTY), straddling).map((e) => e.rank);
+    expect(first).toEqual(Array.from({ length: ROUND_SIZE }, (_, i) => 351 + i));
+
+    // Meet 351–385 and what is left is 386–400 — fewer than a round, ending
+    // exactly where the list does and not at the band's own `to` of 450.
+    const progress = FONDAMENTALE.slice(350, 385).reduce(met, EMPTY);
+    expect(unmetCount(states(progress), straddling)).toBe(15);
+    expect(drillRound(states(progress), straddling).map((e) => e.rank)).toEqual(
+      Array.from({ length: 15 }, (_, i) => 386 + i),
+    );
   });
 });
 
@@ -119,7 +134,7 @@ describe("lexiconQuestion", () => {
   });
 
   // The multi-sense decision, held in a test so it cannot be quietly
-  // "tidied" into a first-sense-only prompt. 92 of the first 400 entries
+  // "tidied" into a first-sense-only prompt. 91 of the first 400 entries
   // split in Polish and the file cannot say whether a split is two meanings
   // or two aspects, so the prompt shows both and lets the English pick.
   //

@@ -10,7 +10,7 @@ import ReviewModule from "./modules/review/ReviewModule.jsx";
 import MappeModule from "./modules/mappe/MappeModule.jsx";
 import ArticoliModule from "./modules/articoli/ArticoliModule.jsx";
 import RiservaModule from "./modules/riserva/RiservaModule.jsx";
-import { FONDAMENTALE } from "./data/fondamentale.js";
+import { FASCE, FONDAMENTALE } from "./data/fondamentale.js";
 import FalsiAmiciModule from "./modules/falsiAmici/FalsiAmiciModule.jsx";
 import OfficinaModule from "./modules/officina/OfficinaModule.jsx";
 import { BENCHES } from "./modules/officina/benches.js";
@@ -382,6 +382,22 @@ describe("La Riserva", () => {
 
     await user.click(screen.getByRole("button", { name: /Fascia 1 · posti 1–200/ }));
     await user.click(screen.getByRole("button", { name: FONDAMENTALE[0].it }));
+    await expectNoViolations(container);
+  });
+
+  // `essere` carries no `gender` field, so the sweep above never draws the
+  // gender pill. A vowel-initial opaque noun does, and it is the one state of
+  // the screen with an extra Italian-language pill in the row. Rank 352 is in
+  // band 2, so open that one.
+  it("has an accessible word detail for a word that carries a gender pill", async () => {
+    const user = userEvent.setup();
+    const elided = FONDAMENTALE.find((e) => e.gender);
+    const { container } = render(<RiservaModule onExit={() => {}} />);
+
+    const band = FASCE.find((f) => elided.rank >= f.from && elided.rank <= f.to);
+    await user.click(screen.getByRole("button", { name: new RegExp(`Fascia ${band.ordinal} · posti ${band.from}–${band.to}`) }));
+    await user.click(screen.getByRole("button", { name: elided.it }));
+    expect(screen.getByText(elided.gender === "m" ? "maschile" : "femminile")).toBeInTheDocument();
     await expectNoViolations(container);
   });
 

@@ -236,14 +236,33 @@ describe("word detail", () => {
 
   // And says nothing where there is nothing to say — the pill must not fire
   // for every word, only the ones the data actually marks.
+  //
+  // This used to assert only that "maschile" and "femminile" were absent, which
+  // cannot fail for the defect it names: delete the `entry.gender &&` guard and
+  // a gender-less word renders an *empty* pill, with no text to find, and the
+  // absence of two strings stays true. So it reads the pill row itself — what
+  // is in it, pill by pill — and an empty pill is what goes red.
+  const pillTexts = () =>
+    Array.from(screen.getByText(/^posto \d+$/).parentElement.children).map((pill) => pill.textContent);
+
   it("shows no gender pill for a word that doesn't carry one", async () => {
     const user = userEvent.setup();
-    const plain = FONDAMENTALE.find((e) => !e.it.startsWith("l'"));
+    const plain = FONDAMENTALE.find((e) => !e.gender);
     render(<RiservaModule onExit={() => {}} />);
     await openWord(user, plain);
 
-    expect(screen.queryByText("maschile")).not.toBeInTheDocument();
-    expect(screen.queryByText("femminile")).not.toBeInTheDocument();
+    // Its rank, and where it sits in the scheduler. Nothing between them.
+    expect(pillTexts()).toEqual([`posto ${plain.rank}`, "not started"]);
+  });
+
+  it("puts the gender pill between the rank and the state, for a word that carries one", async () => {
+    const user = userEvent.setup();
+    const elided = FONDAMENTALE.find((e) => e.gender);
+    render(<RiservaModule onExit={() => {}} />);
+    await openWord(user, elided);
+
+    const label = elided.gender === "m" ? "maschile" : "femminile";
+    expect(pillTexts()).toEqual([`posto ${elided.rank}`, label, "not started"]);
   });
 
   it("goes back to the grid", async () => {

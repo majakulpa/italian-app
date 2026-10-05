@@ -72,11 +72,12 @@ describe("FONDAMENTALE", () => {
   // The other half of that, and the half the drill screen got wrong: the
   // Polish gloss is *not* a key, and nothing in this file makes it one.
   //
-  // Twenty-four Polish senses in the first 300 entries are carried by two
+  // Twenty-five Polish senses in the first 400 entries are carried by two
   // entries or more — `mówić` by dire and parlare, `uczyć się` by studiare and
-  // imparare, `głowa` by testa and capo — and three entries share their whole
-  // Polish set with another: `non`/`no`, `a`/`in`, and `strada`/`via`, which
-  // sit at adjacent ranks and so land in the same drill round.
+  // imparare, `głowa` by testa and capo — and four pairs of entries share their
+  // whole Polish set: `non`/`no`, `a`/`in`, `stanza`/`la pace` (both `pokój`)
+  // and `strada`/`via`. The last of those sit at adjacent ranks and so land in
+  // the same drill round.
   //
   // This is asserted rather than merely known because a screen was telling the
   // learner the opposite. DrillRound's note on a split entry claimed the Polish
@@ -104,11 +105,27 @@ describe("FONDAMENTALE", () => {
 
     // And an entry whose whole Polish set is another entry's, so the Polish
     // alone cannot pick between them at all.
-    const strada = FONDAMENTALE.find((w) => w.it === "strada");
-    const via = FONDAMENTALE.find((w) => w.it === "via");
+    //
+    // Pinned as the whole list rather than a sample, because a comment here
+    // counted them wrongly once: `toMatchObject` above only checks the senses it
+    // names, so a fourth pair arrived and nothing went red. A new pair is not an
+    // error — add it here, having checked their English glosses differ.
     const set = (word) => word.pl.split(" · ").map((s) => s.trim()).sort().join("|");
-    expect(set(strada)).toBe(set(via));
-    expect(strada.en).not.toBe(via.en);
+    const bySet = new Map();
+    for (const word of FONDAMENTALE) {
+      bySet.set(set(word), [...(bySet.get(set(word)) ?? []), word]);
+    }
+    const sameSet = [...bySet.values()].filter((words) => words.length > 1);
+
+    expect(sameSet.map((words) => words.map((w) => w.it).join("/")).sort()).toEqual([
+      "a/in",
+      "non/no",
+      "stanza/la pace",
+      "strada/via",
+    ]);
+    for (const words of sameSet) {
+      expect(new Set(words.map((w) => w.en)).size, words.map((w) => w.it).join("/")).toBe(words.length);
+    }
   });
 
   it("stores every entry lower-case and untrimmed of nothing", () => {

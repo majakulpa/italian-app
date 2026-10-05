@@ -40,26 +40,39 @@ export function measure({ id, textPath, outPath }) {
   ]);
 }
 
-export function main(argv) {
-  if (!existsSync(VENV_PYTHON)) {
-    // Not a warning. The designed fallback when the checker cannot run is that
-    // no episode ships — never a JavaScript approximation, never a lowered
-    // threshold. See research/gen-experiment/README.md for the venv commands.
-    console.error(
-      `no checker venv at ${VENV_PYTHON}\n` +
-        "Build it with the commands in research/gen-experiment/README.md. " +
-        "Without it nothing can be measured, and an unmeasured episode does not ship."
-    );
-    return 1;
-  }
-  mkdirSync(BUILD, { recursive: true });
-  run(process.execPath, [path.join("scripts", "export-lexicon.mjs"), LEXICON]);
+// The venv guard sits where the measuring starts, not at the top of main().
+//
+// It used to be the first statement here, which made every exit path depend on
+// a gitignored local artefact: `--text` with no `--id` answered "no checker
+// venv" instead of naming the missing flag, and so did a run with no episodes.
+// On a developer's machine the venv exists and both read correctly; in CI it
+// never does, so two tests asserting those paths could only ever pass on the
+// laptop that wrote them. They went red on the first push.
+//
+// The rule the guard enforces is "an unmeasured episode does not ship", and
+// that rule is about measuring. A usage error and an empty EPISODES list are
+// both knowable without a checker, and answering them honestly costs the gate
+// nothing: nothing below this line runs without the venv.
+function requireChecker() {
+  if (existsSync(VENV_PYTHON)) return null;
+  // Not a warning. The designed fallback when the checker cannot run is that
+  // no episode ships — never a JavaScript approximation, never a lowered
+  // threshold. See research/gen-experiment/README.md for the venv commands.
+  console.error(
+    `no checker venv at ${VENV_PYTHON}\n` +
+      "Build it with the commands in research/gen-experiment/README.md. " +
+      "Without it nothing can be measured, and an unmeasured episode does not ship."
+  );
+  return 1;
+}
 
+export function main(argv) {
   const flag = (name) => {
     const i = argv.indexOf(name);
     return i === -1 ? null : argv[i + 1];
   };
   const textPath = flag("--text");
+
   if (textPath) {
     const id = flag("--id");
     const outPath = flag("--out");
@@ -67,6 +80,10 @@ export function main(argv) {
       console.error("--text needs --id and --out");
       return 2;
     }
+    const missing = requireChecker();
+    if (missing !== null) return missing;
+    mkdirSync(BUILD, { recursive: true });
+    run(process.execPath, [path.join("scripts", "export-lexicon.mjs"), LEXICON]);
     measure({ id, textPath, outPath });
     return 0;
   }
@@ -75,6 +92,11 @@ export function main(argv) {
     console.log("no episodes in src/data/serial.js — nothing to measure");
     return 0;
   }
+
+  const missing = requireChecker();
+  if (missing !== null) return missing;
+  mkdirSync(BUILD, { recursive: true });
+  run(process.execPath, [path.join("scripts", "export-lexicon.mjs"), LEXICON]);
   mkdirSync(REPORTS, { recursive: true });
   for (const episode of EPISODES) {
     const textPath = path.join(BUILD, `${episode.id}.txt`);

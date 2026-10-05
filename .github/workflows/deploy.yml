@@ -1,4 +1,6 @@
-# Builds the app and publishes it to GitHub Pages on every merge to main.
+# Builds the app and publishes it to GitHub Pages on every merge to main, and
+# once a day regardless, so a deploy that silently never ran cannot leave the
+# site behind main indefinitely.
 #
 # The site is served from https://majakulpa.github.io/italian-app/, so the
 # build gets `--base=/italian-app/`. It is passed here rather than set in
@@ -11,6 +13,17 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # A deploy that never happened leaves no red tick to notice — the site just
+  # quietly stays on an older commit. Four merges went missing that way before
+  # the concurrency rule below was fixed. This is the belt to that braces: once
+  # a day, main is rebuilt and republished whether or not anything was pushed,
+  # so the longest the site can be out of date is a day rather than forever.
+  #
+  # It costs one build a day and it is the only thing here that can notice a
+  # deploy nobody watched. 04:17 rather than on the hour: scheduled jobs queue
+  # behind everyone else's cron, and the hour is the worst time to ask.
+  schedule:
+    - cron: "17 4 * * *"
   # The build job (suite + build) also runs on pull requests, so a broken
   # pipeline shows up on the PR instead of as a 404 after merging. Only the
   # deploy job is restricted to main.
@@ -57,8 +70,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # CLAUDE.md: nothing ships on a red suite.
-      - run: npm test
+      # CLAUDE.md: nothing ships on a red suite — and the suite is the one with
+      # the coverage gate on it, not the bare one.
+      #
+      # This used to be `npm test`, which is `vitest run` with no coverage. The
+      # 100% thresholds in vite.config.js therefore only ever fired on a
+      # machine where somebody remembered to type `npm run test:coverage`, and
+      # CI would go green on a pull request that dropped them. A gate nothing
+      # enforces is a comment.
+      #
+      # One command rather than two: `test:coverage` runs every test `npm test`
+      # runs — src/ and the scripts/ suites alike — so running both would just
+      # pay for the slower pass twice.
+      - run: npm run test:coverage
       - run: npx vite build --base=/italian-app/
       # Nothing shaped like an Anthropic API key may reach the published site
       # or the repository — the scene partner is called with the learner's own

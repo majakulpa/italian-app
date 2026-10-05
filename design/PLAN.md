@@ -193,6 +193,20 @@ content problem rather than an engineering one, and every entry added now
 raises the headline. Decide whether to grind through it or source De Mauro's
 list directly.
 
+One thing to be clear-eyed about before committing to the grind: the headline
+flattens fast, because the weighting is a harmonic series and so is the payoff.
+Measured off `rankWeight()`, ranks 301–400 bought 3.0 coverage points, 401–500
+buy 2.3, and the whole last band of 200 before the target is worth 1.1 between
+them. A single entry at rank 1,900 moves the headline by 0.006 of a point.
+
+That is not an argument against finishing the list — it is an argument against
+justifying it with the percentage. The case for the long tail is readability:
+the same table under the settled decision above says the full 2,000 still
+leaves 14 unknown words in every 100, and a reader needs 95–98% before text can
+be read rather than decoded. The tail is what closes that gap, and it does so
+in a quantity the headline is almost blind to. Judge the grind on unknown words
+per 100, which is the number this plan already says is the honest one.
+
 **3. There is a visual seam.** The city uses the new design system; the four
 module interiors still use the old postcard styling. It closes as each district
 is built out. Nobody should "fix" it with a blanket restyle — that would be a

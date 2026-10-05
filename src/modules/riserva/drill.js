@@ -31,7 +31,7 @@
 //
 // Met-ness is read through lexiconStates() rather than off the riserva key
 // alone, so a word the *deck* already taught is not offered here as new — the
-// 20 lemmas the deck shares with the base 2,000 are the only overlap today.
+// 22 lemmas the deck shares with the base 2,000 are the only overlap today.
 //
 // That guard points one way only, and this comment used to claim it pointed
 // both ("the line that stops them being asked twice"). It stops this bench
@@ -116,7 +116,7 @@ export function unmetCount(states, fascia) {
 // One entry as something to produce.
 //
 // ── Both glosses, verbatim, and why the multi-sense ones are not trimmed ─
-// 87 of the first 300 entries carry more than one Polish sense, separated by
+// 92 of the first 400 entries carry more than one Polish sense, separated by
 // " · ". The obvious move is to pick one and ask on that; it is wrong here,
 // for two reasons.
 //
@@ -131,7 +131,7 @@ export function unmetCount(states, fascia) {
 // would — but it is not free, and the version of this argument that shipped
 // said it was. It claimed the Polish senses "all point at the same Italian
 // one", so a split was "more evidence for the answer than either alone". The
-// file says otherwise. 24 Polish senses in the first 300 entries are carried
+// file says otherwise. 25 Polish senses in the first 400 entries are carried
 // by two entries or more — `mówić` by dire and parlare, `uczyć się` by
 // studiare and imparare, `głowa` by testa and capo — and `strada` (280,
 // `droga · ulica`) and `via` (281, `ulica · droga`) have identical Polish sets
@@ -168,7 +168,7 @@ export function unmetCount(states, fascia) {
 // Which cuts both ways, and the first version of this only saw one side of it.
 // The neighbour verdict ran ahead of the spelling analysis with no guard, so a
 // one-character slip that happened to land on another entry — `ragazzo` for
-// `ragazza`, and 71 such pairs in the 300 — was reported as reaching for the
+// `ragazza`, and 86 such pairs in the 400 — was reported as reaching for the
 // wrong word when the learner had the word and missed the gender. The verdict
 // now has to beat what the spelling analysis found before it is said; see
 // NEIGHBOUR_EDITS in locatedFeedback.js for where the line sits and why

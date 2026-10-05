@@ -36,9 +36,9 @@ import LiveStatus from "../../shared/LiveStatus.jsx";
 // ── The screen has a verb now ───────────────────────────────────────────
 // It did not, and that was the ceiling on the whole app: coverage learned a
 // word was known from one place, the vocabulary deck, and only 20 of its 120
-// words are in the base 2,000 — so a fully-mastered account read 1.6% and
-// could not read more. Every cell here was a picture of a word there was no
-// way to study.
+// words were in the base 2,000 (22 now, with ranks 301–400) — so a
+// fully-mastered account read 1.6% and could not read more.
+// Every cell here was a picture of a word there was no way to study.
 //
 // A *fascia* is the door, which PLAN.md settled for word detail and which is
 // the same answer here. Opening a band offers a typed production round over

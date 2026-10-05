@@ -19,7 +19,7 @@
 // distribution, not a specific word's place in it — but don't cite a number
 // from here as if it were De Mauro's own.
 //
-// TARGET is 2,000. The first 300 are seeded here, accurately, in rank order;
+// TARGET is 2,000. The first 400 are seeded here, accurately, in rank order;
 // appending the rest is mechanical — add entries to the end of the array and
 // the ranks stay contiguous, which fondamentale.test.js checks.
 //

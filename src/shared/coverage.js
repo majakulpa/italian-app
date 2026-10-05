@@ -124,7 +124,7 @@ const BY_LEMMA = new Map(FONDAMENTALE.map((entry) => [lemmaKey(entry.it), entry]
 // their evidence is folded. Two, where there used to be one:
 //
 //   vocab    the deck. It teaches 120 Italian words with example sentences,
-//            and 20 of them normalise onto a base-vocabulary lemma. Narrow,
+//            and 22 of them normalise onto a base-vocabulary lemma. Narrow,
 //            and it was the whole bridge.
 //   riserva  the reservoir itself. Every entry in fondamentale.js is a unit
 //            under a `riserva:` key, so a word can be studied *as* a lexicon

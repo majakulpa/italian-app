@@ -96,14 +96,14 @@ const ENDING = 2;
 // Two, because one is a slip. One edit is a gender ending (`ragazzo` for
 // `ragazza`, `figlio` for `figlia`, `nonno` for `nonna`), an agreement
 // (`primo` for `prima`), a dropped letter (`modo` for `mondo`) or a thumb on
-// the wrong key — and 71 pairs of the 300 written down are within one edit of
+// the wrong key — and 86 pairs of the 400 written down are within one edit of
 // each other, overwhelmingly the short function words a phone typo lands on.
 // Told "it belongs to a different entry, read the English gloss again", a
 // learner who simply missed the gender is sent to re-read a gloss she had
 // right, and the one verdict that would have named her actual error is the one
 // she does not get.
 //
-// Two edits is not a slip in a 300-word list. `parola` for `parlare` is three
+// Two edits is not a slip in a list this size. `parola` for `parlare` is three
 // and is the case this verdict exists for: it shares `par` at the front and
 // none of the mistake, so "it starts right and then goes somewhere else" is
 // confident and wrong about the kind of error. Those two bracket the

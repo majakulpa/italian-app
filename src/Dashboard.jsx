@@ -67,7 +67,7 @@ export default function Dashboard({ onSelect }) {
 //
 // Both numbers are capped by the content that ships, and the cap has moved
 // twice. It was 1.6% and 20 solid, because coverage learned that a word was
-// known from the vocabulary deck alone and only 20 of its 120 words are
+// known from the vocabulary deck alone and only 20 of its 120 words were
 // inside the base 2,000. La Riserva's drill made every seeded rank reachable,
 // which moved the ceiling to what those ranks were worth — 66.1% at 300
 // seeded — and ranks 301–400 moved it again on their own: 69.1%, and 400 of

@@ -241,14 +241,14 @@ categories/dialogues/stories each, and four grammar topics.
   and in the coverage figure at the same time. A word is offered here once:
   this bench meets it, and La Piazza is what brings it back.
 
-  That is what raised the coverage ceiling from **1.6% to 66.1%** — see
-  Coverage below.
+  That is what raised the coverage ceiling from **1.6% to 66.1%**, and the 100
+  entries written after it took it to **69.1%** — see Coverage below.
 
   A wrong answer is **located, not solved**, judged by the very code La Piazza
   judges with (`src/shared/locatedFeedback.js`, which moved out of
   `modules/review/` when this became its second caller). Both glosses are
-  shown, every sense, exactly as `fondamentale.js` writes them: 87 of the
-  first 300 entries split in Polish, the file cannot say whether a split is
+  shown, every sense, exactly as `fondamentale.js` writes them: 92 of the
+  first 400 entries split in Polish, the file cannot say whether a split is
   two senses or two aspects, and going gloss → Italian a split is extra
   evidence for one answer rather than ambiguity between two.
 
@@ -260,8 +260,8 @@ categories/dialogues/stories each, and four grammar topics.
 
   It also distinguishes a rank with **no word written down yet** from one the
   learner has not met — a claim about the file against a claim about her — so
-  the lexicon being 300 of a 2,000 target is visible on the grid instead of
-  reading as 1,700 words she failed to learn. The drill keeps that
+  the lexicon being 400 of a 2,000 target is visible on the grid instead of
+  reading as 1,600 words she failed to learn. The drill keeps that
   distinction: a band with no word behind its ranks offers no round rather
   than a drill of nothing, and a band whose words have all been met says so
   instead. And the grid is a picture, not
@@ -298,7 +298,7 @@ categories/dialogues/stories each, and four grammar topics.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency
-  order with English *and* Polish glosses (300 of a 2,000 target so far);
+  order with English *and* Polish glosses (400 of a 2,000 target so far);
   `src/shared/coverage.js` weights each word by 1/rank, Zipf-style, normalised
   so the whole 2,000 comes to 86% of running text. That weighting is the whole
   point — counted flat, memorising the back half of the list would claim half
@@ -310,19 +310,21 @@ categories/dialogues/stories each, and four grammar topics.
   The figure is capped by the content that ships, and where the cap sits is
   worth knowing before reading anything into it. It used to be very low:
   coverage learned that a word was known from one place, the vocabulary
-  module's 120 words, and just 20 of those are in the base 2,000 — so
-  mastering every word, drill, dialogue and story in the app read **1.6%** and
-  **20 / 2000 solid**, and nothing could move it.
+  module's 120 words, and just 20 of those were in the base 2,000 (22 now,
+  since ranks 301–400 added `governo` and `legge`) — so mastering every word,
+  drill, dialogue and story in the app read **1.6%** and **20 / 2000 solid**,
+  and nothing could move it.
 
   La Riserva's drill widened the bridge. Every entry in `fondamentale.js` is a
   unit of its own now, so the ceiling is the worth of the ranks that have a
-  word behind them — **66.1%** and **300 / 2000 solid**, which is the same
-  "top 300 words are worth about two thirds of running text" the weighting
-  predicts, arriving from the other side. `coverage.test.js` pins it so it
-  cannot move, or fail to move, unnoticed.
+  word behind them — first **66.1%** and **300 / 2000 solid**, now **69.1%** and
+  **400 / 2000 solid**, which is the same "top 300 words are worth about two
+  thirds of running text" the weighting predicts, arriving from the other side
+  and over a few more ranks. `coverage.test.js` pins it so it cannot move, or
+  fail to move, unnoticed.
 
-  What is left under the cap is the honest bottleneck: 1,700 ranks have no
-  word to drill. Raising it past 66.1% is a content job — accurate entries
+  What is left under the cap is the honest bottleneck: 1,600 ranks have no
+  word to drill. Raising it past 69.1% is a content job — accurate entries
   with English and Polish glosses — and no longer an engineering one.
 - **Word states** — a word is `unseen`, `learning` (boxes 1–2), `known`
   (boxes 3–4) or `solid` (the top box, reached by answering right at the end of

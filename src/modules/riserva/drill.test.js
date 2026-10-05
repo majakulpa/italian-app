@@ -119,7 +119,7 @@ describe("lexiconQuestion", () => {
   });
 
   // The multi-sense decision, held in a test so it cannot be quietly
-  // "tidied" into a first-sense-only prompt. 87 of the first 300 entries
+  // "tidied" into a first-sense-only prompt. 92 of the first 400 entries
   // split in Polish and the file cannot say whether a split is two meanings
   // or two aspects, so the prompt shows both and lets the English pick.
   //
@@ -173,8 +173,8 @@ describe("lexiconQuestion", () => {
   });
 
   // The guard on that verdict, against the real list rather than a fixture.
-  // A one-character slip that lands on another entry is a slip: 71 pairs of
-  // the 300 are within one fold-edit of each other, and reporting a missed
+  // A one-character slip that lands on another entry is a slip: 86 pairs of
+  // the 400 are within one fold-edit of each other, and reporting a missed
   // gender as "you reached for a different entry" is the app being confidently
   // wrong about the commonest mistake it can receive.
   it("locates a one-character slip rather than calling it a different entry", () => {

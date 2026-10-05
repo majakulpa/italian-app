@@ -31,6 +31,10 @@ const a1Grammar = GRAMMAR_LEVELS.find((l) => l.id === "A1");
 const firstTopic = a1Grammar.topics[0];
 
 const VOCAB_KEYS = greetings.words.map((w) => wordKey(a1Vocab, greetings, w));
+// Every deck key, for the tests that need more words than one category holds.
+const VOCAB_ALL = LEVELS.flatMap((level) =>
+  level.categories.flatMap((cat) => cat.words.map((w) => wordKey(level, cat, w))),
+);
 const DRILL_KEY = drillKey(a1Grammar, firstTopic, firstTopic.drills[0]);
 const STORY_KEY = (() => {
   const level = STORY_LEVELS.find((l) => l.id === "A1");
@@ -282,6 +286,53 @@ describe("dueItems", () => {
       expect(articles.length).toBeGreaterThan(1);
       expect(dueCount(progress, TODAY)).toBe(articles.length);
       expect(dueItems(progress, TODAY, articles.length).map((u) => u.key).sort()).toEqual([...articles].sort());
+    });
+
+    // ── The account that already exists ───────────────────────────────────
+    // Gli Articoli's bench used to write progress.words with no schedule
+    // entry, because the strand was not scheduled. Scheduling it does not
+    // reach back: a learner who worked the bench arrives with sixteen undated
+    // keys, isDue says every one of them is due, and the sort has to decide
+    // where they go against vocabulary that is genuinely overdue.
+    //
+    // They go last. An undated item is "never scheduled", which is not the
+    // same claim as "overdue since the beginning of time" — and the old
+    // `|| ""` made exactly that claim, because an empty string sorts before
+    // every ISO date.
+    it("sorts an item that was never scheduled after every item that has a date", () => {
+      const article = articoliKey(STRANDS[0], STRANDS[0].items[0]);
+      const progress = progressWith(
+        { [article]: "known", [VOCAB_KEYS[0]]: "known" },
+        // Dated, and only one day overdue — still ahead of the undated one.
+        { [VOCAB_KEYS[0]]: { box: 2, due: "2026-08-16", last: "2026-08-15" } },
+      );
+
+      expect(dueItems(progress, TODAY).map((u) => u.key)).toEqual([VOCAB_KEYS[0], article]);
+    });
+
+    // The harm the ordering does, at the scale it actually does it. Sixteen
+    // undated article keys against twenty-five overdue words used to come out
+    // as a round of { articoli: 16, vocab: 4 } — measured — which is a bench's
+    // whole back catalogue served ahead of everything the learner was actually
+    // due. The cap is what turns a sort into a monopoly.
+    it("does not let a never-scheduled bench monopolise the round", () => {
+      const words = {};
+      const schedule = {};
+      const articles = STRANDS.flatMap((s) => s.items.map((i) => articoliKey(s, i)));
+      for (const key of articles) words[key] = "known";
+
+      const overdue = VOCAB_ALL.slice(0, SESSION_LIMIT + 5);
+      overdue.forEach((key, i) => {
+        words[key] = "known";
+        schedule[key] = { box: 2, due: `2026-08-0${(i % 9) + 1}`, last: "2026-08-01" };
+      });
+
+      expect(articles.length).toBeGreaterThan(10);
+      expect(overdue.length).toBeGreaterThan(SESSION_LIMIT);
+
+      const round = dueItems(progressWith(words, schedule), TODAY);
+      expect(round).toHaveLength(SESSION_LIMIT);
+      expect(round.every((u) => u.moduleId === "vocab")).toBe(true);
     });
 
     // ...and the write follows: one graded article settles one key. A collapse

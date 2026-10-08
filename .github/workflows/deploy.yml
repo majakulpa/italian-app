@@ -1,63 +1,60 @@
-# Builds the app and publishes it to GitHub Pages on every merge to main, and
-# once a day regardless, so a deploy that silently never ran cannot leave the
-# site behind main indefinitely.
+# Builds the app and publishes it to GitHub Pages on every run — main to the
+# site root, and every pull request to a preview path of its own.
 #
-# The site is served from https://majakulpa.github.io/italian-app/, so the
-# build gets `--base=/italian-app/`. It is passed here rather than set in
-# vite.config.js so `npm run dev` and the test suite keep serving from `/`.
+#   main          https://majakulpa.github.io/italian-app/
+#   pull request  https://majakulpa.github.io/italian-app/pr-42/
 #
-# No SPA fallback (404.html) is needed: the app has no URL router — screens
-# are React state inside one page — so there is only ever one URL to load.
+# Why a gh-pages branch rather than actions/deploy-pages. That action publishes
+# one artifact as the whole site, so there is exactly one version of the app
+# live at a time: deploying a pull request with it would replace the real app
+# with unreviewed code until the next merge put it back. A branch holds many
+# directories at once, so a preview can sit beside the app instead of on top
+# of it.
+#
+# The build gets --base pointed at wherever it will be served from, because
+# Vite writes that prefix into every asset URL. It is passed here rather than
+# set in vite.config.js so `npm run dev` and the test suite keep serving from /.
+#
+# No SPA fallback (404.html) is needed: the app has no URL router — screens are
+# React state inside one page — so there is only ever one URL to load.
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+  pull_request:
+    # `closed` is here for the cleanup job below, which deletes a merged or
+    # abandoned pull request's preview. Without it previews accumulate forever.
+    types: [opened, synchronize, reopened, closed]
   # A deploy that never happened leaves no red tick to notice — the site just
   # quietly stays on an older commit. Four merges went missing that way before
-  # the concurrency rule below was fixed. This is the belt to that braces: once
-  # a day, main is rebuilt and republished whether or not anything was pushed,
-  # so the longest the site can be out of date is a day rather than forever.
-  #
-  # It costs one build a day and it is the only thing here that can notice a
-  # deploy nobody watched. 04:17 rather than on the hour: scheduled jobs queue
-  # behind everyone else's cron, and the hour is the worst time to ask.
+  # the concurrency rule below was fixed. Once a day main is rebuilt and
+  # republished whether or not anything was pushed, so the longest the site can
+  # be out of date is a day rather than forever.
   schedule:
     - cron: "17 4 * * *"
-  # The build job (suite + build) also runs on pull requests, so a broken
-  # pipeline shows up on the PR instead of as a 404 after merging. Only the
-  # deploy job is restricted to main.
-  pull_request:
   workflow_dispatch:
 
+# contents: write, because publishing is a commit to gh-pages. The old
+# pages/id-token permissions belonged to actions/deploy-pages and are gone with
+# it.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Why this is not the usual `group: pages` + `cancel-in-progress: true`.
-#
-# That is one group for every run in the repository, pull requests included,
-# with cancellation on — so the newest run kills whatever is in flight. Merge
-# two pull requests a minute apart and the first merge's deploy is cancelled
-# by the second, and because nothing re-runs it, that commit never reaches the
-# site. It had happened four times by October: #35, #36, #40 and #45 all show
-# as `cancelled` on main, each killed by the merge that followed it.
-#
-# Worse, a push to any pull request could cancel a main deploy, and the pull
-# request's own run skips the deploy job — so the site would just stop at
-# whatever shipped last, with a green tick on every check.
-#
-# So: one group per ref, which keeps pull requests out of main's way, and no
-# cancellation on main. Deploys of main queue and each one publishes. Builds of
-# a pull request still cancel their own superseded runs, because there the only
-# thing lost is CI minutes.
+# One group per ref, so a pull request can never cancel a deploy of main, and
+# no cancellation on main: a cancelled deploy is a merge that silently never
+# reaches the site, which is how #35, #36, #40 and #45 went missing. A pull
+# request still cancels its own superseded runs, where the only thing lost is
+# CI minutes.
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
+    # Nothing to build when a pull request is merely closing; the cleanup job
+    # handles that event.
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -70,6 +67,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+
       # CLAUDE.md: nothing ships on a red suite — and the suite is the one with
       # the coverage gate on it, not the bare one.
       #
@@ -83,7 +81,21 @@ jobs:
       # runs — src/ and the scripts/ suites alike — so running both would just
       # pay for the slower pass twice.
       - run: npm run test:coverage
-      - run: npx vite build --base=/italian-app/
+
+      # Where this build will be served from. A pull request goes to its own
+      # directory; everything else is the site root.
+      - id: target
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "dir=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
+            echo "base=/italian-app/pr-${{ github.event.number }}/" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=." >> "$GITHUB_OUTPUT"
+            echo "base=/italian-app/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: npx vite build --base=${{ steps.target.outputs.base }}
+
       # Nothing shaped like an Anthropic API key may reach the published site
       # or the repository — the scene partner is called with the learner's own
       # key (see src/shared/sceneKey.js), and this is a public repo publishing
@@ -92,20 +104,28 @@ jobs:
       # Its own step, here, and not a `postbuild` hook in package.json: the
       # line above is `npx vite build`, so `npm run build` never runs in CI and
       # a hook on it would never fire on the build that actually deploys. It
-      # goes between the build and the upload so that a hit stops the artifact
-      # from being created at all.
+      # goes between the build and the publish so that a hit stops anything
+      # from being published at all.
       - run: node scripts/check-no-secrets.mjs
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  deploy:
-    needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      # A pull request raised from a fork cannot push, and its token is
+      # read-only by design. Build and test it — that is the part that protects
+      # main — and skip publishing rather than failing the run.
+      - name: Publish
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          TARGET: ${{ steps.target.outputs.dir }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/publish-pages.sh "$TARGET"
+
+  # Delete a preview when its pull request closes, merged or not. Previews are
+  # free to make and would otherwise be kept forever by nobody in particular.
+  cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v5
+      - env:
+          TARGET: pr-${{ github.event.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/publish-pages.sh --remove "$TARGET"

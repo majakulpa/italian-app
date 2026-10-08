@@ -47,7 +47,17 @@ permissions:
 # request still cancels its own superseded runs, where the only thing lost is
 # CI minutes.
 concurrency:
-  group: pages-${{ github.ref }}
+  # Every run of main gets a group to itself, so no main deploy can ever be
+  # cancelled by another. `cancel-in-progress: false` was not enough: it only
+  # protects a run that has already started. Merging #50 and #51 ten seconds
+  # apart left #51's run *queued*, and GitHub cancelled it there — two seconds,
+  # no jobs, and main never published. That is the same silent failure the
+  # per-ref group was added to stop, one step earlier in the lifecycle.
+  #
+  # Two main deploys may now overlap. That is safe here because publishing is a
+  # push to gh-pages and scripts/publish-pages.sh retries from a fresh clone
+  # when it loses the race, so the loser republishes rather than disappearing.
+  group: pages-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.run_id || 'shared' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:

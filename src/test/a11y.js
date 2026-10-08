@@ -36,9 +36,22 @@ function describeViolations(violations) {
 // cascading through the rest of the file.
 let inFlight = Promise.resolve();
 
-export function findViolations(container, { fragment = true } = {}) {
+// `without` takes elements to keep out of the scan, for a subtree that is
+// decorative at a size where walking it is the whole cost of the scan. It is
+// not a way to duck a violation: axe reports the same checked nodes with such
+// a subtree and without it (measured on La Riserva — 15 either way), because
+// the rules already skip anything aria-hidden. What it saves is the virtual
+// tree axe builds first, which on La Riserva's two thousand cells is ~6.5s of
+// an ~11.9s scan under coverage.
+//
+// The thing this *does* drop is the check that the subtree is still hidden —
+// un-hide it and its contents become checked nodes. So a screen that excludes
+// its decoration here has to be scanned whole somewhere else, and the caller
+// is responsible for saying where. See a11y.test.jsx's La Riserva block.
+export function findViolations(container, { fragment = true, without = [] } = {}) {
+  const context = without.length > 0 ? { include: [container], exclude: without } : container;
   const run = inFlight.then(() =>
-    axe.run(container, {
+    axe.run(context, {
       runOnly: { type: "tag", values: WCAG_AA },
       resultTypes: ["violations"],
       // Skip axe's stylesheet preload: it fetches every <style>/<link> before

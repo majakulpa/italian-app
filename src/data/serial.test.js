@@ -65,7 +65,7 @@ describe("the shipped serial", () => {
 // `newWords[].it` and ignores everything else on an episode, which is right —
 // the gate's fixtures are bare `{ it }` declarations and should not have to
 // carry prose metadata to prove an arm bites. But a *shipped* episode is also a
-// screen, and the three things below would each ship silently broken.
+// screen, and the four things below would each ship silently broken.
 describe("every shipped episode, as something a reader opens", () => {
   const base = new Set(FONDAMENTALE.map((entry) => lemmaKey(entry.it)));
 
@@ -119,9 +119,10 @@ describe("every shipped episode, as something a reader opens", () => {
 
 // ── Proof that the pass above is not vacuous ─────────────────────────────────
 //
-// EPISODES is empty, so "passes the release gate" passes over nothing. A gate
-// that cannot fail is the thing this repo refuses most, so the same gate is run
-// here against a real episode: the generation experiment's own certified text,
+// "passes the release gate" now runs over a real shipped episode, but a passing
+// episode only ever demonstrates that the gate *can* pass. A gate that cannot
+// fail is the thing this repo refuses most, so the same gate is run here against
+// texts that break it: the generation experiment's own certified text,
 // put through the exact pipeline an episode goes through
 // (`node scripts/measure-serial.mjs --text ... --id ... --out ...`), with its
 // report committed under research/gen-experiment/gate-fixture/.

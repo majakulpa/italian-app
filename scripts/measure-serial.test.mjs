@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -66,12 +66,39 @@ describe("the measurement pipeline", () => {
     expect(out).toContain("--text needs --id and --out");
   });
 
-  // With EPISODES empty there is nothing to measure, and saying so beats
-  // silently writing no reports — the committed gate fixtures are what prove
-  // the pipeline works, not this run. Also knowable without a checker.
-  it("says so when there are no episodes, checker or not", () => {
-    const { code, out } = run(dir);
-    expect(code).toBe(0);
-    expect(out).toContain("no episodes in src/data/serial.js");
+});
+
+// With no episodes there is nothing to measure, and saying so beats silently
+// writing no reports — the committed gate fixtures are what prove the pipeline
+// works, not this run. Also knowable without a checker, which is why it is
+// asserted at all.
+//
+// This used to run the script as a subprocess and assert on the real EPISODES,
+// which worked only while the serial had no content. src/data/serial.js now
+// ships episode 1, so that run reaches the measuring path and answers "no
+// checker venv" instead — a true answer to a different question. The behaviour
+// is still the pipeline's, and still the state the repo returns to whenever a
+// season is started from scratch, so it is exercised in-process against an
+// injected empty list rather than deleted. Injecting is the only way: the
+// script resolves `EPISODES` through a static import relative to its own file,
+// so no choice of working directory can change what it sees.
+describe("the pipeline with nothing to measure", () => {
+  afterEach(() => {
+    vi.doUnmock("../src/data/serial.js");
+    vi.resetModules();
+  });
+
+  it("says so when there are no episodes, checker or not", async () => {
+    vi.doMock("../src/data/serial.js", () => ({ EPISODES: [] }));
+    vi.resetModules();
+    const { main } = await import("./measure-serial.mjs");
+    const lines = [];
+    const log = vi.spyOn(console, "log").mockImplementation((line) => lines.push(line));
+    try {
+      expect(main([])).toBe(0);
+    } finally {
+      log.mockRestore();
+    }
+    expect(lines.join("\n")).toContain("no episodes in src/data/serial.js");
   });
 });

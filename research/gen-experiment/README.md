@@ -99,12 +99,37 @@ Gitignored at `research/gen-experiment/.venv`. Verified on macOS x86_64:
 ```bash
 cd research/gen-experiment
 /usr/local/bin/python3.9 -m venv .venv
-.venv/bin/pip install "spacy==3.7.5" simplemma
+.venv/bin/pip install "numpy<2" "spacy==3.7.5" simplemma
 .venv/bin/pip install https://github.com/explosion/spacy-models/releases/download/it_core_news_sm-3.7.0/it_core_news_sm-3.7.0-py3-none-any.whl
 ```
 
-Known-good versions: Python 3.9.0, spacy 3.7.5, simplemma 1.1.2,
+Known-good versions: Python 3.9.0, numpy 1.26.4, spacy 3.7.5, simplemma 1.1.2,
 it_core_news_sm 3.7.0.
+
+The `numpy<2` pin is load-bearing and was added after the recipe above stopped
+working. spacy 3.7.5's `install_requires` allows numpy 2, but the thinc wheels
+it pulls were compiled against the numpy 1.x C ABI, so a fresh venv now resolves
+numpy 2.x and `import spacy` dies before measuring anything:
+
+```
+ValueError: numpy.dtype size changed, may indicate binary incompatibility.
+Expected 96 from C header, got 88 from PyObject
+```
+
+That failure mode is why the pin is written down rather than left to pip: a venv
+that cannot import spaCy is indistinguishable, from `measure-serial.mjs`'s point
+of view, from no venv at all — and the designed consequence of no venv is that
+no episode ships. Check a rebuilt venv against a report that already exists
+before trusting it on new prose:
+
+```bash
+node scripts/measure-serial.mjs --text research/gen-experiment/texts/B_constr_1.txt \
+  --id B_constr_1 --out /tmp/verify.json
+```
+
+Every field except `measuredAt` must match `gate-fixture/B_constr_1.json`. If it
+does not, the instrument changed and no figure it produces is comparable to a
+committed one.
 
 ## Run the pipeline
 
@@ -168,9 +193,19 @@ to it, so an old report over-states its unknowns and the gate stays conservative
 5. `stageFlags` is empty;
 6. `lexiconOnlyCoverage` is reported as a number and clears `COVERAGE_FLOOR`.
 
-`EPISODES` is empty, so that loop passes over nothing. The same gate is therefore
-run against fixtures in `gate-fixture/`, through the same function, and each arm
-is proven to fail when it should. `B_constr_1` clears five arms and fails
+`EPISODES` now holds `ep1` — 505 content words at **98.6%** lexicon-only
+coverage, zero stage flags, two off-lexicon lemmas (`sala`, `luce`), both
+declared against a cap of fifteen. Its first pass measured 97.8% with six
+off-lexicon lemmas; the repair pass wrote three of them out rather than
+declaring them, because `sedere` and `alzare` are off-lexicon only as an
+artefact of `fondamentale.js` storing the reflexives `sedersi` and `alzarsi`
+against a token-level checker, and `rotta` was spaCy mislemmatising a
+participle. A declaration is a promise that a word is new, so it does not get
+spent on tooling noise.
+
+The same gate is also run against fixtures in `gate-fixture/`, through the same
+function, and each arm is proven to fail when it should. `B_constr_1` clears
+five arms and fails
 coverage at 92.9% — which is the honest headline of this slice: **the
 experiment's 97.2% was for its own proxy lexicon and was never ours.** Against
 the real 600 the same certified text sits 2.1 points under the floor, because

@@ -12,5 +12,6 @@ suite instead of quietly invalidating a number nobody re-checked.
 Do not hand-edit one. Re-run the pipeline. The format is documented in
 `research/gen-experiment/README.md` under "Release gate for the serial".
 
-Empty but for this file: `EPISODES` in `src/data/serial.js` is empty, because the
-gate ships before the content.
+`ep1.json` is the first: 505 content words, 98.6% lexicon-only coverage against
+the 600 entries in `src/data/fondamentale.js`, zero stage flags, two off-lexicon
+lemmas. Every figure in it was produced by the Python checker, not typed.

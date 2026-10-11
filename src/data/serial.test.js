@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { EPISODES } from "./serial.js";
+import { FONDAMENTALE } from "./fondamentale.js";
+import { lemmaKey } from "../shared/lemma.js";
 import {
   COVERAGE_FLOOR,
   LEXICON_FLOOR,
@@ -54,6 +56,64 @@ describe("the shipped serial", () => {
 
   it("gives every episode a file-name-safe id, so its report can be found", () => {
     expect(EPISODES.filter((episode) => !/^[a-z0-9_-]+$/.test(episode.id))).toEqual([]);
+  });
+});
+
+// ── What the gate deliberately does not check ────────────────────────────────
+//
+// serialGate.js is the measurement's enforcement arm and nothing more: it reads
+// `newWords[].it` and ignores everything else on an episode, which is right —
+// the gate's fixtures are bare `{ it }` declarations and should not have to
+// carry prose metadata to prove an arm bites. But a *shipped* episode is also a
+// screen, and the three things below would each ship silently broken.
+describe("every shipped episode, as something a reader opens", () => {
+  const base = new Set(FONDAMENTALE.map((entry) => lemmaKey(entry.it)));
+
+  // A "parola nuova" the learner already has in the base 600 is not new, and
+  // telling them it is undoes the one thing the declaration list is for. This
+  // is the inverse of gate arm 3: that arm asks whether every unknown word was
+  // declared, and nothing asks whether every declared word was unknown.
+  it("declares only words that are genuinely outside the base vocabulary", () => {
+    const alreadyKnown = EPISODES.flatMap((episode) =>
+      episode.newWords.filter((word) => base.has(lemmaKey(word.it))).map((word) => word.it)
+    );
+    expect(alreadyKnown).toEqual([]);
+  });
+
+  // The learner is a Polish native who also reads English, which is why
+  // fondamentale.js carries both glosses. A new word with one gloss or none
+  // renders as a word with no meaning attached.
+  it("glosses every new word in English and Polish", () => {
+    const ungloss = EPISODES.flatMap((episode) =>
+      episode.newWords.filter((word) => !word.en || !word.pl).map((word) => word.it)
+    );
+    expect(ungloss).toEqual([]);
+  });
+
+  // An empty page, or a paragraph that is empty or merely padded, is not a
+  // cosmetic problem: canonicalText() joins paragraphs with newlines, so a blank
+  // one emits a blank line and a padded one shifts a byte, and either changes
+  // the hash the report was written against. The gate would then report
+  // "drifted from its measurement" — true but unhelpful, naming the symptom
+  // several steps downstream of the typo.
+  it("ships no empty page, and no paragraph that would shift the measured bytes", () => {
+    const bad = EPISODES.flatMap((episode) => [
+      ...(episode.pages.length && episode.pages.every((page) => page.length)
+        ? []
+        : [`${episode.id}: empty page`]),
+      ...episode.pages
+        .flat()
+        .filter((p) => p !== p.trim() || !p.length)
+        .map((p) => `${episode.id}: untrimmed or empty paragraph ${JSON.stringify(p)}`),
+    ]);
+    expect(bad).toEqual([]);
+  });
+
+  it("gives every episode an authored season and title", () => {
+    const unnamed = EPISODES.filter((episode) => !episode.season || !episode.title).map(
+      (episode) => episode.id
+    );
+    expect(unnamed).toEqual([]);
   });
 });
 

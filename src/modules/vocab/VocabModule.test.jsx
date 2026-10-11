@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import VocabModule from "./VocabModule.jsx";
 import { LEVELS } from "../../data/vocab.js";
 import { TOKENS, CITY_ACCENTS } from "../../shared/theme.js";
-import { loadProgress, wordKey, todayISO } from "../../shared/storage.js";
+import { loadProgress, saveProgress, markWord, wordKey, todayISO, loadLastLevelId, saveLastLevelId } from "../../shared/storage.js";
 import * as speech from "../../shared/speech.js";
 
 const a1 = LEVELS.find((l) => l.id === "A1");
@@ -479,5 +479,69 @@ describe("ListeningQuiz", () => {
     expect(screen.getByText("to review")).toBeInTheDocument();
     expect(screen.getByText("WORDS TO REVIEW")).toBeInTheDocument();
     expect(screen.getByText(word0.it)).toBeInTheDocument();
+  });
+});
+
+// The screen used to open on A1 every visit, so a learner part-way through
+// B1 re-picked their level each time. The rule itself (and its edge cases)
+// is tested in shared/landingLevel.test.js; these cover the wiring: what is
+// written when, and that the picker lands where it was told to.
+describe("the level the home screen opens on", () => {
+  const a2 = LEVELS.find((l) => l.id === "A2");
+
+  function completeLevel(progress, level) {
+    return level.categories.reduce(
+      (p, cat) => cat.words.reduce((q, w) => markWord(q, wordKey(level, cat, w), "known"), p),
+      progress
+    );
+  }
+
+  it("opens on A1 with no history", () => {
+    renderVocab();
+    expect(screen.getByText("Greetings & basics")).toBeInTheDocument();
+  });
+
+  it("opens on the level last picked by hand", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderVocab();
+    await user.click(screen.getByRole("button", { name: /Intermedio/ }));
+    unmount();
+
+    renderVocab();
+    expect(screen.getByText("Work & study")).toBeInTheDocument();
+    expect(screen.queryByText("Greetings & basics")).not.toBeInTheDocument();
+  });
+
+  it("opens on the level whose deck was last opened", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderVocab();
+    await user.click(screen.getByRole("button", { name: /Elementare/ }));
+    await user.click(screen.getAllByRole("button", { name: /Cards/ })[0]);
+    unmount();
+
+    renderVocab();
+    expect(screen.getByText("Travel")).toBeInTheDocument();
+  });
+
+  it("skips a finished level to the next one with work left", () => {
+    saveProgress(completeLevel(loadProgress(), LEVELS[0]));
+    renderVocab();
+    expect(screen.getByText("Travel")).toBeInTheDocument();
+    expect(screen.queryByText("Greetings & basics")).not.toBeInTheDocument();
+  });
+
+  it("moves off a remembered level once it is finished", () => {
+    saveLastLevelId("vocab", "A2");
+    saveProgress(completeLevel(completeLevel(loadProgress(), LEVELS[0]), a2));
+    renderVocab();
+    expect(screen.getByText("Work & study")).toBeInTheDocument();
+  });
+
+  it("does not remember the level it merely landed on", () => {
+    saveProgress(completeLevel(loadProgress(), LEVELS[0]));
+    const { unmount } = renderVocab();
+    expect(screen.getByText("Travel")).toBeInTheDocument();
+    unmount();
+    expect(loadLastLevelId("vocab")).toBe(null);
   });
 });

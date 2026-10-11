@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { ArrowLeft, RotateCw, Check, X, ChevronRight, Layers, Headphones, Volume2 } from "lucide-react";
 import { TOKENS, CITY_RULES, CITY_ACCENTS, citySurface } from "../../shared/theme.js";
 import { LEVELS } from "../../data/vocab.js";
-import { loadProgress, saveProgress, wordKey, categoryKnownCount } from "../../shared/storage.js";
+import { loadProgress, saveProgress, wordKey, categoryKnownCount, loadLastLevelId, saveLastLevelId } from "../../shared/storage.js";
+import { landingLevel } from "../../shared/landingLevel.js";
 import { reviewItem } from "../../shared/srs.js";
 import { shuffle } from "../../shared/shuffle.js";
 import { speakItalian, isSpeechSupported } from "../../shared/speech.js";
@@ -72,8 +73,26 @@ function optionStyle(state) {
   };
 }
 
+// The module id the remembered level is filed under (storage.js).
+const MODULE_ID = "vocab";
+
 function VocabHome({ onPick, onExit, exitLabel, progress }) {
-  const [level, setLevel] = useState(LEVELS[0]);
+  // Not LEVELS[0]: this screen used to open on A1 every time, so a learner
+  // part-way through B1 re-picked their level on every visit. landingLevel()
+  // reads the level they were last on and how far each level has been taken —
+  // see shared/landingLevel.js for the order. Computed once on mount, so
+  // marking the last word of the level does not move the picker under the
+  // learner mid-session.
+  const [level, setLevel] = useState(() => landingLevel(LEVELS, progress, loadLastLevelId(MODULE_ID)));
+
+  // Remember a hand-picked level, so the next visit opens on it even if an
+  // earlier level is still unfinished. Only an explicit pick writes here —
+  // the landing level itself is not written back, or rule 2 (first unfinished
+  // level) could never be reached again.
+  const pickLevel = (lv) => {
+    setLevel(lv);
+    saveLastLevelId(MODULE_ID, lv.id);
+  };
 
   return (
     <div className="citta" style={{ maxWidth: 640, margin: "0 auto", padding: "68px 20px 60px" }}>
@@ -99,7 +118,7 @@ function VocabHome({ onPick, onExit, exitLabel, progress }) {
         </h1>
       </div>
 
-      <LevelPicker levels={LEVELS} active={level} onSelect={setLevel} />
+      <LevelPicker levels={LEVELS} active={level} onSelect={pickLevel} />
 
       <p style={{ textAlign: "center", color: TOKENS.inkSoft, fontFamily: "'Inter', sans-serif", fontSize: 15, marginBottom: 28 }}>
         {level.tagline}
@@ -660,7 +679,12 @@ export default function VocabModule({ onExit, exitLabel = "All modules" }) {
     saveProgress(progress);
   }, [progress]);
 
-  const onPick = (level, category, mode) => setSession({ level, category, mode });
+  // Opening a deck counts as being on that level: the next visit comes back
+  // to it even if an earlier level is still unfinished.
+  const onPick = (level, category, mode) => {
+    saveLastLevelId(MODULE_ID, level.id);
+    setSession({ level, category, mode });
+  };
   const onBack = () => setSession(null);
   // Goes through reviewItem rather than markWord so every answer also moves
   // the word's Leitner box — ordinary study is what feeds the review queue.

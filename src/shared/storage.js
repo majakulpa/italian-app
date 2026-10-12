@@ -419,3 +419,38 @@ export function saveThemeMode(mode) {
     // storage unavailable (private browsing, quota, etc.) — falls back to OS preference
   }
 }
+
+// ── The level a module's home screen opens on ───────────────────────────
+// Which level you were last on, per module: { vocab: "B1", ... }. Its own
+// slot rather than a map inside the progress blob, for the reason the
+// coverage history gives above — the blob is held in state by long-lived
+// screens and written back whole on every answer, so a value written from the
+// home screen would be clobbered by the next graded answer from a screen that
+// loaded before it.
+//
+// Keyed by module so a second module can adopt the same memory without
+// another slot. A save from before this existed simply has no key, loads as
+// no memory, and the home screen falls back to the first unfinished level
+// (see landingLevel.js) — which is the same answer this is here to give.
+const LAST_LEVEL_KEY = "italiano:last-level:v1";
+
+export function loadLastLevelId(moduleId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LAST_LEVEL_KEY));
+    const id = parsed?.[moduleId];
+    return typeof id === "string" ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastLevelId(moduleId, levelId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LAST_LEVEL_KEY)) || {};
+    const existing = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    localStorage.setItem(LAST_LEVEL_KEY, JSON.stringify({ ...existing, [moduleId]: levelId }));
+  } catch {
+    // storage unavailable (private browsing, quota, etc.) — the home screen
+    // just falls back to the first unfinished level next time
+  }
+}

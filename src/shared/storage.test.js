@@ -30,6 +30,8 @@ import {
   saveCoverageHistory,
   addCoveragePoint,
   COVERAGE_HISTORY_VERSION,
+  loadLastLevelId,
+  saveLastLevelId,
 } from "./storage.js";
 
 const level = { id: "A1" };
@@ -604,5 +606,42 @@ describe("coverage history", () => {
     it("writes nothing for a date before the last point, as from a clock set back", () => {
       expect(addCoveragePoint(history, "2026-08-30", 50)).toBe(history);
     });
+  });
+});
+
+describe("last level opened", () => {
+  it("has no memory before anything is picked", () => {
+    expect(loadLastLevelId("vocab")).toBe(null);
+  });
+
+  it("reads back a saved level id", () => {
+    saveLastLevelId("vocab", "B1");
+    expect(loadLastLevelId("vocab")).toBe("B1");
+  });
+
+  it("keeps one level per module", () => {
+    saveLastLevelId("vocab", "B1");
+    saveLastLevelId("grammar", "A2");
+    expect(loadLastLevelId("vocab")).toBe("B1");
+    expect(loadLastLevelId("grammar")).toBe("A2");
+  });
+
+  it("overwrites the module's previous level", () => {
+    saveLastLevelId("vocab", "B1");
+    saveLastLevelId("vocab", "A2");
+    expect(loadLastLevelId("vocab")).toBe("A2");
+  });
+
+  it("reads unparseable or wrongly shaped storage as no memory", () => {
+    localStorage.setItem("italiano:last-level:v1", "{{{");
+    expect(loadLastLevelId("vocab")).toBe(null);
+    localStorage.setItem("italiano:last-level:v1", JSON.stringify({ vocab: 3 }));
+    expect(loadLastLevelId("vocab")).toBe(null);
+  });
+
+  it("writes over storage that isn't a map rather than throwing", () => {
+    localStorage.setItem("italiano:last-level:v1", JSON.stringify(["B1"]));
+    saveLastLevelId("vocab", "B1");
+    expect(loadLastLevelId("vocab")).toBe("B1");
   });
 });

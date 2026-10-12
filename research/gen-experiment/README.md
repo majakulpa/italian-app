@@ -193,15 +193,26 @@ to it, so an old report over-states its unknowns and the gate stays conservative
 5. `stageFlags` is empty;
 6. `lexiconOnlyCoverage` is reported as a number and clears `COVERAGE_FLOOR`.
 
-`EPISODES` now holds `ep1` — 505 content words at **98.6%** lexicon-only
-coverage, zero stage flags, two off-lexicon lemmas (`sala`, `luce`), both
-declared against a cap of fifteen. Its first pass measured 97.8% with six
-off-lexicon lemmas; the repair pass wrote three of them out rather than
-declaring them, because `sedere` and `alzare` are off-lexicon only as an
-artefact of `fondamentale.js` storing the reflexives `sedersi` and `alzarsi`
-against a token-level checker, and `rotta` was spaCy mislemmatising a
-participle. A declaration is a promise that a word is new, so it does not get
-spent on tooling noise.
+`EPISODES` now holds `ep1` — 503 content words at **98.4%** lexicon-only
+coverage, zero stage flags, three off-lexicon lemmas (`sala`, `luce`, `buio`),
+all declared against a cap of fifteen.
+
+Its first pass measured **97.8%** with six off-lexicon lemmas, and the repair
+pass wrote **four** of them out rather than declaring them — six less four is
+two, and the third declaration came later, from review:
+
+| Lemma | Why it was not declared |
+|---|---|
+| `sedere` | from "si siede" — off-lexicon only because `fondamentale.js` stores the reflexive `sedersi` and the checker matches single tokens |
+| `alzare` | from "si alza" — same artefact, `alzarsi` is in the 600 |
+| `rotta` | spaCy mislemmatising the participle "rotte" as the noun *rotta*, "route" |
+| `fine` | genuinely absent, but "sempre venti minuti troppo presto" reads better than "venti minuti prima della fine" |
+
+A declaration is a promise that a word is new, so it does not get spent on
+tooling noise — and it does not get spent where a rewrite reads better either.
+`il buio` was added on review, replacing a calque (`nel nero`): a word missing
+from the lexicon is a reason to declare it or rephrase, never a reason to write
+the wrong word.
 
 The same gate is also run against fixtures in `gate-fixture/`, through the same
 function, and each arm is proven to fail when it should. `B_constr_1` clears

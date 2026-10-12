@@ -326,10 +326,12 @@ categories/dialogues/stories each, and four grammar topics.
   worth about two thirds of running text (66.1%), and the second 300 add about
   seven points more. `coverage.test.js` pins it so it
   cannot move, or fail to move, unnoticed. 600 is also the word count Il
-  Cinema's unbuilt generated serial is gated on (`src/shared/districts.js`) —
-  the ceiling and that threshold now meet for the first time, which makes the
+  Cinema's generated serial is gated on (`src/shared/districts.js`) — the
+  ceiling and that threshold now meet for the first time, which makes the
   door unreachable-in-principle no longer, though reaching it is still study
-  nobody has done yet, not a fact about seeding.
+  nobody has done yet, not a fact about seeding. Episode 1 is written and
+  measured against exactly those 600 words; what is unbuilt is the screen that
+  reads it, not the content.
 
   What is left under the cap is the honest bottleneck: 1,400 ranks have no
   word to drill. Raising it past 73.3% is a content job — accurate entries
@@ -458,13 +460,25 @@ categories/dialogues/stories each, and four grammar topics.
    is not a lexical item, and a trap is a collision rather than a word you are
    trying to remember. Each `scheduled: false` in `src/shared/stats.js` says
    which it is.
-6. **Il Cinema — the generated serial.** The last unbuilt chunk of the design
-   (screens 13–17). `research/gen-experiment/` already measured the mechanism:
-   Italian written against a fixed 600-lemma lexicon reads at 97.2% known
-   words with no forms above stage 3, where unconstrained Italian manages
-   82.1% and breaks stage about once every 73 words. The lexicon reached 600
-   entries, so the threshold the serial opens at is reachable for the first
-   time.
+6. **Il Cinema — the generated serial.** The release gate ships and so does
+   episode 1: `src/data/serial.js` holds "L'uomo del martedì", 503 content
+   words at **98.4%** lexicon-only coverage against the real 600 in
+   `src/data/fondamentale.js`, zero forms outside presente / passato prossimo /
+   imperfetto, three declared new words. Every one of those figures was
+   produced by the offline Python checker in `research/gen-experiment/` and is
+   committed in `src/data/serial-reports/ep1.json`; `src/shared/serialGate.js`
+   measures no Italian and only holds the prose to its own measurement, byte
+   for byte.
+
+   Note the figure, because the experiment's headline **97.2% is not it**. That
+   was measured against an OpenSubtitles proxy lexicon whose own README admits
+   it has no `tavolo`, `letto`, `sedia` or `porta`; against our 600 the
+   experiment's certified text scores 92.9%, which is *below* the gate's floor.
+   The constrained-writing claim survives — it just has to be re-earned per
+   episode against the list we actually teach.
+
+   What is still unbuilt is the reading screen (design screens 13–17). Nothing
+   renders `EPISODES` yet, which is why no screenshot appears with the episode.
 7. **More scenes, and the districts behind them** — Il Mercato has three and
    all four phases work. Another scene is one object in `src/data/scenes.js`
    plus a language review; another district is a row in `districts.js` and a

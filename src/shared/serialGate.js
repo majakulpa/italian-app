@@ -22,8 +22,9 @@
 //
 // If the Python venv cannot be built, no episode ships. A gate that cannot run
 // is not a gate, and the fallback is to publish nothing, not to publish
-// unchecked. That is why EPISODES in src/data/serial.js is empty rather than
-// hopeful.
+// unchecked. EPISODES in src/data/serial.js was empty rather than hopeful until
+// a venv existed to measure episode 1 with; nothing goes in that list that a
+// committed report cannot vouch for.
 //
 // ── The six arms ────────────────────────────────────────────────────────────
 // 1. a report exists for the episode, and is about that episode;

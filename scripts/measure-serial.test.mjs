@@ -78,12 +78,34 @@ describe("the measurement pipeline", () => {
 // ships episode 1, so that run reaches the measuring path and answers "no
 // checker venv" instead — a true answer to a different question. The behaviour
 // is still the pipeline's, and still the state the repo returns to whenever a
-// season is started from scratch, so it is exercised in-process against an
-// injected empty list rather than deleted. Injecting is the only way: the
-// script resolves `EPISODES` through a static import relative to its own file,
-// so no choice of working directory can change what it sees.
+// season is started from scratch, so the episode list is injected instead.
+// Injecting is the only way to empty it: the script resolves `EPISODES` through
+// a static import relative to its own file, so no choice of working directory
+// can change what it sees.
+//
+// The working directory still has to be a venv-free one, and that half is not
+// decoration. Mocking alone would have let this test pass through the exact
+// regression it is named for: with the venv guard back at the top of main(),
+// run from the repo root where a venv exists, requireChecker() returns null,
+// execution falls through to the empty-episodes branch, and the assertion below
+// still holds. The guard's ordering is only observable where the checker is
+// absent — so main() is called from an empty mkdtemp, which is what CI is and
+// what a laptop never reproduces by accident. The import happens before the
+// chdir deliberately: VENV_PYTHON is a module-level *relative* path, resolved
+// against the working directory at existsSync() time, so importing early and
+// chdir'ing late tests the lookup rather than the module load.
 describe("the pipeline with nothing to measure", () => {
+  let dir;
+  let home;
+
+  beforeEach(() => {
+    home = process.cwd();
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "no-venv-"));
+  });
+
   afterEach(() => {
+    process.chdir(home);
+    fs.rmSync(dir, { recursive: true, force: true });
     vi.doUnmock("../src/data/serial.js");
     vi.resetModules();
   });
@@ -94,11 +116,16 @@ describe("the pipeline with nothing to measure", () => {
     const { main } = await import("./measure-serial.mjs");
     const lines = [];
     const log = vi.spyOn(console, "log").mockImplementation((line) => lines.push(line));
+    let code;
     try {
-      expect(main([])).toBe(0);
+      process.chdir(dir);
+      expect(fs.existsSync(path.join("research", "gen-experiment", ".venv"))).toBe(false);
+      code = main([]);
     } finally {
+      process.chdir(home);
       log.mockRestore();
     }
+    expect(code).toBe(0);
     expect(lines.join("\n")).toContain("no episodes in src/data/serial.js");
   });
 });

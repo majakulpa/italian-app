@@ -48,7 +48,15 @@ export default defineConfig({
     // so a discovery bug that makes that command meaningless is worth a line
     // of config. configDefaults.exclude is spread rather than replaced —
     // writing a bare array here silently drops node_modules and dist.
-    exclude: [...configDefaults.exclude, "**/.claude/**"],
+    //
+    // e2e/ is excluded for a different reason, and a hard one: vitest's
+    // default `include` is **/*.{test,spec}.?(c|m)[jt]s?(x), which matches
+    // e2e/city.spec.js. Collected here, every one of those files dies on
+    // `import { test } from "@playwright/test"` — there is no browser and no
+    // Playwright runner under jsdom. The browser suite has its own runner
+    // (playwright.config.js) and its own command (`npm run e2e`). Spread onto
+    // configDefaults.exclude for the same reason as above.
+    exclude: [...configDefaults.exclude, "**/.claude/**", "e2e/**"],
     setupFiles: ["./src/test/setup.js"],
     globals: true,
     // Vitest's 5s default is measured against a single render; several tests

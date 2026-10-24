@@ -106,18 +106,6 @@ jobs:
 
       - run: npx vite build --base=${{ steps.target.outputs.base }}
 
-      # Nothing shaped like an Anthropic API key may reach the published site
-      # or the repository — the scene partner is called with the learner's own
-      # key (see src/shared/sceneKey.js), and this is a public repo publishing
-      # to GitHub Pages.
-      #
-      # Its own step, here, and not a `postbuild` hook in package.json: the
-      # line above is `npx vite build`, so `npm run build` never runs in CI and
-      # a hook on it would never fire on the build that actually deploys. It
-      # goes between the build and the publish so that a hit stops anything
-      # from being published at all.
-      - run: node scripts/check-no-secrets.mjs
-
       # ── The browser suite, on pull requests ONLY ───────────────────────
       #
       # `if: github.event_name == 'pull_request'` on EVERY step below, and
@@ -127,8 +115,15 @@ jobs:
       # and a browser suite is not worth risking a fifth. main never runs E2E
       # at all. The PR is the review gate; gating it there is enough.
       #
-      # Placed after the build and the secrets check and before the publish,
-      # so the report is written into dist/ and goes up with everything else.
+      # Placed after the build and BEFORE the secrets check, which is a
+      # correction rather than a preference. The report is written into dist/,
+      # and scripts/check-no-secrets.mjs walks EVERY file in dist/ (not just
+      # the service worker's globPatterns — see decision 2 in its header). Run
+      # the scan first and the report it has never seen is published anyway:
+      # 8MB of generated HTML, JSON attachments and videos, on a public repo,
+      # straight past the one guard that exists to stop that. So the order is
+      # build -> e2e -> scan -> publish, and main's path is unchanged because
+      # the e2e step is a no-op there.
       #
       # CI downloads its own browsers. The exact pins in package.json are a
       # local concern — this container ships chromium-1194 and ffmpeg-1011
@@ -148,7 +143,10 @@ jobs:
         id: e2e
         if: github.event_name == 'pull_request'
         continue-on-error: true
-        run: npx playwright test --reporter=html
+        # list AND html: `--reporter=html` alone replaces the config's reporter
+        # list, which left the CI job log with no per-test output at all — a
+        # failure showed up only inside the published report.
+        run: npx playwright test --reporter=list,html
         env:
           # scripts/publish-pages.sh copies dist/ wholesale, so writing the
           # report here puts it at /italian-app/pr-N/e2e-report/ with NO
@@ -159,6 +157,21 @@ jobs:
           # has to come from the environment rather than from
           # playwright.config.js.
           PLAYWRIGHT_HTML_OPEN: never
+
+      # Nothing shaped like an Anthropic API key may reach the published site
+      # or the repository — the scene partner is called with the learner's own
+      # key (see src/shared/sceneKey.js), and this is a public repo publishing
+      # to GitHub Pages.
+      #
+      # Its own step, and not a `postbuild` hook in package.json: CI runs
+      # `npx vite build`, so `npm run build` never runs here and a hook on it
+      # would never fire on the build that actually deploys.
+      #
+      # It sits immediately before the publish, after everything that writes
+      # into dist/ — the build AND the E2E report — so that a hit stops
+      # anything from being published at all. It runs unconditionally, on main
+      # as on a pull request.
+      - run: node scripts/check-no-secrets.mjs
 
       # A pull request raised from a fork cannot push, and its token is
       # read-only by design. Build and test it — that is the part that protects

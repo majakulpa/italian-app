@@ -11,8 +11,12 @@
 // SEED BEFORE LOAD, NEVER DURING. The long-lived screens write the whole
 // progress blob back on every answer (`useEffect(() => saveProgress(progress))`),
 // so re-seeding `italiano:progress:v1` mid-test gets clobbered by the next
-// answer. The other three slots have no such writer and are safe to set at
-// any point — which is how the theme spec reaches the explicit palette.
+// answer. The other three slots have no such writer, so a mid-test write to
+// them would survive — but nothing here does that: every seeder below is an
+// addInitScript guarded to the first document, including seedTheme, because
+// a value re-applied on a reload would overwrite a choice the app had made
+// since. If a spec ever does need a mid-test write, those three slots are
+// where it is safe, and it should use page.evaluate rather than this file.
 import { PROGRESS_VERSION, wordKey } from "../src/shared/storage.js";
 import { STORAGE_KEYS } from "./fixtures.js";
 

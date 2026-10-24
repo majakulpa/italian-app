@@ -96,10 +96,11 @@ export const test = base.extend({
     //
     // This does NOT weaken the contrast audit: the font never carried the
     // colour, and axe measures the computed colour of whatever glyphs are
-    // painted. It does change metrics, so font-size-dependent AA thresholds
-    // (large text is judged at 18.5px/14px bold) are judged against the
-    // fallback — which is the stricter direction, since the fallback renders
-    // no larger than Fraunces at the same declared size.
+    // painted. Nor does it move the large-text threshold — axe reads the
+    // DECLARED font-size (axe.js:31549), so substituting the family cannot
+    // change which threshold a node is judged against. (An earlier version of
+    // this comment claimed the fallback made the thresholds "stricter". That
+    // was a non-sequitur and is gone.)
     //
     // One visible consequence: the aborted request logs
     // "Failed to load resource: net::ERR_FAILED" to the console. Measured

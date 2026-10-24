@@ -153,6 +153,17 @@ reason the suite exists:
    browser sweep failed on the dark project alone with *insufficient color
    contrast of 1.26 (foreground color: #000000, background color: #14202a)* —
    which is the 1.27:1 La Riserva's legend actually shipped with.
+   The gate has its own regression tests (`e2e/a11y.spec.js`, "The contrast
+   gate itself"), because a gate that cannot fail is the state the jsdom suite
+   is permanently in. They inject known-bad contrast at 2.29:1 into a real
+   screen and assert the audit rejects it. One `color-contrast` incomplete is
+   tolerated and only under a conjunction: the node must be `aria-hidden`
+   (WCAG 1.4.3 exempts pure decoration, and Mappatura has eleven such
+   separator glyphs) **and** axe must have declined it as non-text. The
+   message key alone is not enough — `shortTextContent` is a measured failure
+   being discarded, so exempting it on its own let a *visible* single
+   character through at 2.29:1. That bug is what those tests exist to stop
+   coming back.
 2. **No fragment exemptions.** `src/test/a11y.js` has to disable `region`,
    `landmark-one-main`, `page-has-heading-one`, `html-has-lang` and
    `document-title` when it renders a module on its own. Every scan here is a
@@ -171,6 +182,13 @@ can serve assets from a previous build, and `vite build` is already its own CI
 step. Chromium only — `isSpeechSupported()` gates the `Listen` button and every
 `SpeakButton` returns `null` without it, so control counts differ per engine
 and a cross-browser matrix needs per-engine expectations written first.
+
+The sweep covers every screen, including the four no journey spec walks —
+Il Mercato and the Gli Articoli / La Riserva / Falsi Amici benches. La
+Riserva is scanned whole, grid included: the `exclude` escape hatch
+`src/test/a11y.js` documents exists because coverage instrumentation made
+that scan expensive under jsdom, and a browser does not pay that, so this is
+the place its 2,000 `aria-hidden` cells are checked as still hidden.
 
 The suite is **additive**. `src/a11y.test.jsx`, `src/test/a11y.js` and
 `src/test/contrast.js` are unchanged and still run under `npm test`.

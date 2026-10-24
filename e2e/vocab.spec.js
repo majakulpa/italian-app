@@ -126,11 +126,21 @@ test.describe("Vocabulary — quiz", () => {
       .first();
     await expect(wrong).toBeVisible();
     const wrongGloss = (await wrong.textContent()).trim();
-    expect(wrongGloss).not.toBe(GLOSS.get(secondWord));
     await wrong.click();
     await expect(page.getByRole("status")).toContainText(/not quite/i);
     // Still "1 correct" — a wrong answer does not advance the tally.
     await expect(page.getByText("1 correct")).toBeVisible();
+
+    // FEEDBACK IS NEVER COLOUR ALONE (WCAG 1.4.1). AnswerMark pairs the
+    // tick/cross with visually hidden text that becomes part of the option's
+    // accessible name, so the two marks are asserted by NAME rather than by
+    // the colour or the icon — neither of which a screen reader gets.
+    //
+    // This replaces an assertion that could not fail: it compared the gloss
+    // just picked against the correct one, which the filter above had already
+    // excluded from the candidates.
+    await expect(page.getByRole("button", { name: `${wrongGloss} your answer, incorrect` })).toBeVisible();
+    await expect(page.getByRole("button", { name: `${GLOSS.get(secondWord)} correct answer` })).toBeVisible();
 
     // ---- through to the summary ----
     await page.getByRole("button", { name: "Next word" }).click();

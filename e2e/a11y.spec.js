@@ -4,13 +4,23 @@
 // (real contrast, no fragment exemptions, the third palette) and holds the
 // assertion that keeps the contrast claim from going quietly hollow.
 //
-// Every screen a journey in this directory reaches gets scanned here, and
-// each scan is a whole real document served by vite — so `region`,
+// Every screen the app can be in gets scanned here — the ones the journey
+// specs in this directory walk, and the four they do not (Il Mercato and the
+// Gli Articoli / La Riserva / Falsi Amici benches, at the bottom of the first
+// block). Each scan is a whole real document served by vite, so `region`,
 // `landmark-one-main`, `page-has-heading-one`, `html-has-lang` and
-// `document-title`, which src/test/a11y.js has to disable on a fragment,
-// all run on all of them.
+// `document-title`, which src/test/a11y.js has to disable on a fragment, all
+// run on all of them.
 import { test, expect, openCity, pressTab, typeAnswer } from "./fixtures.js";
 import { auditScreen } from "./a11y.js";
+
+// The journey specs record every run, because the owner asked to watch those.
+// This file does not: nobody needs 32 webm files of a passing axe scan, and
+// at ~120KB each they were most of the 8.9MB the PR report accumulated in
+// gh-pages history on every push. The evidence that matters on a failure here
+// is axe's JSON, which ./a11y.js attaches, and the video is still kept when
+// there is something to look at.
+test.use({ video: "retain-on-failure" });
 import { seedOneDueWord, seedTheme } from "./seed.js";
 import { LEVELS } from "../src/data/vocab.js";
 
@@ -25,7 +35,7 @@ async function answerVocabQuestion(page) {
   await page.getByRole("button", { name: GLOSS.get(word), exact: true }).click();
 }
 
-test.describe("WCAG 2.1 AA — every screen a journey reaches", () => {
+test.describe("WCAG 2.1 AA — every screen", () => {
   test("La Città, the map", async ({ page }, testInfo) => {
     await openCity(page);
     await auditScreen(page, testInfo, "city");
@@ -166,6 +176,76 @@ test.describe("WCAG 2.1 AA — every screen a journey reaches", () => {
     await pressTab(page, "Casa");
     await auditScreen(page, testInfo, "casa");
   });
+
+  // The four screens no journey spec in this directory walks. They are here
+  // because the sweep's job is every screen, not every screen that happens
+  // to have a journey — Il Mercato is a hub with two open stalls, and
+  // Gli Articoli, La Riserva and Falsi Amici are three of L'Officina's five
+  // benches, all open on a fresh account.
+  //
+  // Audited only. Journey specs for them are deliberately out of scope: each
+  // would need its own recon of prompts, verdicts and summaries, and the
+  // thing that was missing here was palette coverage of their markup.
+
+  test("Il Mercato, the hub and its two stalls", async ({ page }, testInfo) => {
+    await openCity(page);
+    await page.getByRole("button", { name: /Il Mercato/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Il Mercato" })).toBeVisible();
+    await auditScreen(page, testInfo, "mercato-hub");
+  });
+
+  test("Gli Articoli: the strands and a gap drill", async ({ page }, testInfo) => {
+    await openCity(page);
+    await pressTab(page, "Officina");
+    await page.getByRole("button", { name: /Gli Articoli/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Gli Articoli" })).toBeVisible();
+    await auditScreen(page, testInfo, "articoli-home");
+
+    // Authored order, no shuffle — Gli Articoli walks its items as written,
+    // which is why no Math.random stub is needed to reach a stable screen.
+    await page.getByRole("button", { name: /Il determinativo/ }).click();
+    await auditScreen(page, testInfo, "articoli-strand");
+  });
+
+  test("Falsi Amici: the collection and both trap sets", async ({ page }, testInfo) => {
+    await openCity(page);
+    await pressTab(page, "Officina");
+    await page.getByRole("button", { name: /Falsi Amici/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Falsi Amici" })).toBeVisible();
+    // Two h2 sections — "The maps set these" and "Nothing generates these" —
+    // so the collection screen covers both sources in one scan.
+    await auditScreen(page, testInfo, "falsi-amici-home");
+
+    await page.getByRole("button", { name: /^Practise these/ }).first().click();
+    await auditScreen(page, testInfo, "falsi-amici-drill");
+  });
+
+  // La Riserva is the slow one, and deliberately scanned WHOLE rather than
+  // with an exclude. src/test/a11y.js documents an `exclude` escape hatch for
+  // exactly this screen, and requires that a screen which excludes its
+  // decoration be scanned whole somewhere else — this is that place.
+  //
+  // It is affordable here because the cost that made it expensive under jsdom
+  // was coverage instrumentation, which a browser does not pay. The grid is
+  // 2,000 cells, aria-hidden with its facts given as text, and the ten bands
+  // are the real controls — two thousand focusable cells would be a trap
+  // rather than a tab order. Scanning it whole is what checks the grid is
+  // still hidden: un-hide it and its contents become checked nodes.
+  test("La Riserva, the whole grid included", async ({ page }, testInfo) => {
+    await openCity(page);
+    await pressTab(page, "Officina");
+    await page.getByRole("button", { name: /La Riserva/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "La Riserva" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "The ten fasce" })).toBeVisible();
+    await auditScreen(page, testInfo, "riserva-home");
+
+    // A fascia with words behind it opens a typed round; the first band has
+    // all 200 ranks filled.
+    // Anchored and with the separator, because /Fascia 1/ also matches
+    // "Fascia 10 \u00b7 posti 1801\u20132000".
+    await page.getByRole("button", { name: /^Fascia 1 \u00b7/ }).click();
+    await auditScreen(page, testInfo, "riserva-fascia");
+  });
 });
 
 // THE THIRD PALETTE.
@@ -217,28 +297,62 @@ test.describe("Keyboard access", () => {
   test("every district tile and all four tabs are reachable by Tab, with visible focus", async ({ page }) => {
     await openCity(page);
 
-    const names = ["L'Officina", "Il Cantiere", "Il Mercato", "Il Cinema", "La Piazza", "Città", "Officina", "Piazza", "Casa"];
+    const nav = page.getByRole("navigation", { name: "Sections" });
+
+    // IDENTITY, NOT SUBSTRING, and that is the whole point of this shape.
+    //
+    // A district tile is one button wrapping the whole card, so its
+    // accessible name concatenates every text node — "L'Officina 0 / 120
+    // words". districts.js:62,91 name two districts L'Officina and La Piazza,
+    // and TabBar names two tabs Officina and Piazza. An earlier version of
+    // this test matched with `text.includes(name)`, so reaching the two TILES
+    // marked the two TABS as reached: it gated two of the four tabs it
+    // claimed, and those two buttons might never have been focused at all —
+    // which means their focus-visible outline was never checked either.
+    //
+    // These are element handles compared with ===, so nothing can stand in
+    // for anything else. The tabs are scoped to the nav as well.
+    const targets = [
+      ["tile L'Officina", page.getByRole("button", { name: /L'Officina/ })],
+      ["tile Il Cantiere", page.getByRole("button", { name: /Il Cantiere/ })],
+      ["tile Il Mercato", page.getByRole("button", { name: /Il Mercato/ })],
+      ["tile Il Cinema", page.getByRole("button", { name: /Il Cinema/ })],
+      ["tile La Piazza", page.getByRole("button", { name: /La Piazza/ })],
+      ["tab Città", nav.getByRole("button", { name: "Città", exact: true })],
+      ["tab Officina", nav.getByRole("button", { name: "Officina", exact: true })],
+      ["tab Piazza", nav.getByRole("button", { name: "Piazza", exact: true })],
+      ["tab Casa", nav.getByRole("button", { name: "Casa", exact: true })],
+    ];
+
+    const handles = [];
+    for (const [id, locator] of targets) {
+      // Each target must name exactly one element, or "reached" would be
+      // ambiguous about which one it reached.
+      await expect(locator, `${id} should resolve to exactly one element`).toHaveCount(1);
+      handles.push(await locator.elementHandle());
+    }
+
     const reached = new Set();
 
     // A bounded walk rather than `while (true)`: 60 presses is comfortably
     // more than the document holds, and a regression that drops something
     // from the tab order shows up as a missing name rather than a hang.
-    for (let i = 0; i < 60 && reached.size < names.length; i++) {
+    for (let i = 0; i < 60 && reached.size < targets.length; i++) {
       await page.keyboard.press("Tab");
-      const focused = await page.evaluate(() => {
+      const focused = await page.evaluate((els) => {
         const el = document.activeElement;
         if (!el || el === document.body) return null;
         const style = getComputedStyle(el);
         return {
-          text: (el.textContent || "").trim(),
           tag: el.tagName,
           // What makes the focus ring visible. The browser default is an
           // outline; this asserts the app has not set `outline: none`
           // anywhere in the tab order without putting something back.
           outlineStyle: style.outlineStyle,
           outlineWidth: style.outlineWidth,
+          index: els.indexOf(el),
         };
-      });
+      }, handles);
       if (!focused) continue;
 
       // Every control in the app is a real <button> — no role="button" divs,
@@ -248,15 +362,13 @@ test.describe("Keyboard access", () => {
       expect(focused.outlineStyle).not.toBe("none");
       expect(focused.outlineWidth).not.toBe("0px");
 
-      for (const name of names) {
-        if (focused.text.includes(name)) reached.add(name);
-      }
+      if (focused.index >= 0) reached.add(targets[focused.index][0]);
     }
 
     // La Piazza's tile is aria-disabled, NOT disabled, so it is in this list
     // on purpose: a locked door you cannot even reach is the thing the design
     // argues against, and `disabled` would take it out of the tab order.
-    expect([...names].filter((n) => !reached.has(n))).toEqual([]);
+    expect(targets.map(([id]) => id).filter((id) => !reached.has(id))).toEqual([]);
   });
 
   test("Escape closes the story gloss from the keyboard", async ({ page }) => {
@@ -276,5 +388,97 @@ test.describe("Keyboard access", () => {
     await expect(word).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("group", { name: "Word gloss" })).toHaveCount(0);
+  });
+});
+
+// THE CONTRAST GATE ITSELF.
+//
+// Every test above asserts the app is clean. None of them asserts the gate
+// can fail — and a gate that cannot fail is the state the jsdom suite is
+// permanently in, which is the whole reason this directory exists. These
+// tests inject known-bad contrast into a real screen and assert the audit
+// rejects it.
+//
+// They exist specifically because an earlier version of ./a11y.js tolerated
+// `shortTextContent` and `nonBmp` on the message key alone, which let a
+// VISIBLE single character and a VISIBLE bare glyph through at 2.29:1. That
+// bug was invisible to every other test in this file. See the long comment
+// in ./a11y.js for the measurements.
+//
+// #3E5C64 on #14202a is 2.29:1. Both are set explicitly on the injected
+// subtree rather than inherited, so the ratio is the same in both projects
+// and these tests do not depend on which palette is painting.
+const BAD_FG = "#3E5C64";
+const BAD_BG = "#14202a";
+
+async function inject(page, html) {
+  await page.evaluate(
+    ([markup, bg]) => {
+      const host = document.createElement("div");
+      host.style.cssText = `background:${bg};padding:20px`;
+      host.innerHTML = markup;
+      document.body.appendChild(host);
+    },
+    [html, BAD_BG],
+  );
+}
+
+test.describe("The contrast gate itself", () => {
+  // Each of these was measured: the first two land in axe's `incomplete` with
+  // a message key, so they are caught by assertContrastWasMeasured rather
+  // than by the violation list. The third lands in `violations`. All three
+  // must fail, and for the suite to mean anything the first two matter most —
+  // they are the ones that used to pass.
+  const CAUGHT = {
+    "a visible single character": `<p style="color:${BAD_FG};font-size:16px">x</p>`,
+    "a visible bare glyph": `<p style="color:${BAD_FG};font-size:16px"> → </p>`,
+    "visible words": `<p style="color:${BAD_FG};font-size:16px">hello there</p>`,
+  };
+
+  for (const [what, html] of Object.entries(CAUGHT)) {
+    test(`fails on ${what} at 2.29:1`, async ({ page }, testInfo) => {
+      await openCity(page);
+      // The screen is clean before the injection, so the rejection below is
+      // the injected node and not something that was already there.
+      await auditScreen(page, testInfo, "gate-baseline");
+
+      await inject(page, html);
+
+      await expect(auditScreen(page, testInfo, "gate-injected")).rejects.toThrow(
+        /color-contrast|could not determine the painted colours/,
+      );
+    });
+  }
+
+  // The other half of the conjunction, and the reason the filter is not
+  // simply "fail on every incomplete": Mappatura's six " · " separators and
+  // five " → " glyphs are aria-hidden decoration at opacity 0.55, and WCAG
+  // 1.4.3 exempts pure decoration. These must NOT fail, or the suite is red
+  // on a bullet.
+  test("tolerates the same shapes when they are aria-hidden decoration", async ({ page }, testInfo) => {
+    await openCity(page);
+    await inject(
+      page,
+      `<span aria-hidden="true" style="color:${BAD_FG};font-size:16px"> · </span>
+       <span aria-hidden="true" style="color:${BAD_FG};font-size:16px"> → </span>
+       <div aria-hidden="true"><span style="color:${BAD_FG};font-size:16px">x</span></div>`,
+    );
+
+    // The third one is nested rather than marked directly, because aria-hidden
+    // is inherited down the subtree — the filter has to use closest(), and a
+    // version that read the node's own attribute would fail here.
+    await auditScreen(page, testInfo, "gate-decoration");
+  });
+
+  // aria-hidden is not a blanket exemption. A node axe genuinely could not
+  // resolve still fails even when it is decoration, because "I could not
+  // measure this" is never the same answer as "this is a bullet".
+  test("still fails on an aria-hidden node axe could not resolve", async ({ page }, testInfo) => {
+    await openCity(page);
+    // Equal foreground and background: axe reports `equalRatio` as
+    // incomplete, which is not one of the tolerated non-text keys.
+    await inject(page, `<p aria-hidden="true" style="color:${BAD_BG};font-size:16px">unresolvable text here</p>`);
+
+    await expect(auditScreen(page, testInfo, "gate-unresolvable")).rejects.toThrow(/could not determine the painted colours/);
   });
 });

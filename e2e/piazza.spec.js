@@ -98,8 +98,16 @@ test.describe("La Piazza — one item due", () => {
 
     await expect(page.getByRole("heading", { level: 1, name: /That’s the round/ })).toBeVisible();
     // Right on the second go, after the app said where to look — so it comes
-    // back rather than being promoted.
-    await expect(page.getByText("coming back")).toBeVisible();
+    // back rather than being promoted. ONLY A FIRST-ATTEMPT CORRECT ANSWER
+    // PROMOTES, which is the bar this screen exists to hold.
+    //
+    // The NUMBERS, not the labels. ReviewModule.jsx:676 renders
+    // <p>{promoted.length}</p> and then <Eyebrow>right first time</Eyebrow>
+    // unconditionally, so both labels are on screen the instant Summary
+    // mounts whatever the counts are — asserting them proves only that the
+    // summary rendered.
+    await expect(countBeside(page, "right first time")).toHaveText("0");
+    await expect(countBeside(page, "coming back")).toHaveText("1");
     await expect(page.getByText("Worth another look")).toBeVisible();
 
     await page.getByRole("button", { name: /Back to La Piazza/ }).click();
@@ -111,14 +119,23 @@ test.describe("La Piazza — one item due", () => {
     await pressTab(page, "Piazza");
     await page.getByRole("button", { name: /Start the round/ }).click();
 
+    // The negative control, before pressing anything: the answer is NOT on
+    // screen yet. Without this the assertion below passes on a screen that
+    // showed the answer from the start, which is the opposite of this
+    // module's whole design — located, not solved.
+    await expect(page.getByText("ciao", { exact: true })).toHaveCount(0);
+
     await page.getByRole("button", { name: "Show me" }).click();
 
     // An empty box is not an attempt, so there is nothing to locate — the
     // screen says so plainly rather than inventing a place.
-    await expect(page.getByText("ciao").first()).toBeVisible();
+    await expect(page.getByText("ciao", { exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: /See how it went/ }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: /That’s the round/ })).toBeVisible();
-    await expect(page.getByText("right first time")).toBeVisible();
+    // "Show me" is wrong by definition, so NOTHING was promoted. The number,
+    // not the label — see the note in the test above.
+    await expect(countBeside(page, "right first time")).toHaveText("0");
+    await expect(countBeside(page, "coming back")).toHaveText("1");
   });
 });

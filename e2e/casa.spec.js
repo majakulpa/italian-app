@@ -97,12 +97,23 @@ test.describe("Casa", () => {
   // the same.
   test("the explicit palette paints what the media query paints", async ({ page }, testInfo) => {
     await openCity(page);
+
+    // BOTH MEASUREMENTS ON CASA. An earlier version captured the
+    // media-query baseline on La Città and compared it against a measurement
+    // taken on Casa — two different screens, so the comparison asserted an
+    // unrelated invariant and only passed because both headings happen to use
+    // TOKENS.ink. `painted()` reads the first h1 on the page, so the screen
+    // has to be the same on both sides or the test means nothing.
+    await pressTab(page, "Casa");
+
+    // Still no stored choice at this point, so the media query is what is
+    // painting — which is the thing the explicit palette has to match.
+    expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBeUndefined();
     const fromMediaQuery = await painted(page);
     expect(fromMediaQuery.shellBackground).not.toBe("rgba(0, 0, 0, 0)");
 
     // Toggle to the other mode and back, which leaves an explicit choice
     // matching the project's own scheme.
-    await pressTab(page, "Casa");
     const first = testInfo.project.name === "dark" ? "Switch to light mode" : "Switch to dark mode";
     await page.getByRole("button", { name: first }).click();
     await page.getByRole("button", { name: testInfo.project.name === "dark" ? "Switch to dark mode" : "Switch to light mode" }).click();

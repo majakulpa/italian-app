@@ -102,12 +102,27 @@ export const test = base.extend({
     // this comment claimed the fallback made the thresholds "stricter". That
     // was a non-sequitur and is gone.)
     //
-    // One visible consequence: the aborted request logs
-    // "Failed to load resource: net::ERR_FAILED" to the console. Measured
-    // across every journey in this directory, that and vite's own HMR
-    // chatter plus React's devtools notice are the ONLY console output —
-    // no app errors, no React warnings, no unhandled rejections. So a
-    // console error in a run that is not this font URL is a real one.
+    // Two visible consequences, and both are this fixture's own doing rather
+    // than the app's. Measured over a full run, 90 page loads:
+    //
+    //   - 182 failed requests, every one this same URL with
+    //     net::ERR_FAILED: one per page load for the document's own
+    //     stylesheet, and 92 more from axe's CSS preload XHR.
+    //   - 92 console warnings, "Couldn't load preload assets:", from axe's
+    //     own preload catch (axe-core/axe.js:34176) — the other half of
+    //     those same aborted XHRs.
+    //
+    // Nothing else: no app errors, no React warnings, no unhandled
+    // rejections, no pageerror events. So a console message in a run that is
+    // neither this font URL nor that axe warning is a real one.
+    //
+    // src/test/a11y.js passes `preload: false` to silence the axe half under
+    // jsdom. Deliberately NOT done here: in a browser the preload is how axe
+    // resolves cross-origin stylesheet rules, and turning it off to quieten a
+    // warning would narrow what the contrast rule can see. Nothing in this
+    // app paints from a cross-origin sheet today, so it would be safe today —
+    // which is exactly the kind of reasoning that goes stale and leaves a
+    // gate quietly checking less than it claims.
     await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
 
     // ---- 4. VIEWPORT AND COLOUR SCHEME ----------------------------------

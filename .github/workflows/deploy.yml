@@ -118,6 +118,48 @@ jobs:
       # from being published at all.
       - run: node scripts/check-no-secrets.mjs
 
+      # ── The browser suite, on pull requests ONLY ───────────────────────
+      #
+      # `if: github.event_name == 'pull_request'` on EVERY step below, and
+      # that is the load-bearing part. main's publish path stays byte-for-byte
+      # what it was: this repo lost four deploys to silent cancellation
+      # (#35/#36/#40/#45), the concurrency rules above are the scar tissue,
+      # and a browser suite is not worth risking a fifth. main never runs E2E
+      # at all. The PR is the review gate; gating it there is enough.
+      #
+      # Placed after the build and the secrets check and before the publish,
+      # so the report is written into dist/ and goes up with everything else.
+      #
+      # CI downloads its own browsers. The exact pins in package.json are a
+      # local concern — this container ships chromium-1194 and ffmpeg-1011
+      # preinstalled, which 1.56.x is the release that pins, so a developer
+      # runs `npm run e2e` with no download at all.
+      - name: Install Chromium for Playwright
+        if: github.event_name == 'pull_request'
+        run: npx playwright install --with-deps chromium
+
+      # ORDER MATTERS HERE, and it is deliberate: `continue-on-error` plus the
+      # trailing gate at the bottom of this job means a RED SUITE STILL
+      # PUBLISHES ITS OWN REPORT. A failure you can open, watch the video of
+      # and read the measured contrast ratio out of is worth more than a red
+      # tick with nothing behind it — and the PR check still goes red, because
+      # the last step re-raises the failure after the publish has happened.
+      - name: Browser E2E + WCAG 2.1 AA suite
+        id: e2e
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: npx playwright test --reporter=html
+        env:
+          # scripts/publish-pages.sh copies dist/ wholesale, so writing the
+          # report here puts it at /italian-app/pr-N/e2e-report/ with NO
+          # change to that script.
+          PLAYWRIGHT_HTML_OUTPUT_DIR: dist/e2e-report
+          # `--reporter=html` on the command line replaces the config's
+          # reporter list and its options, so "don't try to open a browser"
+          # has to come from the environment rather than from
+          # playwright.config.js.
+          PLAYWRIGHT_HTML_OPEN: never
+
       # A pull request raised from a fork cannot push, and its token is
       # read-only by design. Build and test it — that is the part that protects
       # main — and skip publishing rather than failing the run.
@@ -127,6 +169,16 @@ jobs:
           TARGET: ${{ steps.target.outputs.dir }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/publish-pages.sh "$TARGET"
+
+      # The gate, after the publish. See the comment on the e2e step: the
+      # report is already up by the time this runs, so a red suite leaves
+      # both a red check AND something to look at.
+      - name: Fail the run if the browser suite failed
+        if: github.event_name == 'pull_request' && steps.e2e.outcome == 'failure'
+        run: |
+          echo "The browser E2E / WCAG AA suite failed."
+          echo "Report: https://majakulpa.github.io/italian-app/pr-${{ github.event.number }}/e2e-report/"
+          exit 1
 
   # Delete a preview when its pull request closes, merged or not. Previews are
   # free to make and would otherwise be kept forever by nobody in particular.

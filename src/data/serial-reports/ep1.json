@@ -1,0 +1,34 @@
+{
+  "contentWords": 503,
+  "episodeId": "ep1",
+  "lexicon": {
+    "sha256": "061a50aad04e07284465bf767875ef4c46673f4cd4b1a62c70d69d3926dd275d",
+    "size": 600,
+    "source": "lexicon_fondamentale.json"
+  },
+  "lexiconOnlyCoverage": 98.4,
+  "measuredAt": "2026-10-11T18:46:52Z",
+  "offLexiconForms": {
+    "buio": [
+      "buio"
+    ],
+    "luce": [
+      "luce"
+    ],
+    "sala": [
+      "sala"
+    ]
+  },
+  "offLexiconLemmas": [
+    "buio",
+    "luce",
+    "sala"
+  ],
+  "stageFlags": [],
+  "textBytes": 2727,
+  "textSha256": "66d5efbb0bc4dd58819550ffd2e1dbe017358118f95e43601bbe1662afba1369",
+  "tooling": {
+    "checker": "research/gen-experiment/check_text.py",
+    "detectors": "union(spaCy morphology, Italian suffix rules)"
+  }
+}

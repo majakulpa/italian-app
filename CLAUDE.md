@@ -29,6 +29,12 @@ the project structure, what's built, and the roadmap.
   passes every arithmetic contrast check and axe pass while being invisible in
   one theme. That has already shipped once. Measure the rendered page, in both
   themes, and say what you measured.
+- That browser pass now has a suite behind it: `npm run e2e` (Playwright, in
+  `e2e/`, Chromium at 375x812 in both palettes) walks every screen and runs
+  axe's WCAG 2.1 AA rule set against the *painted* page, which is the one
+  place `color-contrast` returns a real ratio instead of "incomplete". It is
+  additive — it does not replace reading the screen, and it does not replace
+  `npm test`. See the README's browser-tests section.
 
 ## Git
 

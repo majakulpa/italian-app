@@ -87,6 +87,9 @@ src/
 public/
   manifest icons, favicon
 vite.config.js              PWA config (manifest, service worker) + Vitest config
+e2e/                        Playwright: the browser journeys and the WCAG AA sweep
+                              (outside src/ — see "Browser tests" below for why)
+playwright.config.js        Chromium at 375x812, a light and a dark project
 ```
 
 ## Tests
@@ -117,6 +120,83 @@ rather than deleting the block.
 A test that can't fail is worth nothing, so anything load-bearing gets checked
 against a deliberately broken build before it's trusted — break the rule, watch
 the test go red, put it back.
+
+## Browser tests (E2E + WCAG 2.1 AA)
+
+```bash
+npm run e2e          # Chromium, 375x812, light and dark
+npm run e2e:ui       # the interactive runner
+npm run e2e:report   # open the last HTML report
+```
+
+Playwright, in `e2e/` at the top level — deliberately **not** under `src/`,
+for two reasons that both bite:
+
+- Vitest's default `include` is `**/*.{test,spec}.?(c|m)[jt]s?(x)`, so
+  `e2e/city.spec.js` would be collected by `npm test` and die on
+  `import { test } from "@playwright/test"`. `vite.config.js` excludes
+  `e2e/**` as the other half of that.
+- The coverage gate's `include` is `src/**/*.{js,jsx}` at 100%. A helper
+  under `src/` would need covering by a suite that cannot run it — the
+  helpers only mean anything inside a browser.
+
+**What it covers that jsdom cannot.** Three things, and the first is the
+reason the suite exists:
+
+1. **Real colour contrast.** jsdom has no paint, so axe's `color-contrast`
+   rule can only ever return *incomplete* (`src/test/a11y.js` says so), and
+   the arithmetic in `src/test/contrast.js` reads the hex values the design
+   system *promises* — it proves a token has good contrast, never that a token
+   was applied. In a browser the rule resolves the actual cascade. Verified by
+   deleting `color: TOKENS.ink` from the La Città `h1`: the jsdom a11y sweep
+   and the palette arithmetic both stayed green across 127 tests, and the
+   browser sweep failed on the dark project alone with *insufficient color
+   contrast of 1.26 (foreground color: #000000, background color: #14202a)* —
+   which is the 1.27:1 La Riserva's legend actually shipped with.
+   The gate has its own regression tests (`e2e/a11y.spec.js`, "The contrast
+   gate itself"), because a gate that cannot fail is the state the jsdom suite
+   is permanently in. They inject known-bad contrast at 2.29:1 into a real
+   screen and assert the audit rejects it. One `color-contrast` incomplete is
+   tolerated and only under a conjunction: the node must be `aria-hidden`
+   (WCAG 1.4.3 exempts pure decoration, and Mappatura has eleven such
+   separator glyphs) **and** axe must have declined it as non-text. The
+   message key alone is not enough — `shortTextContent` is a measured failure
+   being discarded, so exempting it on its own let a *visible* single
+   character through at 2.29:1. That bug is what those tests exist to stop
+   coming back.
+2. **No fragment exemptions.** `src/test/a11y.js` has to disable `region`,
+   `landmark-one-main`, `page-has-heading-one`, `html-has-lang` and
+   `document-title` when it renders a module on its own. Every scan here is a
+   whole real document served by vite, so all five run on every screen.
+3. **The third palette.** `src/shared/theme.js` holds three sets of
+   `--color-*` values: the base `:root`, the `@media (prefers-color-scheme:
+   dark)` block, and the explicit `:root[data-theme="dark"]` /
+   `[data-theme="light"]` blocks the Casa toggle writes. The two projects flip
+   the media query; only a seeded `italiano:theme:v1` reaches the last two, so
+   they get tests of their own. Keyboard access (SC 2.1.1) does too, since axe
+   reports on markup rather than behaviour.
+
+It runs against `npm run dev`, not the preview build: the PWA registers its
+service worker with `registerType: "autoUpdate"`, which against a built target
+can serve assets from a previous build, and `vite build` is already its own CI
+step. Chromium only — `isSpeechSupported()` gates the `Listen` button and every
+`SpeakButton` returns `null` without it, so control counts differ per engine
+and a cross-browser matrix needs per-engine expectations written first.
+
+The sweep covers every screen, including the four no journey spec walks —
+Il Mercato and the Gli Articoli / La Riserva / Falsi Amici benches. La
+Riserva is scanned whole, grid included: the `exclude` escape hatch
+`src/test/a11y.js` documents exists because coverage instrumentation made
+that scan expensive under jsdom, and a browser does not pay that, so this is
+the place its 2,000 `aria-hidden` cells are checked as still hidden.
+
+The suite is **additive**. `src/a11y.test.jsx`, `src/test/a11y.js` and
+`src/test/contrast.js` are unchanged and still run under `npm test`.
+
+On a pull request, CI runs it after the build and publishes the HTML report —
+videos and axe JSON included — to `/italian-app/pr-N/e2e-report/`, then fails
+the run if the suite failed. `main` never runs it at all: this repo lost four
+deploys to silent cancellation and its publish path is left exactly as it is.
 
 To add a module: create `src/modules/<name>/<Name>Module.jsx` exporting a
 component that accepts an `onExit` prop (call it to return to the home

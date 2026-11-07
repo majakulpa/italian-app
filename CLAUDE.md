@@ -58,12 +58,16 @@ runs, screenshotting, data entry.
 
 | Agent | Model | Give it |
 |---|---|---|
-| `scout` | opus | Implementation. One well-scoped change, on a branch, with its tests. |
+| `scout` | opus | Implementation that is also a design decision. One scoped change, on a branch, with its tests. |
 | `reviewer` | opus | Adversarial review of a branch or PR. Read-only. |
+| `mechanic` | sonnet | Implementation where the answer is already decided. Wiring, a named coverage gap, renames, data-shape edits, docs. |
 | `lexicographer` | sonnet | `src/data/fondamentale.js` entries — EN + PL glosses. Language accuracy. |
 | `scanner` | haiku | Read-only recon. "Where is X", "does Y exist", pattern sweeps. |
 | `verifier` | haiku | `npm test`, the coverage gate, the build. Returns a verdict, not a log. |
 | `evidence` | haiku | Before/after screenshots at 375x812, console errors, wiki URLs. |
+
+The rows are in descending cost order, and that order is the default reading
+direction: start at the bottom and only climb when the job genuinely needs it.
 
 ### Dispatch freely, and say what you dispatched
 
@@ -82,18 +86,84 @@ The gate that used to live here was an `ask` rule on the `Agent` tool in
 including the read-only recon ones, and a prompt that always gets the same
 answer is a prompt that stops being read.
 
-### Routing
+### Routing — cheapest agent that can do the job correctly
 
-- **Cheapest agent that can do the job correctly.** Judgement, architecture,
-  correctness arguments and Italian/Polish content go to opus or sonnet.
-  Searching, running, capturing and reporting go to haiku.
-- **Push verbose work down.** Anything that produces hundreds of lines you
-  only need the conclusion from belongs in a subagent's context, not this one.
+Both halves of that sentence are load bearing. "Cheapest" is not a licence to
+send design work to haiku, and "correctly" is not a licence to send every job
+to opus because opus is never wrong. The rule is to name what the job actually
+requires, then pick the lowest tier that supplies it.
+
+Ask one question: **has the right answer already been decided, or is deciding
+it the work?**
+
+- Deciding it is the work → `scout` (build) or `reviewer` (judge). Visual and
+  interaction design, architecture, a correctness argument, whether a finding
+  is real, what to build next.
+- Already decided, only the typing remains → `mechanic`. Wiring a component
+  that exists into a place that exists, closing a coverage gap at named lines,
+  a rename, a data-shape migration, docs.
+- Italian or Polish content, or whether a gloss/article/translation is right →
+  `lexicographer`. Never cheaper: a wrong gloss ships a language error to a
+  learner and no test catches it.
+- Finding, running, capturing, reporting → `scanner`, `verifier`, `evidence`.
+  These are the three jobs where the output is long and the answer is short,
+  which is exactly what a cheap agent is for.
+
+**Escalate on evidence, not on nerves.** Give the job to the lower tier first
+and let it hand back. `mechanic` is instructed to stop and report when a brief
+turns out to need a design decision, and that handoff costs one short message
+— far less than opus doing the whole thing on the chance that it might. The
+same applies upward: if `mechanic` hands back twice on the same change, the
+change was never mechanical, so promote it to `scout` and say why.
+
+**Spend on the gate, not on the work.** Where quality is actually protected
+here is the coverage gate, the axe sweep, the browser suite and `reviewer` —
+and those are cheap to run relative to re-doing a shipped mistake. So: never
+skip the review of a change that touches behaviour in order to save a
+dispatch, and never pay opus to write something a gate would have caught
+anyway.
+
+### Dispatching is not free either
+
+A subagent starts cold. It re-reads `CLAUDE.md`, `README.md` and the files it
+needs before it does anything useful, which is a fixed cost per dispatch that
+has nothing to do with the size of the question. That changes the arithmetic:
+
+- **Don't dispatch what you can answer in one call.** One `grep`, one file
+  read, one `git log` — do it inline. A `scanner` dispatch to find out which
+  file exports a function costs more than the `grep` and arrives later. Reach
+  for `scanner` when the sweep is wide or the output is long, not when it is
+  one command.
+- **Batch recon into one brief.** Eight related questions about the same
+  feature go to one `scanner`, not eight. Eight *unrelated* questions still
+  don't go to one worker — that is the rule that survived from the old gate —
+  but "everything needed to build X" is one job, not eight.
+- **Continue an agent instead of spawning another.** An agent that has already
+  read the tree can answer a follow-up with its context intact; a fresh
+  dispatch pays the cold start again. Use `SendMessage` to the one that is
+  already warm.
+- **Don't re-derive what is already in this context.** If the orchestrator has
+  just read a file, handing that work to a subagent so it can read the same
+  file again is pure loss.
 - **Parallel only when independent.** Two agents reading different things at
   once is good. Chaining a task that needs the previous one's answer through
-  parallel workers is worse than doing it in sequence.
+  parallel workers is worse than doing it in sequence, and usually means
+  paying twice for the second one.
 - **One level of delegation.** Workers other than `scout` have no `Agent`
   tool and cannot spawn further agents.
+
+### One review round by default
+
+`reviewer` is opus and it is worth it, but the loop is where the cost hides.
+Default to **one** round: review, Scout answers every finding, orchestrator
+adjudicates, ship. A second round is for when the first found something
+load-bearing that the fix might plausibly have got wrong — not as a routine
+confirmation that the fixes landed. That last part is a `verifier` job, and
+`verifier` is haiku.
+
+Changes that need no `reviewer` at all: a data-only addition already held by a
+committed measurement and its gate, a docs-only change, a comment fix. Say
+when you are skipping it and why, so the choice is visible rather than silent.
 
 ### Integrating what comes back
 

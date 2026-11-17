@@ -48,10 +48,21 @@ export default defineConfig({
     // workflow's cleanup job deletes the preview when the PR closes.
     video: "on",
     trace: "on-first-retry",
-    // Only two transitions exist in the whole app (SpeakButton.jsx:41,
-    // LevelPicker.jsx:42) and there are no keyframes, intervals or rAF
-    // anywhere in src/ — but a screenshot taken mid-transition is a flake for
-    // free, so they are frozen for the capture.
+    // Three transitions exist in the whole app (SpeakButton.jsx:41,
+    // LevelPicker.jsx:42, and the smooth scroll Le Canzoni asks for when it
+    // follows the sung line) — but a screenshot taken mid-transition is a
+    // flake for free, so they are frozen for the capture.
+    //
+    // This comment used to claim there were "no keyframes, intervals or rAF
+    // anywhere in src/", and Le Canzoni is the screen that would have made
+    // that false. It did not, and the distinction is worth keeping: the
+    // sing-along highlight is driven by the audio element's own `timeupdate`
+    // event, not by a timer, so there is still no setInterval and no
+    // requestAnimationFrame in src/. What is new is content that updates
+    // without being asked to, which is an SC 2.2.2 concern rather than a
+    // screenshot one — the play/pause control is what answers it, and the
+    // smooth scroll is suppressed under prefers-reduced-motion
+    // (modules/canzoni/useReducedMotion.js).
     screenshot: { mode: "only-on-failure", animations: "disabled" },
   },
 

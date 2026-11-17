@@ -98,6 +98,28 @@ describe("Il Mercato", () => {
     expect(screen.getByRole("button", { name: /Scene/ })).toHaveTextContent(`0 / ${TOTAL_SCENE_WORDS} words`);
   });
 
+  // Le Canzoni is the hub's first countless stall — a `view` with no module
+  // behind it, so its pill has to state what the song is rather than a
+  // fraction nothing writes. The negative assertion is the load-bearing one:
+  // handing this stall a `0 / 1 songs` badge is the invented-figure mistake
+  // benches.js spends its header on, and it would look perfectly natural
+  // beside the two stalls that do count.
+  it("opens Le Canzoni, badged with a fact rather than a count", async () => {
+    const user = userEvent.setup();
+    render(<MercatoModule onExit={() => {}} />);
+
+    const card = screen.getByRole("button", { name: /Canzoni/ });
+    expect(card).toHaveTextContent("Napoletano");
+    expect(card.textContent).not.toMatch(/\d+\s*\/\s*\d+/);
+
+    await user.click(card);
+    expect(screen.getByRole("heading", { level: 1, name: "Le Canzoni" })).toBeInTheDocument();
+
+    // And back out again, through the same `back` the counting stalls use.
+    await user.click(screen.getByRole("button", { name: /Il Mercato/ }));
+    expect(screen.getByRole("heading", { name: "Il Mercato" })).toBeInTheDocument();
+  });
+
   it("leaves for the city from the back link", async () => {
     const user = userEvent.setup();
     const onExit = vi.fn();

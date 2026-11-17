@@ -5,6 +5,7 @@ import { loadProgress } from "../../shared/storage.js";
 import { districtById } from "../../shared/districts.js";
 import ConversationsModule from "../conversations/ConversationsModule.jsx";
 import ScenesModule from "../scene/ScenesModule.jsx";
+import CanzoniModule from "../canzoni/CanzoniModule.jsx";
 import { STALLS } from "./stalls.js";
 
 // Il Mercato — the market, and the front door on the district that used to
@@ -42,6 +43,10 @@ const NAME = districtById("mercato").name;
 
 const EXIT_LABEL = <span lang="it">{NAME}</span>;
 
+function formatCount({ done, total, unit }) {
+  return `${done} / ${total} ${unit}`;
+}
+
 function Eyebrow({ children, style }) {
   return (
     <span
@@ -60,9 +65,16 @@ function Eyebrow({ children, style }) {
 }
 
 function Stall({ stall, progress, onOpen }) {
-  const { done, total, unit } = stall.count(progress);
   const paint = CITY_ACCENTS[stall.accent];
   const Icon = stall.icon;
+
+  // A stall either derives a fraction from storage or shows none — the rule
+  // benches.js states at length. Le Canzoni is the first station in the city
+  // with nothing to count: it is a `view`, it writes no progress, and a
+  // songs-listened figure would be exactly the content-consumed metric the
+  // coverage headline replaces. So a countless stall puts its own `badge` in
+  // the pill instead, and what goes there is a fact rather than a number.
+  const badge = stall.count ? formatCount(stall.count(progress)) : stall.badge;
 
   return (
     <button
@@ -88,7 +100,7 @@ function Stall({ stall, progress, onOpen }) {
             whiteSpace: "nowrap",
           }}
         >
-          {done} / {total} {unit}
+          {badge}
         </Eyebrow>
       </span>
 
@@ -168,6 +180,10 @@ export default function MercatoModule({ onExit, onCasa }) {
 
   if (open === "scenes") return <ScenesModule onExit={back} exitLabel={EXIT_LABEL} onCasa={onCasa} />;
   if (open === "conversations") return <ConversationsModule onExit={back} exitLabel={EXIT_LABEL} />;
+  // Le Canzoni writes nothing, so coming back from it cannot change a count —
+  // but it still routes through `back` rather than straight to setOpen(null),
+  // because a second path out of a stall is a second thing to keep in step.
+  if (open === "canzoni") return <CanzoniModule onExit={back} exitLabel={EXIT_LABEL} />;
 
   return <MercatoHome progress={progress} onOpen={setOpen} onExit={onExit} />;
 }

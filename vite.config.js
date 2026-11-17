@@ -29,7 +29,36 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico}"]
+        // Note what is NOT here: `mp3`. Le Canzoni's recording is 2.2MB, and
+        // precaching puts it on every first visit whether or not anybody ever
+        // opens that stall — one of eleven surfaces, and the one that teaches
+        // the core vocabulary least, since the song is Neapolitan. Making
+        // every learner pay 2.2MB of mobile data to install a song they may
+        // not play is the wrong default.
+        globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        // So it is cached on first play instead, which gets the PWA property
+        // that matters — a song you have played once plays again on a train
+        // with no signal — at no cost to anyone who never plays it.
+        //
+        // `rangeRequests` is not decoration: a browser seeking inside an
+        // audio file sends a Range header and expects a 206, and a plain
+        // cached 200 would break scrubbing in Safari. The plugin serves a
+        // partial out of the full cached response.
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === "audio",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "canzoni-audio",
+              rangeRequests: true,
+              // 200 only. A 206 is a slice of a file, and caching slices
+              // under the whole file's key is how you get a track that plays
+              // the same eight seconds forever.
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 12 }
+            }
+          }
+        ]
       }
     })
   ],

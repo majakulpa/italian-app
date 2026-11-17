@@ -18,6 +18,8 @@ import MercatoModule from "./modules/mercato/MercatoModule.jsx";
 import { STALLS } from "./modules/mercato/stalls.js";
 import ScenesModule from "./modules/scene/ScenesModule.jsx";
 import { SCENES } from "./data/scenes.js";
+import CanzoniModule from "./modules/canzoni/CanzoniModule.jsx";
+import { CANZONI } from "./data/canzoni.js";
 import { expectNoViolations } from "./test/a11y.js";
 import { LEVELS } from "./data/vocab.js";
 import { GRAMMAR_LEVELS } from "./data/grammar.js";
@@ -83,10 +85,26 @@ beforeEach(() => {
     start() {}
     stop() {}
   };
+  // Same argument again for media: jsdom implements no HTMLMediaElement worth
+  // the name — play() throws "Not implemented" and fires no events — and Le
+  // Canzoni's transport is one of the controls being audited. The stub
+  // dispatches the events a real element would, so the play button's name
+  // flips to "Pause" and the paused state gets scanned too.
+  HTMLMediaElement.prototype.play = function play() {
+    this.dispatchEvent(new Event("play"));
+    return Promise.resolve();
+  };
+  HTMLMediaElement.prototype.pause = function pause() {
+    this.dispatchEvent(new Event("pause"));
+  };
 });
 
 afterEach(() => {
   delete window.SpeechRecognition;
+  // These are assigned onto the prototype rather than spied, so
+  // restoreAllMocks does not reach them.
+  delete HTMLMediaElement.prototype.play;
+  delete HTMLMediaElement.prototype.pause;
   // The decrypted scene-partner key lives in module memory, which localStorage.clear()
   // does not touch — so it has to be dropped explicitly between scans.
   forgetSceneKey();
@@ -416,6 +434,75 @@ describe("Il Mercato", () => {
       const card = screen.getByRole("button", { name: new RegExp(stall.name) });
       card.focus();
       expect(document.activeElement, stall.id).toBe(card);
+    }
+  });
+});
+
+// Le Canzoni is the app's first screen with a media element on it and its
+// first with content that moves on its own, so it is audited in more states
+// than its size suggests: idle, playing, translations open, and — through the
+// injected fixture — timed, which is the only way to reach the `aria-current`
+// markup while every shipped song is untimed.
+//
+// What this cannot check is the *painted* highlight. axe under jsdom can only
+// ever report colour-contrast as incomplete, so whether the sung line's ink
+// clears 4.5:1 on its accent is e2e/canzoni.spec.js's job and nothing here
+// should be read as covering it.
+describe("Le Canzoni", () => {
+  const timed = [{ ...CANZONI[0], lines: CANZONI[0].lines.map((line, i) => ({ ...line, start: i * 4 })) }];
+
+  const openSong = async (user) => user.click(screen.getAllByRole("button", { name: /Funicul/ })[0]);
+
+  it("has an accessible song list", async () => {
+    const { container } = render(<CanzoniModule onExit={() => {}} />);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible song, idle and playing", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<CanzoniModule onExit={() => {}} />);
+    await openSong(user);
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole("button", { name: "Play" }));
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible song with every translation showing", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<CanzoniModule onExit={() => {}} />);
+    await openSong(user);
+    await user.click(screen.getByRole("button", { name: "Show the translations" }));
+    await expectNoViolations(container);
+  });
+
+  // The sung line carries aria-current, which no other screen in the app uses
+  // — worth scanning on its own rather than assuming a list item with one
+  // extra attribute is safe.
+  it("has an accessible sung line", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<CanzoniModule onExit={() => {}} songs={timed} />);
+    await openSong(user);
+    await expectNoViolations(container);
+  });
+
+  it("has an accessible timing pass", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<CanzoniModule onExit={() => {}} />);
+    await openSong(user);
+    await user.click(screen.getByText("Measure the line timings"));
+    await expectNoViolations(container);
+  });
+
+  it("leaves no control out of the tab order", async () => {
+    const user = userEvent.setup();
+    render(<CanzoniModule onExit={() => {}} />);
+    await openSong(user);
+    await user.click(screen.getByRole("button", { name: "Show the translations" }));
+
+    for (const control of screen.getAllByRole("button")) {
+      control.focus();
+      expect(document.activeElement, control.textContent).toBe(control);
     }
   });
 });
@@ -1291,6 +1378,35 @@ describe("Italian text is marked as Italian", () => {
     // The gloss bar repeats the headword in Italian and its meaning in English.
     const meaning = a1Story.paragraphs[0].gloss[glossed];
     expect(italianAncestor(screen.getByText(meaning))).toBeNull();
+  });
+
+  // ── The one screen whose text is deliberately NOT Italian ──────────────
+  //
+  // Le Canzoni sings in Neapolitan, which is a different language from
+  // Italian rather than a dialect of it for `lang` purposes — it has its own
+  // subtag. So this is the one place in the app where `italianAncestor`
+  // returning null is the *correct* answer, and marking the lines `lang="it"`
+  // would be the SC 3.1.2 bug rather than the fix: a screen reader would
+  // apply Italian phonetics to text that is not Italian.
+  //
+  // The assertion runs both ways round for that reason. It is easy to
+  // "tidy" a stray `nap` into `it` for consistency with the rest of the
+  // repo, and nothing else in the suite would complain.
+  it("marks the song in Neapolitan, and the standard-Italian gloss beside it in Italian", async () => {
+    const user = userEvent.setup();
+    const song = CANZONI[0];
+    render(<CanzoniModule onExit={() => {}} />);
+    await user.click(screen.getAllByRole("button", { name: /Funicul/ })[0]);
+
+    const sung = screen.getByText(song.lines[0].nap);
+    expect(sung.closest(`[lang="${song.language}"]`)).not.toBeNull();
+    expect(italianAncestor(sung)).toBeNull();
+
+    // The standard-Italian equivalent on the same line really is Italian, and
+    // is marked so — the two languages sit in one list item.
+    await user.click(screen.getByRole("button", { name: "Show the translations" }));
+    const withItalian = song.lines.find((line) => line.it);
+    expect(italianAncestor(screen.getByText(`In italiano: ${withItalian.it}`))).not.toBeNull();
   });
 
   // La Piazza puts three languages' worth of claim in one card: the English

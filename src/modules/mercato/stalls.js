@@ -24,7 +24,7 @@
 // words, written when Ascolta is finished, and that number moves the first
 // time anybody opens a scene.
 
-import { MessageCircle, Mic } from "lucide-react";
+import { MessageCircle, Mic, Music } from "lucide-react";
 import { moduleStats } from "../../shared/stats.js";
 import { SCENES } from "../../data/scenes.js";
 
@@ -65,6 +65,42 @@ export const STALLS = [
     icon: MessageCircle,
     blurb: "Scripted conversations with the reply chosen from three. No microphone and no network — they work anywhere.",
     count: dialoguesDone,
+    waiting: null,
+  },
+  // ── The first station in the city that counts nothing ──────────────────
+  //
+  // `view: true` and `module: null`, which is the shape benches.js kept the
+  // flag alive for: "a route without a module has to *say* that it counts
+  // nothing, rather than being handed a MODULE_STATS entry over keys nothing
+  // writes". Le Canzoni writes no storage at all. A songs-listened figure
+  // would be the content-consumed metric the coverage headline exists to
+  // replace, and a song is the one thing here you would do for its own sake.
+  //
+  // So `count` is null and `badge` says what the stall is instead. Every
+  // other station in both hubs derives a fraction; this one has no numerator
+  // and no denominator and should not pretend to. What goes in the pill is
+  // the fact a learner most needs on the door: it is dialect.
+  //
+  // It belongs in Il Mercato rather than L'Officina or Il Cinema because the
+  // district's own blurb is "where you have to say it out loud to somebody",
+  // and singing is saying it out loud. Il Cinema is the better long-term
+  // home, but it routes straight at `stories` — putting a second screen
+  // there means making it a hub, which is work that belongs with the serial.
+  {
+    id: "canzoni",
+    hub: "mercato",
+    name: "Canzoni",
+    lang: "it",
+    module: null,
+    route: "canzoni",
+    view: true,
+    accent: "tomato",
+    icon: Music,
+    count: null,
+    badge: "Napoletano",
+    // Plural-agnostic on purpose: "N songs" with a count interpolated would
+    // be a branch the coverage gate could not reach while only one ships.
+    blurb: "Songs old enough to be nobody's property, with the words in Neapolitan, English and Polish. Nothing is marked or counted.",
     waiting: null,
   },
 ];

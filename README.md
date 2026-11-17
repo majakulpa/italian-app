@@ -206,6 +206,43 @@ entry in `MODULE_STATS` (`src/shared/stats.js`) too, or its dashboard card
 will have no progress to show — `stats.test.js` fails if the two lists
 disagree.
 
+## CI and deploys
+
+One workflow, `.github/workflows/deploy.yml`, is both the CI gate and the
+deployer. On a **pull request** it runs, in order:
+
+1. `npm ci`
+2. `npm run test:coverage` — the whole vitest suite *with* the 100%
+   thresholds in `vite.config.js`. Deliberately not `npm test`, which runs no
+   coverage: the gate would then only ever fire on a machine where somebody
+   remembered to type it.
+3. `npx vite build --base=/italian-app/pr-N/`
+4. `npx playwright install --with-deps chromium`
+5. The browser suite — `npx playwright test`, including the axe WCAG 2.1 AA
+   sweep, with its HTML report published to the preview
+6. `scripts/check-no-secrets.mjs` over every file in `dist/`
+7. Publish the preview to `/italian-app/pr-N/`
+
+On **main** the same job runs minus steps 4, 5 and 6's preview path, and
+publishes to the site root. It is triggered by `push`, by a daily cron
+(`17 4 * * *`) so the site cannot silently sit on a stale commit for more than
+a day, and by `workflow_dispatch`. `main` does not run the browser suite — see
+the note at the end of the browser-tests section above.
+
+A preview is deleted by the `cleanup` job when its pull request closes, and
+`alert-stale-site` files a labelled GitHub issue if a deploy of `main` ever
+fails, because a deploy that does not happen otherwise produces nothing to
+notice.
+
+### The gate is enforced in repo settings, not in this file
+
+`main` is protected: merging needs a pull request and a green **`build`**
+check, and the rule applies to admins too. That protection lives in GitHub's
+branch-protection settings, so nothing in the repo shows it — which is why it
+is written down here. If you rename the `build` job in `deploy.yml`, the
+required check stops matching and every pull request becomes unmergeable until
+the rule is renamed to match.
+
 ## What's built
 
 Every module runs across five levels — A1, A2, B1, B2, C1 — with two

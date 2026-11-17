@@ -216,6 +216,89 @@ jobs:
           echo "Report: https://majakulpa.github.io/italian-app/pr-${{ github.event.number }}/e2e-report/"
           exit 1
 
+  # ── When a deploy of main fails, say so somewhere you will look ────────
+  #
+  # The failure this repo keeps having is not a red tick, it is the ABSENCE
+  # of one. Four merges (#35/#36/#40/#45) never reached the site and nobody
+  # noticed, because a deploy that does not happen produces nothing to see.
+  # The concurrency rules above stop one specific cause of that. They do not
+  # stop the general case: any red step in `build` on main — a flaky test, a
+  # dependency that moved, the Playwright/runner mismatch that broke #56 —
+  # leaves the published site quietly serving the previous commit.
+  #
+  # GitHub's own notification for a failed run is an email, which is exactly
+  # the channel a failing build is easiest to miss in. An open issue on the
+  # repo is not: it sits on the issues tab with a red label until somebody
+  # closes it, which is the property we want.
+  #
+  # Pull requests are excluded. A red pull request already shows a red check
+  # on itself, which is visible by construction, and with the `build` check
+  # required on main it also blocks the merge. This job is only about main's
+  # deploys — push, the daily cron, and a manual dispatch.
+  alert-stale-site:
+    needs: build
+    # `always()` is required, or this job is skipped along with its failed
+    # dependency and reports nothing.
+    if: always() && needs.build.result == 'failure' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # Narrower than the workflow default on purpose: this job publishes
+    # nothing, it only files an issue.
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open or update the stale-site issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          # Idempotent: the label may already exist from an earlier failure,
+          # and `gh issue create --label` fails outright if it does not.
+          gh label create deploy-failure \
+            --color B60205 \
+            --description "A deploy of main failed; the published site is stale" \
+            2>/dev/null || true
+
+          EXISTING=$(gh issue list \
+            --label deploy-failure --state open \
+            --json number --jq '.[0].number // empty')
+
+          # printf rather than a heredoc: a heredoc body inside this YAML
+          # block scalar has to carry the block's indentation, and ten leading
+          # spaces turn the whole issue body into a markdown code block.
+          BODY=$(printf '%s\n' \
+            "The published site is **not** serving \`$SHA\`." \
+            "" \
+            "- <https://majakulpa.github.io/italian-app/> is still on the previous commit." \
+            "- Trigger: \`$TRIGGER\`" \
+            "- Failed run: $RUN_URL" \
+            "" \
+            "It stays that way until a deploy of \`main\` goes green. Fix the failing" \
+            "step and re-run that workflow, or push the fix to \`main\` — the daily" \
+            "cron retries too. Close this issue once the site is current again.")
+
+          if [ -n "$EXISTING" ]; then
+            # The cron retries daily. If main is broken for a week, that is
+            # seven identical comments on an issue that is already open and
+            # already says the site is stale, so a scheduled run adds nothing.
+            # A push or a manual dispatch does: somebody just tried again.
+            if [ "$TRIGGER" = "schedule" ]; then
+              echo "Already reported as #$EXISTING; a scheduled retry adds no new information."
+              exit 0
+            fi
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create \
+              --label deploy-failure \
+              --title "Deploy of main failed — the published site is stale" \
+              --body "$BODY"
+          fi
+
   # Delete a preview when its pull request closes, merged or not. Previews are
   # free to make and would otherwise be kept forever by nobody in particular.
   cleanup:

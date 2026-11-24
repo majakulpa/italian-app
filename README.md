@@ -62,6 +62,7 @@ src/
     mappe.js                     Mappatura delle parole: suffix correspondences, their two roads, their notes, their false friends and their drills
     articoli.js                  Gli Articoli: the three strands, the rules behind them, and every item's Polish anchor
     falsiAmici.js                Falsi Amici: the pairs no suffix rule generates, and the map traps it reuses rather than copies
+    canzoni.js                   Le Canzoni: public-domain songs, their lines in Neapolitan/English/Polish, and the licence provenance of every recording
   modules/
     vocab/VocabModule.jsx              Flashcards + quiz UI (done)
     grammar/GrammarModule.jsx          Lesson (explanation) + drill UI (done)
@@ -79,6 +80,9 @@ src/
     riserva/drill.js                   Which words a fascia hands you, and one entry as something to produce
     riserva/DrillRound.jsx             The typed round behind a fascia, and what it says at the end
     riserva/traces.js                  Where you met a word: the deck's example sentence, and the stories that glossed it
+    canzoni/CanzoniModule.jsx          Le Canzoni: the song list, the player, the lyric sheet and the timing pass (done)
+    canzoni/timing.js                  Which line is being sung, whether a song is timed at all, and how a timing pass writes itself down
+    canzoni/useReducedMotion.js        The app's first prefers-reduced-motion query — it degrades the scroll, not the highlight
     officina/OfficinaModule.jsx        L'Officina's hub — the five benches, and the route into each (done)
     officina/benches.js                The benches as data, and the rule that a figure is measured or absent
     review/ReviewModule.jsx            La Piazza: the landing, and the typed review round (a route, not a MODULES entry)
@@ -205,6 +209,18 @@ the `MODULES` array in `src/App.jsx` with `ready: true`. Give it a matching
 entry in `MODULE_STATS` (`src/shared/stats.js`) too, or its dashboard card
 will have no progress to show — `stats.test.js` fails if the two lists
 disagree.
+
+That is the recipe for a screen that *counts* something. A screen that keeps
+no progress of its own takes the other path, and taking the wrong one is how
+you end up with a `MODULE_STATS` entry over keys nothing writes: leave it out
+of both `MODULES` and `MODULE_STATS`, and register it as a station with
+`module: null` and `view: true` instead (`src/modules/mercato/stalls.js`'s
+`canzoni` is the worked example, and `benches.js:115-124` is the argument).
+`districts.test.js` enforces the fork from both sides — a routed station must
+be either a module or an admitted view, and a view's route must not appear in
+`MODULE_STATS`. A station inside a hub also needs no branch in `App.jsx`: the
+hub dispatches its own, which is why `conversations` and `scenes` are absent
+from App's switch entirely.
 
 ## CI and deploys
 
@@ -416,6 +432,82 @@ categories/dialogues/stories each, and four grammar topics.
   *taken*, not solved — and the caught mark is never cleared, because getting
   the word right afterwards is progress but it does not un-happen the catch,
   and a collection that quietly empties itself is not one.
+- **Le Canzoni** — Il Mercato's third stall, and the one screen in the app
+  that asks nothing of you. A public-domain recording plays, the words sit
+  down the page, and one control reveals the English and the Polish under
+  every line. The lyric line being sung lights up — once somebody has timed
+  the recording; see below.
+
+  **It counts nothing, and that is the point.** It is the first station in the
+  city marked `view: true` — no `MODULES` entry, no `MODULE_STATS` entry, no
+  writes to storage at all. The flag had been sitting in
+  `modules/officina/benches.js` unused since La Riserva stopped needing it,
+  kept because the rule it encodes is the one worth keeping: a route without a
+  module has to *say* that it counts nothing. A songs-listened figure would be
+  precisely the content-consumed metric the coverage headline exists to
+  replace, and a song is the one thing here you would do for its own sake.
+  Nothing on this screen reaches `reviewItem` and nothing turns up in La
+  Piazza.
+
+  **Why this song and no other.** Lyrics and recordings are two separate
+  copyrights and nearly every Italian song fails one of them. `'O sole mio` is
+  the trap — widely believed public domain, still in copyright in the EU
+  because of the 2002 Mazzucchi co-authorship ruling. Jam-ALT, the one
+  ready-made corpus of Creative Commons songs with time-aligned lyrics, holds
+  79 songs in English, German, Spanish and French and **no Italian at all**.
+  What is left is 1880 and earlier: `Funiculì, Funiculà`, whose authors died
+  in 1903 and 1922, with a 1906 recording Wikimedia Commons holds as public
+  domain, attribution not required. `src/data/canzoni.js` carries the whole
+  provenance, including the one thing not verified — the text is checked
+  against a secondary transcription, because IMSLP and CPDL both refuse
+  automated fetches, and the file says so rather than implying a score was
+  consulted.
+
+  **It is Neapolitan, and the screen says so.** It will teach nothing of
+  `fondamentale.js`'s top 600, and every freely usable Italian song has that
+  problem — they are all dialect, operatic or archaic. So the stall's badge
+  reads `Napoletano` instead of a count, and a line under the title admits the
+  song is there to be enjoyed rather than studied. What turns that weakness
+  into the lesson is the third gloss: where the Neapolitan parts company with
+  standard Italian, the line shows what Italian would say instead. `jamme`
+  against `andiamo` is worth more to a learner than another `-zione` noun.
+  The lyrics are marked `lang="nap"`, not `lang="it"` — marking them Italian
+  would have a screen reader apply Italian phonetics to a different language,
+  the same SC 3.1.2 defect `AnswerStatus.jsx` describes pointed the other way,
+  and it is also why these lines carry no `SpeakButton`: `speech.js` hard-codes
+  `it-IT` and would mispronounce every one of them with confidence.
+
+  **No timings ship, because nobody has measured any.** Every `start` in
+  `canzoni.js` is `null`, so no line lights up yet and the screen says that
+  outright. Dividing the duration by the line count would drift out of sync
+  within two lines and read as a bug; it is the same refusal
+  `modules/scene/SceneListen.jsx` makes when it declines to print a `0:14`
+  over a recording that does not exist. An untimed song is a first-class
+  state here, not a broken one — it is a bilingual lyric sheet with a player,
+  which is most of the value. The screen carries the fix too: a timing pass
+  that plays the track, takes one tap per line, and prints the array to paste
+  back into the data file. One pass per song, and the next song will need the
+  same one.
+
+  **Two firsts worth knowing about.** It is the app's first media element —
+  `HTMLMediaElement` is unimplemented in jsdom, so the unit tests and the axe
+  sweep both stub `play`/`pause` and dispatch the events a real element would,
+  and `e2e/canzoni.spec.js` is what proves a real browser fetches the MP3 and
+  starts it from a click. And it is the first screen whose content moves on its
+  own, so it is the first to honour `prefers-reduced-motion`
+  (`modules/canzoni/useReducedMotion.js`): the *scroll* degrades to a jump, not
+  the highlight, because removing the highlight would remove the feature. The
+  highlight is driven by the audio element's own `timeupdate` event rather than
+  a timer, which is why there is still no `setInterval` and no
+  `requestAnimationFrame` anywhere in `src/`. SC 2.2.2 is answered by the
+  play/pause control, and the sung line is marked three ways — surface, weight
+  and `aria-current`, the repo's first — so colour is never the only cue.
+
+  The recording is **not precached**: 2.2MB on every first visit, for one stall
+  of eleven that teaches the core vocabulary least, is the wrong default. A
+  `runtimeCaching` rule in `vite.config.js` caches it on first play instead,
+  with `rangeRequests` on, so a song you have played once plays again with no
+  signal and nobody else pays for it.
 - **Coverage** — the headline figure, and the one number the app wants you to
   care about: what share of running Italian you could now follow.
   `src/data/fondamentale.js` holds De Mauro's base vocabulary in frequency

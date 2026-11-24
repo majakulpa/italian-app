@@ -243,10 +243,22 @@ function TimingPass({ lines, taps, onTap, onReset }) {
       </div>
 
       {taps.length > 0 && (
-        <output
+        // A plain <p>, and that is a correction rather than a preference.
+        // This was an <output>, which ARIA maps to role="status" — an
+        // implicit live region. Two things went wrong with it: every tap
+        // re-announced the whole growing array, which is chatter during the
+        // one activity that needs you listening to music; and it put a second
+        // live region on a screen that already has one, so the play/pause
+        // announcement and a timing readout would compete. It also made
+        // getByRole("status") ambiguous the moment a tap existed, which the
+        // tests only survived because none of them tapped and then looked.
+        //
+        // The array is something you read and copy, deliberately, when you
+        // have finished. It does not need announcing at all.
+        <p
           style={{
-            display: "block",
             marginTop: 12,
+            marginBottom: 0,
             fontFamily: MONO,
             fontSize: 12,
             lineHeight: 1.6,
@@ -255,7 +267,7 @@ function TimingPass({ lines, taps, onTap, onReset }) {
           }}
         >
           {formatTimings(taps)}
-        </output>
+        </p>
       )}
     </details>
   );
@@ -420,7 +432,20 @@ function SongScreen({ song, onExit, exitLabel }) {
         </p>
       )}
 
-      <ol style={{ listStyle: "none", padding: 0, margin: "20px 0 0" }}>
+      {/* `role="list"` on a list is not redundant here, and it is the first
+          in the repo. Safari drops list semantics from a ul/ol the moment
+          `list-style: none` is set — VoiceOver stops announcing "list, 15
+          items" and stops numbering the rows — and restating the role is the
+          documented way back. No axe rule catches it, in jsdom or in a
+          browser, so the suite being green says nothing either way.
+
+          Fourteen other files in src/ set `listStyle: none` without this, so
+          the gap is a repo-wide one rather than anything this screen
+          introduced. It is not fixed wholesale here: that is a sweep of its
+          own, and this list is the one in front of me. A lyric sheet is also
+          the case where it matters most, being the only list in the app whose
+          row order is the content. */}
+      <ol role="list" style={{ listStyle: "none", padding: 0, margin: "20px 0 0" }}>
         {song.lines.map((line, i) => (
           <Line
             key={i}
